@@ -1,0 +1,7 @@
+{
+  "name": "MobileTemplate",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "vue-vite"
+}

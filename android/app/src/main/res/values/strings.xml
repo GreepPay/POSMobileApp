@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Greep POS</string>
+    <string name="title_activity_main">Greep POS</string>
+    <string name="package_name">io.greep.pos.vendor</string>
+    <string name="custom_url_scheme">io.greep.pos.vendor</string>
+</resources>
