@@ -1,7 +1,9 @@
 <template>
   <app-wrapper>
     <dashboard-layout title="Wallet">
-      <div class="w-full flex flex-col items-center justify-start px-4 space-y-4">
+      <div
+        class="w-full flex flex-col items-center justify-start px-4 space-y-4"
+      >
         <!-- Balance card section -->
         <div class="w-full flex flex-col space-y-2 pt-2">
           <app-image-loader
@@ -9,7 +11,9 @@
             :photoUrl="'/images/wallet-bg.svg'"
           >
             <div class="w-full flex flex-row items-center justify-between">
-              <app-normal-text class="text-left font-semibold !text-white !text-sm">
+              <app-normal-text
+                class="text-left font-semibold !text-white !text-sm"
+              >
                 James Roland
               </app-normal-text>
 
@@ -56,7 +60,9 @@
               Recent history
             </app-normal-text>
 
-            <app-normal-text class="text-primary text-right"> View all </app-normal-text>
+            <app-normal-text class="text-primary text-right">
+              View all
+            </app-normal-text>
           </div>
 
           <div class="w-full flex flex-col space-y-3">
@@ -74,98 +80,98 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, reactive } from "vue";
-import {
-  AppImageLoader,
-  AppNormalText,
-  AppHeaderText,
-  AppButton,
-  AppTransaction,
-} from "@greep/ui-components";
-import { Logic } from "@greep/logic";
-
-export default defineComponent({
-  name: "IndexPage",
-  components: {
+  import { defineComponent, reactive } from "vue"
+  import {
     AppImageLoader,
     AppNormalText,
     AppHeaderText,
     AppButton,
     AppTransaction,
-  },
-  setup() {
-    const recentTransactions = reactive<
-      {
-        type: "credit" | "debit";
-        description: string;
-        icon: string;
-        amount: number;
-        day: string;
-        time: string;
-      }[]
-    >([
-      {
-        type: "credit",
-        description: "Payment from QR-Code | Josh",
-        icon: "scan-type",
-        amount: 70,
-        day: "Today",
-        time: "10:54 AM",
-      },
-      {
-        type: "credit",
-        description: "Payment from QR-Code | Lizzy",
-        icon: "scan-type",
-        amount: 95,
-        day: "Today",
-        time: "09:54 AM",
-      },
-      {
-        type: "debit",
-        description: "Withdrawal from Wallet",
-        icon: "send-type",
-        amount: 230,
-        day: "Today",
-        time: "07:54 AM",
-      },
-      {
-        type: "credit",
-        description: "Payment from Transfer | Josh",
-        icon: "tag-type",
-        amount: 89,
-        day: "Today",
-        time: "06:54 AM",
-      },
-      {
-        type: "credit",
-        description: "Payment from QR-Code | Mica",
-        icon: "scan-type",
-        amount: 70,
-        day: "Today",
-        time: "05:54 AM",
-      },
-      {
-        type: "credit",
-        description: "Payment from Transfer | Lola",
-        icon: "tag-type",
-        amount: 100,
-        day: "Today",
-        time: "04:54 AM",
-      },
-      {
-        type: "credit",
-        description: "Payment from QR-Code | Josh",
-        icon: "scan-type",
-        amount: 70,
-        day: "Today",
-        time: "03:54 AM",
-      },
-    ]);
+  } from "@greep/ui-components"
+  import { Logic } from "@greep/logic"
 
-    return {
-      recentTransactions,
-      Logic,
-    };
-  },
-});
+  export default defineComponent({
+    name: "IndexPage",
+    components: {
+      AppImageLoader,
+      AppNormalText,
+      AppHeaderText,
+      AppButton,
+      AppTransaction,
+    },
+    setup() {
+      const recentTransactions = reactive<
+        {
+          type: "credit" | "debit"
+          description: string
+          icon: string
+          amount: number
+          day: string
+          time: string
+        }[]
+      >([
+        {
+          type: "credit",
+          description: "Payment from QR-Code | Josh",
+          icon: "scan-type",
+          amount: 70,
+          day: "Today",
+          time: "10:54 AM",
+        },
+        {
+          type: "credit",
+          description: "Payment from QR-Code | Lizzy",
+          icon: "scan-type",
+          amount: 95,
+          day: "Today",
+          time: "09:54 AM",
+        },
+        {
+          type: "debit",
+          description: "Withdrawal from Wallet",
+          icon: "send-type",
+          amount: 230,
+          day: "Today",
+          time: "07:54 AM",
+        },
+        {
+          type: "credit",
+          description: "Payment from Transfer | Josh",
+          icon: "tag-type",
+          amount: 89,
+          day: "Today",
+          time: "06:54 AM",
+        },
+        {
+          type: "credit",
+          description: "Payment from QR-Code | Mica",
+          icon: "scan-type",
+          amount: 70,
+          day: "Today",
+          time: "05:54 AM",
+        },
+        {
+          type: "credit",
+          description: "Payment from Transfer | Lola",
+          icon: "tag-type",
+          amount: 100,
+          day: "Today",
+          time: "04:54 AM",
+        },
+        {
+          type: "credit",
+          description: "Payment from QR-Code | Josh",
+          icon: "scan-type",
+          amount: 70,
+          day: "Today",
+          time: "03:54 AM",
+        },
+      ])
+
+      return {
+        recentTransactions,
+        Logic,
+      }
+    },
+  })
 </script>
