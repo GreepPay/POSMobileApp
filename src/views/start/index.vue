@@ -206,15 +206,17 @@
                 <app-button
                   class="!w-full !py-4 border-secondary"
                   variant="secondary"
+                  @click="Logic.Common.GoToRoute('/auth/setup')"
                 >
                   Create account
                 </app-button>
               </div>
 
               <app-button
-                class="!w-full !py-4 font-semibold"
+                class="!w-full !py-4 font-semibold !text-center"
                 variant="secondary"
                 outlined
+                @click="Logic.Common.GoToRoute('/auth/login')"
               >
                 Sign In
               </app-button>

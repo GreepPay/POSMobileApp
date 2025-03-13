@@ -6,7 +6,8 @@
 
 @theme {
   --breakpoint-*: initial;
-  --breakpoint-sm: 640px;
+  --breakpoint-xs: 300px;
+  --breakpoint-sm: 370px;
   --breakpoint-md: 768px;
   --breakpoint-mdlg: 1000px;
   --breakpoint-lg: 1580px;
@@ -42,6 +43,7 @@
   --color-red: #fa1919;
   --color-purple: #8e3be0;
   --color-orange: #ffaa1f;
+  --color-veryLightGray: #999999;
 
   /* Fonts */
   --font-poppins: "Poppins", sans-serif;
