@@ -1,72 +1,16 @@
 <template>
   <app-wrapper>
-    <dashboard-layout title="Wallet">
-      <div class="w-full flex flex-col items-center justify-start px-4 space-y-4">
+    <dashboard-layout title="Timms Closet Ventures">
+      <div
+        class="w-full flex flex-col items-center justify-start px-4 space-y-4"
+      >
         <!-- Balance card section -->
         <div class="w-full flex flex-col space-y-2 pt-2">
           <app-image-loader
-            class="w-full h-[130px] rounded-[15px] flex flex-col justify-between px-3 py-3"
-            :photoUrl="'/images/wallet-bg.svg'"
+            class="w-full h-[250px] rounded-[35px] flex flex-col justify-between px-3 py-3 bg-[#0A141E]/30"
+            :photoUrl="'/images/greep-transparent-logo.svg'"
           >
-            <div class="w-full flex flex-row items-center justify-between">
-              <app-normal-text class="text-left font-semibold !text-white !text-sm">
-                James Roland
-              </app-normal-text>
-
-              <app-normal-text class="text-right !text-white font-normal">
-                @ziggy_bugger
-              </app-normal-text>
-            </div>
-
-            <div class="w-full flex flex-col space-y-0.5">
-              <app-normal-text class="!font-extralight !text-white">
-                Total Balance
-              </app-normal-text>
-              <app-header-text class="!text-left !text-white !text-3xl">
-                ₺ 6,740
-              </app-header-text>
-            </div>
           </app-image-loader>
-        </div>
-
-        <!-- Action buttons -->
-        <div class="w-full grid grid-cols-2 gap-3">
-          <div class="col-span-1 flex flex-col">
-            <app-button
-              class="w-full !bg-secondary !text-white py-3"
-              @click="Logic.Common.GoToRoute('/request')"
-            >
-              Request
-            </app-button>
-          </div>
-          <div class="col-span-1 flex flex-col">
-            <app-button
-              class="w-full !border-secondary !bg-white border-[1px] !text-secondary py-3"
-              @click="Logic.Common.GoToRoute('/withdraw')"
-            >
-              Withdraw
-            </app-button>
-          </div>
-        </div>
-
-        <!-- Recent transactions -->
-        <div class="w-full flex flex-col space-y-4 pt-2">
-          <div class="w-full flex flex-row justify-between items-center">
-            <app-normal-text class="!text-left font-semibold !text-sm">
-              Recent history
-            </app-normal-text>
-
-            <app-normal-text class="text-primary text-right"> View all </app-normal-text>
-          </div>
-
-          <div class="w-full flex flex-col space-y-3">
-            <app-transaction
-              :data="item"
-              v-for="(item, index) in recentTransactions"
-              :key="index"
-              @click="Logic.Common.GoToRoute(`/payment/${index}`)"
-            />
-          </div>
         </div>
       </div>
     </dashboard-layout>
