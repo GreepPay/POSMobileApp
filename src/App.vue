@@ -41,24 +41,27 @@ export default defineComponent({
     );
 
     onMounted(() => {
-      Logic.Common.GoToRoute("/auth/login");
+      // Logic.Common.GoToRoute("/auth/login");
       // deep link config
-      CapacitorApp.addListener("appUrlOpen", function (event: URLOpenListenerEvent) {
-        // Example url: https://beerswift.app/tabs/tabs2
-        // slug = /tabs/tabs2
-        const domainType = ".com";
-        const slug = event.url.split(domainType).pop();
+      CapacitorApp.addListener(
+        "appUrlOpen",
+        function (event: URLOpenListenerEvent) {
+          // Example url: https://beerswift.app/tabs/tabs2
+          // slug = /tabs/tabs2
+          const domainType = ".com";
+          const slug = event.url.split(domainType).pop();
 
-        // We only push to the route if there is a slug present
-        if (slug) {
-          if (getPlatforms()[0] == "android") {
-            window.location.href = `https://localhost${slug}`;
+          // We only push to the route if there is a slug present
+          if (slug) {
+            if (getPlatforms()[0] == "android") {
+              window.location.href = `https://localhost${slug}`;
+              return;
+            }
+            Logic.Common.GoToRoute(slug);
             return;
           }
-          Logic.Common.GoToRoute(slug);
-          return;
         }
-      });
+      );
     });
 
     return {};

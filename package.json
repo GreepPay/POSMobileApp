@@ -25,6 +25,7 @@
     "@tailwindcss/line-clamp": "^0.4.4",
     "@tailwindcss/typography": "^0.5.16",
     "@tailwindcss/vite": "^4.0.0",
+    "country-state-city": "^3.2.1",
     "ionicons": "^7.0.0",
     "tailwindcss": "^4.0.0",
     "vue": "^3.3.0",

@@ -1,4 +1,4 @@
-@import 'tailwindcss';
+@import "tailwindcss";
 
 @plugin '@tailwindcss/typography';
 
@@ -28,11 +28,24 @@
   --text-7xl: 5rem;
 
   /* Colors */
-  --color-primary: #009260;
-  --color-secondary: #001726;
+  --color-green: #10bb76;
+  --color-primary: #10bb76;
+  --color-black: #0a141e;
+  --color-white: #ffffff;
+  --color-darkGreen: #1f8f69;
+  --color-gray-one: #1f8f69;
+  --color-gray-two: #616161;
+  --color-light-gray-one: #f0f3f6;
+  --color-light-gray-two: #e0e2e4;
+  --color-blue-green: #00a0b4;
+  --color-blue: #009de3;
+  --color-red: #fa1919;
+  --color-purple: #8e3be0;
+  --color-orange: #ffaa1f;
 
   /* Fonts */
-  --font-poppins: 'Poppins', sans-serif;
+  --font-poppins: "Poppins", sans-serif;
+  --font-inter: "Poppins", sans-serif;
 }
 
 /*
@@ -91,7 +104,7 @@
 
 /* Body global styles */
 body {
-  font-family: 'Poppins', sans-serif;
+  font-family: "Poppins", sans-serif;
 }
 
 /* Top bar loader */
@@ -118,7 +131,7 @@ body {
   width: 100%;
   position: absolute;
   height: 3px;
-  background-color: #E7692B;
+  background-color: #e7692b;
   animation-name: loader-animation;
   animation-duration: 3s;
   animation-iteration-count: infinite;
