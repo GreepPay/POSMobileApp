@@ -15,6 +15,7 @@
               name="from"
               v-model="filterSetup.from"
               custom-class="!border-[1.5px] border-[#E0E2E4] !rounded-r-[0px] px-4 py-4 !bg-transparent"
+              :input-style="`!text-sm`"
             >
               <template #inner-suffix>
                 <app-icon name="calendar" custom-class="h-[22px]" />
@@ -30,6 +31,7 @@
               name="to"
               v-model="filterSetup.to"
               custom-class="!border-[1.5px] border-[#E0E2E4] !rounded-l-[0px] !border-l-[0px] px-4 py-4 !bg-transparent"
+              :input-style="`!text-sm`"
             >
               <template #inner-suffix>
                 <app-icon name="calendar" custom-class="h-[22px]" />
@@ -55,7 +57,7 @@
               class="flex flex-row space-x-[3px] items-center w-full justify-start"
             >
               <app-normal-text
-                custom-class="!text-black !font-semibold !text-left"
+                custom-class="!text-black !font-semibold !text-left !text-sm"
                 >{{ currentOptionName }}</app-normal-text
               >
               <app-icon name="dropdown" custom-class="!h-[6px]" />
@@ -63,11 +65,13 @@
           </app-select>
 
           <div class="w-full flex flex-row items-center space-x-3">
-            <app-normal-text custom-class="!text-black !font-[500] !text-left"
+            <app-normal-text
+              custom-class="!text-black !font-[500] !text-left !text-sm"
               >In | ₺30,000</app-normal-text
             >
 
-            <app-normal-text custom-class="!text-black !font-[500] !text-left"
+            <app-normal-text
+              custom-class="!text-black !font-[500] !text-left !text-sm"
               >Out | ₺30,000</app-normal-text
             >
           </div>
