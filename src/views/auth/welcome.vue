@@ -10,7 +10,7 @@
       <!-- Top section -->
       <div class="w-full flex flex-row items-center justify-center pt-4">
         <app-image-loader
-          photo-url="/images/temps/user-profile.png"
+          photo-url="/images/temps/profile-2.png"
           class="h-[96px] w-[96px] rounded-full xs:w-[80px] xs:h-[80px]"
         />
       </div>
@@ -62,39 +62,39 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, watch, reactive } from "vue";
-import {
-  AppImageLoader,
-  AppHeaderText,
-  AppNormalText,
-  AppKeyboard,
-} from "@greep/ui-components";
-import { Logic } from "@greep/logic";
-
-export default defineComponent({
-  name: "WelcomePage",
-  components: {
+  import { defineComponent, watch, reactive } from "vue"
+  import {
     AppImageLoader,
     AppHeaderText,
     AppNormalText,
     AppKeyboard,
-  },
-  setup() {
-    const FormValidations = Logic.Form;
+  } from "@greep/ui-components"
+  import { Logic } from "@greep/logic"
 
-    const formData = reactive({
-      passcode: "",
-    });
+  export default defineComponent({
+    name: "WelcomePage",
+    components: {
+      AppImageLoader,
+      AppHeaderText,
+      AppNormalText,
+      AppKeyboard,
+    },
+    setup() {
+      const FormValidations = Logic.Form
 
-    watch(formData, () => {
-      console.log(formData);
-    });
+      const formData = reactive({
+        passcode: "",
+      })
 
-    return {
-      FormValidations,
-      Logic,
-      formData,
-    };
-  },
-});
+      watch(formData, () => {
+        console.log(formData)
+      })
+
+      return {
+        FormValidations,
+        Logic,
+        formData,
+      }
+    },
+  })
 </script>

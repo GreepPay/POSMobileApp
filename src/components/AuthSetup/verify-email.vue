@@ -41,49 +41,49 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, reactive } from "vue";
-import {
-  AppFormWrapper,
-  AppNormalText,
-  AppOtpInput,
-} from "@greep/ui-components";
-import { Logic } from "@greep/logic";
-
-export default defineComponent({
-  components: {
+  import { defineComponent, reactive } from "vue"
+  import {
     AppFormWrapper,
     AppNormalText,
     AppOtpInput,
-  },
-  props: {},
-  name: "AuthSetupVerifyEmail",
-  setup() {
-    const FormValidations = Logic.Form;
+  } from "@greep/ui-components"
+  import { Logic } from "@greep/logic"
 
-    const formData = reactive<{
-      otp_code: string;
-    }>({
-      otp_code: "",
-    });
+  export default defineComponent({
+    components: {
+      AppFormWrapper,
+      AppNormalText,
+      AppOtpInput,
+    },
+    props: {},
+    name: "AuthSetupVerifyEmail",
+    setup() {
+      const FormValidations = Logic.Form
 
-    const handleOTPChange = () => {
-      // formData.otp_code = value;
-    };
+      const formData = reactive<{
+        otp_code: string
+      }>({
+        otp_code: "",
+      })
 
-    return {
-      formData,
-      FormValidations,
-      handleOTPChange,
-    };
-  },
-  data() {
-    return {
-      parentRefs: [],
-    };
-  },
-  mounted() {
-    const parentRefs: any = this.$refs;
-    this.parentRefs = parentRefs;
-  },
-});
+      const handleOTPChange = () => {
+        // formData.otp_code = value;
+      }
+
+      return {
+        formData,
+        FormValidations,
+        handleOTPChange,
+      }
+    },
+    data() {
+      return {
+        parentRefs: [],
+      }
+    },
+    mounted() {
+      const parentRefs: any = this.$refs
+      this.parentRefs = parentRefs
+    },
+  })
 </script>
