@@ -46,7 +46,7 @@
             <div
               v-for="(transaction, index) in transactionHistory"
               :key="index"
-              class="w-full flex flex-row justify-between mb-3 pb-3 border-b-[1px] border-veryLightGray"
+              class="w-full flex flex-row justify-between mb-3 pb-3 border-b-[1px] border-[#E0E2E4]"
             >
               <div class="flex flex-row space-x-2 items-center">
                 <app-icon name="grp-black" custom-class="!h-[45px]" />
