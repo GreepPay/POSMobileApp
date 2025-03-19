@@ -14,7 +14,7 @@
         </app-normal-text>
       </app-info-box>
 
-      <div class="w-full flex flex-col space-y-2">
+      <div class="w-full flex flex-col space-y-1">
         <div
           class="w-full flex flex-row justify-between items-center py-2"
           v-for="(currency, index) in availableCurrencies"
