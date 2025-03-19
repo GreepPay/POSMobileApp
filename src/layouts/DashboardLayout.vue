@@ -28,7 +28,10 @@
           {{ title }}
         </app-header-text>
 
-        <div class="flex flex-row space-x-4 items-center">
+        <div
+          class="flex flex-row space-x-4 items-center"
+          @click="Logic.Common.GoToRoute('/notifications')"
+        >
           <app-icon name="notify-bell" custom-class="!h-[35px]" />
         </div>
       </div>

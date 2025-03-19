@@ -25,7 +25,7 @@
             <!-- Redeem button -->
             <app-button
               variant="primary-white"
-              :class="`!py-4  `"
+              :class="`!py-4  !font-[400]`"
               @click="Logic.Common.GoToRoute('/grp/converter')"
               >Redeem</app-button
             >
@@ -34,40 +34,24 @@
 
         <!-- Transaction history -->
         <div class="flex flex-col space-y-3">
-          <div class="w-full flex flex-row justify-between items-center">
+          <div class="w-full flex flex-row justify-between items-center pb-2">
             <app-normal-text class="font-semibold !text-gray-800 !text-sm"
               >History</app-normal-text
             >
 
-            <app-normal-text class="text-primary">See all</app-normal-text>
+            <app-normal-text
+              class="text-primary"
+              @click="Logic.Common.GoToRoute('/grp/history')"
+              >See all</app-normal-text
+            >
           </div>
 
-          <div class="w-full flex flex-col">
-            <div
+          <div class="w-full flex flex-col pt-3">
+            <app-point-transaction
               v-for="(transaction, index) in transactionHistory"
               :key="index"
-              class="w-full flex flex-row justify-between mb-3 pb-3 border-b-[1px] border-[#E0E2E4]"
-            >
-              <div class="flex flex-row space-x-2 items-center">
-                <app-icon name="grp-black" custom-class="!h-[45px]" />
-                <div class="flex flex-col space-y-[2px]">
-                  <app-normal-text class="font-[500] !text-left !text-sm">{{
-                    transaction.title
-                  }}</app-normal-text>
-                  <app-normal-text
-                    class="!text-left text-gray-two !font-light !text-[12px]"
-                    >{{ transaction.date }}</app-normal-text
-                  >
-                </div>
-              </div>
-
-              <div class="flex flex-row space-x-2 justify-end">
-                <app-normal-text class="font-[500] !text-right !text-sm">
-                  {{ transaction.type == "debit" ? "-" : "+" }}
-                  {{ transaction.amount }}</app-normal-text
-                >
-              </div>
-            </div>
+              :transaction="transaction"
+            />
           </div>
         </div>
       </div>
@@ -77,7 +61,12 @@
 
 <script lang="ts">
 import { defineComponent } from "vue";
-import { AppButton, AppNormalText, AppIcon } from "@greep/ui-components";
+import {
+  AppButton,
+  AppNormalText,
+  AppIcon,
+  AppPointTransaction,
+} from "@greep/ui-components";
 import { Logic } from "@greep/logic";
 import AmountCard from "../../components/Common/AmountCard.vue";
 import { reactive } from "vue";
@@ -89,6 +78,7 @@ export default defineComponent({
     AmountCard,
     AppNormalText,
     AppIcon,
+    AppPointTransaction,
   },
   setup() {
     const transactionHistory = reactive([
