@@ -34,7 +34,7 @@
         <div class="w-full flex flex-col">
           <div
             @click="Logic.Common.GoToRoute('/banks/add')"
-            class="w-full flex flex-row space-x-1 px-3 py-2 border-[1.5px] rounded-full items-center border-[#0A141E]"
+            class="w-full flex flex-row space-x-1 px-3 py-3 border-[1.5px] rounded-[12px] items-center border-[#0A141E]"
           >
             <app-icon name="black-plus" custom-class="h-[24px]" />
 

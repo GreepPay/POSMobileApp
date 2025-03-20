@@ -1,7 +1,9 @@
 <template>
   <app-wrapper>
     <dashboard-layout title="Timms Closet Ventures">
-      <div class="w-full flex flex-col items-center justify-start space-y-4">
+      <div
+        class="w-full flex flex-col items-center justify-start !space-y-[20px]"
+      >
         <!-- Balance card section -->
         <div class="w-full flex flex-col space-y-2 pt-2">
           <div class="w-full flex flex-col px-4">

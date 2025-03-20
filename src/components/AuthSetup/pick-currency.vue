@@ -60,6 +60,7 @@ import {
   AppImageLoader,
 } from "@greep/ui-components";
 import { Logic } from "@greep/logic";
+import { availableCurrencies } from "../../composable";
 
 export default defineComponent({
   components: {
@@ -73,41 +74,6 @@ export default defineComponent({
   name: "AuthSetupPickCurrency",
   setup() {
     const FormValidations = Logic.Form;
-
-    const availableCurrencies = reactive([
-      {
-        code: "TRY",
-        name: "Turkish Lira",
-      },
-      {
-        code: "USD",
-        name: "United States Dollar",
-      },
-      {
-        code: "USDC",
-        name: "USDC",
-      },
-      {
-        code: "NGN",
-        name: "Nigerian Naira",
-      },
-      {
-        code: "GHS",
-        name: "Ghanaian Cedis",
-      },
-      {
-        code: "XLM",
-        name: "XLM",
-      },
-      {
-        code: "ZAR",
-        name: "South African Rand",
-      },
-      {
-        code: "EUR",
-        name: "Euro",
-      },
-    ]);
 
     const formData = reactive<{
       preferred_currency: string;
