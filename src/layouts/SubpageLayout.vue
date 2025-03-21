@@ -1,12 +1,14 @@
 <template>
   <div
-    class="w-full flex flex-col lg:text-sm mdlg:text-[12px] relative h-full text-xs !overflow-y-auto font-poppins"
+    class="w-full flex flex-col lg:text-sm mdlg:text-[12px] relative h-full text-xs overflow-y-hidden font-poppins"
     style="
       padding-top: calc(env(safe-area-inset-top) + 0px) !important;
       padding-bottom: calc(env(safe-area-inset-bottom) + 16px) !important;
     "
   >
-    <div class="w-full flex flex-col relative h-full overflow-y-auto">
+    <div
+      class="w-full flex flex-col relative h-full min-h-screen overflow-y-auto"
+    >
       <!-- Top section -->
       <div
         class="w-full flex flex-row items-center py-4 bg-white px-4 sticky top-0 z-10"
@@ -26,9 +28,12 @@
           </app-header-text>
         </div>
 
-        <div class="flex justify-start invisible" v-if="!hideBackBtn">
+        <div v-if="!hasExtraTopContent" class="flex justify-start invisible">
           <app-icon name="arrow-left" :customClass="'h-[22px]'" />
         </div>
+        <template v-else>
+          <slot name="extra-top-content" />
+        </template>
       </div>
 
       <!-- Content -->
@@ -64,6 +69,14 @@ export default defineComponent({
     hideBackBtn: {
       type: Boolean,
       default: false,
+    },
+    hasExtraTopContent: {
+      type: Boolean,
+      default: false,
+    },
+    hasBottomButton: {
+      type: Boolean,
+      default: true,
     },
   },
   name: "SubPageLayout",

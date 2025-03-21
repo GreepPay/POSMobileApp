@@ -92,7 +92,7 @@ export default defineComponent({
           action_btn: {
             label: "Next",
             handler: () => {
-              console.log("Next");
+              Logic.Common.GoToRoute("/");
             },
             is_disabled: false,
           },

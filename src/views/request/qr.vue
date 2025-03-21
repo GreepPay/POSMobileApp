@@ -1,36 +1,85 @@
 <template>
   <app-wrapper>
-    <subpage-layout title="QR-Payment">
-      <div
-        class="w-full flex flex-col items-center justify-center px-4 space-y-4 h-full -mt-10"
-      >
-        <div class="w-full flex flex-col items-center justify-center space-y-4">
-          <app-normal-text class="!text-gray-800 text-center">
-            Amount Requested
-          </app-normal-text>
-          <app-header-text class="!text-3xl">
-            ₺
-            {{
-              !Number.isNaN(parseFloat(amount))
-                ? Logic.Common.convertToMoney(amount, false, "", false)
-                : "0"
-            }}
-          </app-header-text>
+    <subpage-layout title="Make Payment" :hasExtraTopContent="true">
+      <template #extra-top-content>
+        <div class="flex justify-end flex-row items-center">
+          <app-icon name="share" :customClass="'h-[22px]'" />
         </div>
-        <div class="w-full flex flex-col items-center justify-center space-y-3">
+      </template>
+
+      <div
+        class="w-full flex flex-col items-center justify-center px-4 space-y-4 h-full"
+      >
+        <app-image-loader
+          class="w-full h-fit rounded-[32px] flex flex-col relative justify-center items-center space-y-5 px-4 py-5 xs:!py-4 bg-[linear-gradient(359.13deg,#10BB76_25.37%,#008651_99.25%)]"
+          :photoUrl="''"
+        >
+          <!-- Image bg -->
+          <img
+            src="/images/greep-transparent-logo.svg"
+            class="h-full absolute w-full top-0 left-0 rounded-[35px] z-[1]"
+          />
+
           <div
-            class="w-[90%] h-[300px] px-2 py-2 border-[2px] border-gray-300 rounded-[12px]"
+            class="w-full flex flex-col !space-y-1 justify-center items-center z-[2] py-3"
           >
+            <app-normal-text class="text-center !text-white">
+              Amount
+            </app-normal-text>
+
+            <app-header-text
+              class="text-center !text-white !text-3xl !font-normal pt-1"
+            >
+              ₺
+              {{
+                !Number.isNaN(parseFloat(amount))
+                  ? Logic.Common.convertToMoney(amount, false, "", false)
+                  : "0"
+              }}
+            </app-header-text>
+          </div>
+        </app-image-loader>
+
+        <div
+          class="w-full flex flex-col items-center justify-center space-y-3 h-full flex-grow pb-[60px]"
+        >
+          <app-normal-text
+            class="text-center font-semibold !text-base pb-3 z-30"
+          >
+            Scan QR code to pay
+          </app-normal-text>
+          <div class="w-[90%] h-[300px] xs:h-[250px]">
             <div class="w-full h-full flex items-center justify-center">
               <app-qr-code v-if="qrCodeData" :data="qrCodeData" />
             </div>
           </div>
+        </div>
+      </div>
 
-          <div class="w-[70%] flex flex-col items-center justify-center space-y-2">
-            <app-normal-text class="!text-center !text-gray-800">
-              Show QR code to customer to receive payment from them
-            </app-normal-text>
-          </div>
+      <!-- Bottom button -->
+      <div
+        class="w-full fixed bg-white dark:bg-black bottom-0 left-0 pt-4 px-4 grid-cols-12 grid gap-3"
+        style="
+          padding-bottom: calc(env(safe-area-inset-bottom) + 16px) !important;
+        "
+      >
+        <div class="col-span-4 flex flex-col">
+          <app-button
+            variant="secondary"
+            :class="`!py-4 !border-red !text-red !border-[1.5px] hover:!bg-red/20 `"
+            @click="Logic.Common.GoToRoute('/')"
+            outlined
+            >Cancel</app-button
+          >
+        </div>
+
+        <div class="col-span-8 flex flex-col">
+          <app-button
+            variant="secondary"
+            :class="`!py-4 `"
+            @click="Logic.Common.goBack()"
+            >New Request</app-button
+          >
         </div>
       </div>
     </subpage-layout>
@@ -39,7 +88,14 @@
 
 <script lang="ts">
 import { defineComponent } from "vue";
-import { AppHeaderText, AppNormalText, AppQrCode } from "@greep/ui-components";
+import {
+  AppHeaderText,
+  AppNormalText,
+  AppQrCode,
+  AppButton,
+  AppImageLoader,
+  AppIcon,
+} from "@greep/ui-components";
 import { ref } from "vue";
 import { Logic } from "@greep/logic";
 import { onMounted } from "vue";
@@ -52,6 +108,9 @@ export default defineComponent({
     AppHeaderText,
     AppNormalText,
     AppQrCode,
+    AppButton,
+    AppImageLoader,
+    AppIcon,
   },
   setup() {
     const amount = ref("0");
@@ -72,6 +131,11 @@ export default defineComponent({
       });
     });
 
+    const continueToNext = () => {
+      // Navigate to the next page
+      // Logic.Common.navigate("/request/qr");
+    };
+
     onIonViewWillEnter(() => {
       setAmount();
     });
@@ -84,6 +148,7 @@ export default defineComponent({
       amount,
       Logic,
       qrCodeData,
+      continueToNext,
     };
   },
 });
