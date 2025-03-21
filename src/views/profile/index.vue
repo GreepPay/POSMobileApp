@@ -48,6 +48,7 @@
             class="w-full px-3 flex flex-row space-x-4 items-center py-2 pb-4 border-b-[1px] border-[#E0E2E4]"
             v-for="(item, index) in profileItems"
             :key="index"
+            @click="Logic.Common.GoToRoute(item.route)"
           >
             <app-icon :name="item.logo" :custom-class="`${item.logo_size}`" />
             <app-normal-text class="!text-black !text-sm">{{
@@ -103,21 +104,25 @@ export default defineComponent({
         title: "Personal Info",
         logo: "personal-info",
         logo_size: "!h-[22px]",
+        route: "/profile/info",
       },
       {
         title: "Default Currency",
         logo: "default-currency",
         logo_size: "!h-[22px]",
+        route: "/profile/currency",
       },
       {
         title: "Withdrawal Accounts",
         logo: "withdrawal-accounts",
         logo_size: "!h-[20px]",
+        route: "/profile/accounts",
       },
       {
         title: "Login Settings",
         logo: "settings",
         logo_size: "!h-[22px]",
+        route: "/profile/settings",
       },
     ]);
 
