@@ -100,6 +100,11 @@
         >
         </app-select>
       </div>
+
+      <!-- Spacer -->
+      <div class="h-[30px]"></div>
+
+      <!-- Spacer -->
     </app-form-wrapper>
   </div>
 </template>
@@ -141,6 +146,7 @@ export default defineComponent({
     });
 
     const showStateSelector = ref(true);
+    const formComponent = ref<any>(null);
 
     const stateIsoCode = ref("");
     const countryCode = ref("");
@@ -172,6 +178,21 @@ export default defineComponent({
       }
     };
 
+    const continueWithForm = () => {
+      const state = formComponent.value?.validate();
+      if (state) {
+        // Proceed with form submission
+        formData.country =
+          Country.getCountryByCode(countryCode.value)?.name || "";
+        formData.state =
+          State.getStateByCodeAndCountry(stateIsoCode.value, countryCode.value)
+            ?.name || "";
+        return formData;
+      } else {
+        return;
+      }
+    };
+
     onMounted(() => {
       setCountries();
     });
@@ -193,6 +214,8 @@ export default defineComponent({
       stateIsoCode,
       countryCode,
       showStateSelector,
+      formComponent,
+      continueWithForm,
     };
   },
   data() {

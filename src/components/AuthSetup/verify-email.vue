@@ -15,7 +15,7 @@
 
         <!-- OTP input -->
         <app-otp-input
-          v-model="formData.otp_code"
+          v-model="otpCode"
           type="tel"
           :number-of-input="4"
           :should-reset-o-t-p="true"
@@ -29,7 +29,10 @@
             Didn’t receive any code?
           </app-normal-text>
 
-          <app-normal-text class="text-center text-primary font-semibold">
+          <app-normal-text
+            class="text-center text-primary font-semibold"
+            @click="resentVerifyEmail"
+          >
             Resend?
           </app-normal-text>
         </div>
@@ -41,13 +44,14 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, reactive } from "vue";
+import { defineComponent } from "vue";
 import {
   AppFormWrapper,
   AppNormalText,
   AppOtpInput,
 } from "@greep/ui-components";
 import { Logic } from "@greep/logic";
+import { ref } from "vue";
 
 export default defineComponent({
   components: {
@@ -60,20 +64,36 @@ export default defineComponent({
   setup() {
     const FormValidations = Logic.Form;
 
-    const formData = reactive<{
-      otp_code: string;
-    }>({
-      otp_code: "",
-    });
+    const otpCode = ref("");
 
     const handleOTPChange = () => {
       // formData.otp_code = value;
     };
 
+    const resentVerifyEmail = () => {
+      Logic.Auth.ResendEmailOTP(localStorage.getItem("auth_email") || "");
+      Logic.Common.showAlert({
+        show: true,
+        message:
+          "A new verification email has been sent to your email address.",
+        type: "success",
+      });
+    };
+
+    const continueWithForm = () => {
+      if (otpCode.value.toString().length == 4) {
+        return otpCode.value.toString();
+      } else {
+        return;
+      }
+    };
+
     return {
-      formData,
+      otpCode,
       FormValidations,
       handleOTPChange,
+      resentVerifyEmail,
+      continueWithForm,
     };
   },
   data() {

@@ -81,10 +81,19 @@ export default defineComponent({
       preferred_currency: "TRY",
     });
 
+    const continueWithForm = () => {
+      if (formData.preferred_currency) {
+        return formData;
+      } else {
+        return;
+      }
+    };
+
     return {
       formData,
       FormValidations,
       availableCurrencies,
+      continueWithForm,
     };
   },
   data() {

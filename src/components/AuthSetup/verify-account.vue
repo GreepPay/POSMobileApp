@@ -38,7 +38,9 @@
                 }}
               </app-normal-text>
 
-              <app-icon name="document-upload" class="h-[24px]" />
+              <div class="w-[29px] justify-end flex flex-row">
+                <app-icon name="document-upload" class="h-[24px]" />
+              </div>
             </div>
           </div>
         </template>
@@ -67,7 +69,9 @@
                 }}
               </app-normal-text>
 
-              <app-icon name="document-upload" class="h-[24px]" />
+              <div class="w-[29px] justify-end flex flex-row">
+                <app-icon name="document-upload" class="h-[24px]" />
+              </div>
             </div>
           </div>
         </template>
@@ -108,9 +112,18 @@ export default defineComponent({
       business_document: "",
     });
 
+    const continueWithForm = () => {
+      if (formData.international_passport && formData.business_document) {
+        return formData;
+      } else {
+        return;
+      }
+    };
+
     return {
       formData,
       FormValidations,
+      continueWithForm,
     };
   },
   data() {

@@ -1,27 +1,31 @@
 <template>
   <ion-app class="font-poppins">
     <ion-router-outlet />
+    <app-alert v-if="alertSetup.show" :setup="alertSetup" />
   </ion-app>
 </template>
 
 <script lang="ts">
 import { IonApp, IonRouterOutlet } from "@ionic/vue";
-import { defineComponent, onMounted } from "vue";
+import { defineComponent, onMounted, ref } from "vue";
 import { App as CapacitorApp, URLOpenListenerEvent } from "@capacitor/app";
 import { getPlatforms } from "@ionic/vue";
 import { useRoute, useRouter } from "vue-router";
 import { Logic } from "@greep/logic";
-import { SetFrontendLogic } from "@greep/ui-components";
+import { SetFrontendLogic, AppAlert } from "@greep/ui-components";
 
 export default defineComponent({
   name: "App",
   components: {
     IonApp,
     IonRouterOutlet,
+    AppAlert,
   },
   setup() {
     const router: any = useRouter();
-    const route: any = useRoute();
+    const route = useRoute();
+
+    const alertSetup = ref(Logic.Common.alertSetup);
 
     // Set routers
     Logic.Common.SetRouter(router);
@@ -39,6 +43,21 @@ export default defineComponent({
       // @ts-ignore
       (import.meta as any).env.VITE_API_URL ?? "http://localhost:3000/graphql"
     );
+
+    const handleMountActions = () => {
+      const currentAuthUser = Logic.Auth.AuthUser;
+
+      // If user is authenticated
+      if (currentAuthUser) {
+        Logic.Auth.GetAuthUser();
+      } else {
+        // Go to start page
+        // Only if the path does not contain /auth
+        if (!window.location.pathname.includes("/auth")) {
+          Logic.Common.GoToRoute("/start");
+        }
+      }
+    };
 
     onMounted(() => {
       // Logic.Common.GoToRoute("/auth/login");
@@ -62,9 +81,16 @@ export default defineComponent({
           }
         }
       );
+
+      handleMountActions();
+
+      // Register watchers
+      Logic.Common.watchProperty("alertSetup", alertSetup);
     });
 
-    return {};
+    return {
+      alertSetup,
+    };
   },
 });
 </script>
