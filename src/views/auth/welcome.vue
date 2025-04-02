@@ -34,7 +34,7 @@
         >
 
         <div class="w-full flex flex-row space-x-0 items-center justify-center">
-          <div v-for="index in 5" :key="index" class="px-3">
+          <div v-for="index in 6" :key="index" class="px-3">
             <div
               :class="`h-[15px] w-[15px] rounded-full ${
                 index <= formData.passcode.length
@@ -86,9 +86,57 @@ export default defineComponent({
       passcode: "",
     });
 
-    watch(formData, () => {
-      console.log(formData);
+    watch(formData, async () => {
+      if (formData.passcode.length === 6) {
+        await isFilled();
+      }
     });
+
+    const isFilled = async () => {
+      const authPasscode = localStorage.getItem("auth_passcode");
+
+      if (formData.passcode != authPasscode) {
+        Logic.Common.showAlert({
+          show: true,
+          type: "error",
+          message: "Invalid passcode. Please try again.",
+        });
+        formData.passcode = "";
+        return;
+      }
+
+      const encryptedAuthData = localStorage.getItem("auth_encrypted_data");
+      try {
+        const authData = Logic.Common.decryptData(
+          encryptedAuthData,
+          authPasscode
+        );
+
+        Logic.Auth.SignInForm = {
+          email: authData.email,
+          password: authData.password,
+        };
+      } catch (error) {
+        Logic.Common.showAlert({
+          show: true,
+          type: "error",
+          message: "Invalid passcode. Please try again.",
+        });
+        formData.passcode = "";
+        return;
+      }
+
+      Logic.Common.showLoader({
+        show: true,
+        loading: true,
+      });
+
+      await Logic.Auth.SignIn(true);
+
+      Logic.Common.hideLoader();
+
+      Logic.Common.GoToRoute("/");
+    };
 
     return {
       FormValidations,

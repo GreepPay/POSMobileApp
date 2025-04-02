@@ -8,7 +8,7 @@
         <app-form-wrapper
           ref="formComponent"
           :parent-refs="parentRefs"
-          class="w-full flex flex-col space-y-3 pt-2"
+          class="w-full flex flex-col pt-2"
         >
           <app-text-field
             :has-title="false"
@@ -21,6 +21,20 @@
             :rules="[FormValidations.RequiredRule, FormValidations.EmailRule]"
           >
           </app-text-field>
+
+          <div class="w-full flex flex-col pt-2">
+            <app-text-field
+              :has-title="false"
+              type="password"
+              placeholder="Enter password"
+              ref="email"
+              name="Password"
+              use-floating-label
+              v-model="formData.password"
+              :rules="[FormValidations.RequiredRule]"
+            >
+            </app-text-field>
+          </div>
         </app-form-wrapper>
       </div>
 
@@ -33,6 +47,7 @@
           variant="secondary"
           class="!py-4 col-span-4"
           @click="handleNext"
+          :loading="loadingState"
         >
           Next
         </app-button>
@@ -46,6 +61,7 @@ import { defineComponent } from "vue";
 import { AppFormWrapper, AppTextField, AppButton } from "@greep/ui-components";
 import { Logic } from "@greep/logic";
 import { reactive } from "vue";
+import { ref } from "vue";
 
 export default defineComponent({
   name: "LoginPage",
@@ -57,12 +73,48 @@ export default defineComponent({
   setup() {
     const FormValidations = Logic.Form;
 
+    const loadingState = ref(false);
+
+    const formComponent = ref<any>();
+
     const formData = reactive({
       email: "",
+      password: "",
     });
 
-    const handleNext = () => {
-      Logic.Common.GoToRoute("/auth/verify-email");
+    const handleNext = async () => {
+      const state = formComponent.value?.validate();
+
+      if (state) {
+        loadingState.value = true;
+        Logic.Auth.SignInForm = {
+          email: formData.email,
+          password: formData.password,
+        };
+
+        try {
+          await Logic.Auth.SignIn(true);
+          await Logic.Auth.GetAuthUser();
+          loadingState.value = false;
+          // Check if passcode has been set
+          if (localStorage.getItem("auth_passcode")) {
+            Logic.Common.GoToRoute("/");
+          } else {
+            // Save auth email and pass
+            localStorage.setItem(
+              "auth_email",
+              Logic.Auth.SignInForm?.email || ""
+            );
+            localStorage.setItem(
+              "auth_pass",
+              Logic.Auth.SignInForm?.password || ""
+            );
+            Logic.Common.GoToRoute("/auth/set-passcode");
+          }
+        } catch {
+          loadingState.value = false;
+        }
+      }
     };
 
     return {
@@ -70,6 +122,8 @@ export default defineComponent({
       Logic,
       formData,
       handleNext,
+      formComponent,
+      loadingState,
     };
   },
   data() {

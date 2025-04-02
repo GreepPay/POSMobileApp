@@ -2,6 +2,7 @@
   <ion-app class="font-poppins">
     <ion-router-outlet />
     <app-alert v-if="alertSetup.show" :setup="alertSetup" />
+    <app-loader v-if="loaderSetup.show" :setup="loaderSetup" />
   </ion-app>
 </template>
 
@@ -12,7 +13,7 @@ import { App as CapacitorApp, URLOpenListenerEvent } from "@capacitor/app";
 import { getPlatforms } from "@ionic/vue";
 import { useRoute, useRouter } from "vue-router";
 import { Logic } from "@greep/logic";
-import { SetFrontendLogic, AppAlert } from "@greep/ui-components";
+import { SetFrontendLogic, AppAlert, AppLoader } from "@greep/ui-components";
 
 export default defineComponent({
   name: "App",
@@ -20,12 +21,14 @@ export default defineComponent({
     IonApp,
     IonRouterOutlet,
     AppAlert,
+    AppLoader,
   },
   setup() {
     const router: any = useRouter();
     const route = useRoute();
 
     const alertSetup = ref(Logic.Common.alertSetup);
+    const loaderSetup = ref(Logic.Common.loaderSetup);
 
     // Set routers
     Logic.Common.SetRouter(router);
@@ -50,6 +53,10 @@ export default defineComponent({
       // If user is authenticated
       if (currentAuthUser) {
         Logic.Auth.GetAuthUser();
+
+        if (localStorage.getItem("auth_passcode")) {
+          Logic.Common.GoToRoute("/auth/welcome");
+        }
       } else {
         // Go to start page
         // Only if the path does not contain /auth
@@ -86,10 +93,12 @@ export default defineComponent({
 
       // Register watchers
       Logic.Common.watchProperty("alertSetup", alertSetup);
+      Logic.Common.watchProperty("loaderSetup", loaderSetup);
     });
 
     return {
       alertSetup,
+      loaderSetup,
     };
   },
 });

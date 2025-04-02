@@ -179,7 +179,13 @@ export default defineComponent({
                     await Logic.Auth.GetAuthUser();
 
                     pageSettings.pages[4].action_btn.loading = false;
-                    Logic.Common.GoToRoute("/");
+
+                    // Check if passcode has been set
+                    if (localStorage.getItem("auth_passcode")) {
+                      Logic.Common.GoToRoute("/");
+                    } else {
+                      Logic.Common.GoToRoute("/auth/set-passcode");
+                    }
                   } else {
                     pageSettings.pages[4].action_btn.loading = false;
                   }
