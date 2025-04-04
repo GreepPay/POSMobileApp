@@ -7,9 +7,7 @@
         </div>
       </template>
 
-      <div
-        class="w-full flex flex-col items-center justify-center px-4 space-y-4 h-full"
-      >
+      <div class="w-full flex flex-col items-center justify-center px-4">
         <app-image-loader
           class="w-full h-fit rounded-[32px] flex flex-col relative justify-center items-center space-y-5 px-4 py-5 xs:!py-4 bg-[linear-gradient(359.13deg,#10BB76_25.37%,#008651_99.25%)]"
           :photoUrl="''"
@@ -21,16 +19,16 @@
           />
 
           <div
-            class="w-full flex flex-col !space-y-1 justify-center items-center z-[2] py-3"
+            class="w-full flex flex-col !space-y-1 justify-center items-center z-[2] py-3 !pt-2"
           >
             <app-normal-text class="text-center !text-white">
               Amount
             </app-normal-text>
 
             <app-header-text
-              class="text-center !text-white !text-3xl !font-normal pt-1"
+              class="text-center !text-white !text-3xl !font-normal pt-1 pb-3"
             >
-              ₺
+              {{ currentCurrency }}
               {{
                 !Number.isNaN(parseFloat(amount))
                   ? Logic.Common.convertToMoney(amount, false, "", false)
@@ -41,7 +39,7 @@
         </app-image-loader>
 
         <div
-          class="w-full flex flex-col items-center justify-center space-y-3 h-full flex-grow pb-[60px]"
+          class="w-full flex flex-col items-center justify-center flex-grow pt-10"
         >
           <app-normal-text
             class="text-center font-semibold !text-base pb-3 z-30"
@@ -101,6 +99,8 @@ import { Logic } from "@greep/logic";
 import { onMounted } from "vue";
 import { onIonViewWillEnter } from "@ionic/vue";
 import { computed } from "vue";
+import { User } from "@greep/logic/src/gql/graphql";
+import { availableCurrencies } from "../../composable";
 
 export default defineComponent({
   name: "RequestQRPage",
@@ -115,6 +115,8 @@ export default defineComponent({
   setup() {
     const amount = ref("0");
 
+    const AuthUser = ref<User>(Logic.Auth.AuthUser);
+
     const setAmount = () => {
       //  Get amount from query params
       const queryParams = Logic.Common.route?.query;
@@ -126,9 +128,15 @@ export default defineComponent({
     const qrCodeData = computed(() => {
       return JSON.stringify({
         amount: amount.value,
-        currency: "TRY",
-        uuid: "1234567890",
+        currency: AuthUser.value?.profile?.default_currency || "TRY",
+        uuid: AuthUser.value?.uuid || "",
       });
+    });
+
+    const currentCurrency = computed(() => {
+      return availableCurrencies.filter(
+        (item) => item.code == AuthUser.value?.profile?.default_currency
+      )[0]?.symbol;
     });
 
     const continueToNext = () => {
@@ -142,6 +150,7 @@ export default defineComponent({
 
     onMounted(() => {
       setAmount();
+      Logic.Auth.watchProperty("AuthUser", AuthUser);
     });
 
     return {
@@ -149,6 +158,7 @@ export default defineComponent({
       Logic,
       qrCodeData,
       continueToNext,
+      currentCurrency,
     };
   },
 });

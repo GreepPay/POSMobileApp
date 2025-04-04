@@ -1,9 +1,7 @@
 <template>
   <app-wrapper>
     <subpage-layout title="GRP Tokens" :hasBottomButton="false">
-      <div
-        class="w-full flex flex-col space-y-5 justify-start px-4 h-full pt-1"
-      >
+      <div class="w-full flex flex-col justify-start px-4 h-full pt-1">
         <!-- Balance Information -->
         <amount-card is-wrapper>
           <div class="w-full flex flex-col space-y-4 justify-center z-1 pt-3">
@@ -33,7 +31,7 @@
         </amount-card>
 
         <!-- Transaction history -->
-        <div class="flex flex-col space-y-3">
+        <div class="flex flex-col pt-5">
           <div class="w-full flex flex-row justify-between items-center pb-2">
             <app-normal-text class="font-semibold !text-gray-800 !text-sm"
               >History</app-normal-text
@@ -46,7 +44,7 @@
             >
           </div>
 
-          <div class="w-full flex flex-col pt-3">
+          <div class="w-full flex flex-col pt-4">
             <app-point-transaction
               v-for="(transaction, index) in transactionHistory"
               :key="index"

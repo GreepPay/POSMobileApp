@@ -1,11 +1,9 @@
 <template>
   <app-wrapper>
     <subpage-layout title="Collect Payment">
-      <div
-        class="w-full flex flex-col items-center justify-start px-4 space-y-3 h-full pt-3"
-      >
+      <div class="w-full flex flex-col items-center justify-start px-4 pt-3">
         <app-image-loader
-          class="w-full h-[40%] rounded-[35px] flex flex-col relative justify-center items-center space-y-5 px-4 py-5 xs:!py-4 bg-[linear-gradient(359.13deg,#10BB76_25.37%,#008651_99.25%)]"
+          class="w-full rounded-[35px] flex flex-col relative justify-center items-center space-y-5 px-4 py-5 xs:!py-4 bg-[linear-gradient(359.13deg,#10BB76_25.37%,#008651_99.25%)]"
           :photoUrl="''"
         >
           <!-- Image bg -->
@@ -15,16 +13,16 @@
           />
 
           <div
-            class="w-full flex flex-col !space-y-1 justify-center items-center z-[2] py-4"
+            class="w-full flex flex-col !space-y-1 justify-center items-center z-[2] py-4 pt-6"
           >
             <app-normal-text class="text-center !text-white">
               Enter Amount
             </app-normal-text>
 
             <app-header-text
-              class="text-center !text-white !text-3xl !font-normal pt-1"
+              class="text-center !text-white !text-3xl !font-normal pt-1 pb-7"
             >
-              ₺
+              {{ currentCurrency }}
               {{
                 !Number.isNaN(parseFloat(amount))
                   ? Logic.Common.convertToMoney(amount, false, "", false)
@@ -35,9 +33,9 @@
         </app-image-loader>
 
         <div
-          class="w-full flex flex-col h-full flex-grow justify-center items-center"
+          class="w-full flex flex-col flex-grow justify-center items-center pt-7"
         >
-          <app-keyboard v-model="amount" class="-mt-[16%]" />
+          <app-keyboard v-model="amount" />
         </div>
       </div>
 
@@ -72,6 +70,10 @@ import {
 } from "@greep/ui-components";
 import { ref } from "vue";
 import { Logic } from "@greep/logic";
+import { User } from "@greep/logic/src/gql/graphql";
+import { onMounted } from "vue";
+import { availableCurrencies } from "../../composable";
+import { computed } from "vue";
 
 export default defineComponent({
   name: "RequestPage",
@@ -85,16 +87,31 @@ export default defineComponent({
   setup() {
     const amount = ref("0");
 
+    const AuthUser = ref<User>(Logic.Auth.AuthUser);
+
     const continueToNext = () => {
       if (parseFloat(amount.value) > 0) {
         Logic.Common.GoToRoute(`/request/qr?amount=${amount.value}`);
       }
     };
 
+    const currentCurrency = computed(() => {
+      return availableCurrencies.filter(
+        (item) => item.code == AuthUser.value?.profile?.default_currency
+      )[0]?.symbol;
+    });
+
+    onMounted(() => {
+      Logic.Auth.watchProperty("AuthUser", AuthUser);
+    });
+
     return {
       amount,
       Logic,
       continueToNext,
+      AuthUser,
+      availableCurrencies,
+      currentCurrency,
     };
   },
 });

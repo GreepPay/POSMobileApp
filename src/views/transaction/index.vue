@@ -79,13 +79,21 @@
 
         <!-- Transaction history -->
         <div class="w-full flex flex-col space-y-3">
-          <app-transaction
-            class="z-[10]"
-            v-for="transaction in recentTransactions"
-            :key="transaction.id"
-            :data="transaction"
-            @click="Logic.Common.GoToRoute('/transaction/' + transaction.id)"
-          />
+          <div v-if="true" class="py-4 !pt-2">
+            <app-empty-state
+              title="No transactions"
+              description="Collect Payments, Make Withdrawals, and Redeem the GRP Tokens you’ve earned."
+            />
+          </div>
+          <template v-else>
+            <app-transaction
+              class="z-[10]"
+              v-for="transaction in recentTransactions"
+              :key="transaction.id"
+              :data="transaction"
+              @click="Logic.Common.GoToRoute('/transaction/' + transaction.id)"
+            />
+          </template>
         </div>
 
         <!-- Spacer -->
@@ -103,6 +111,7 @@ import {
   AppNormalText,
   AppIcon,
   AppTransaction,
+  AppEmptyState,
 } from "@greep/ui-components";
 import { Logic } from "@greep/logic";
 import { reactive } from "vue";
@@ -124,6 +133,7 @@ export default defineComponent({
     AppNormalText,
     AppIcon,
     AppTransaction,
+    AppEmptyState,
   },
   setup() {
     const filterSetup = reactive({

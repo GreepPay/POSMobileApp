@@ -1,9 +1,9 @@
-import type { CapacitorConfig } from '@capacitor/cli';
+import type { CapacitorConfig } from "@capacitor/cli";
 
 const config: CapacitorConfig = {
-  appId: 'io.greep.pos.vendor',
-  appName: 'Greep POS',
-  webDir: 'dist',
+  appId: "io.greep.pos.vendor",
+  appName: "Greep POS",
+  webDir: "dist",
   plugins: {
     SplashScreen: {
       launchShowDuration: 4000,
@@ -20,7 +20,7 @@ const config: CapacitorConfig = {
     PushNotifications: {
       presentationOptions: ["badge", "sound", "alert"],
     },
-  }
+  },
 };
 
 export default config;

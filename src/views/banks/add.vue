@@ -1,69 +1,81 @@
 <template>
   <app-wrapper>
     <subpage-layout title="New Bank Account">
-      <div
-        class="w-full flex flex-col space-y-5 justify-start px-4 h-full pt-4"
+      <app-form-wrapper
+        ref="formComponent"
+        :parent-refs="parentRefs"
+        class="w-full flex flex-col justify-start px-4 h-full pt-4"
       >
-        <app-text-field
-          :has-title="false"
-          type="text"
-          placeholder="Bank Name"
-          ref="bankName"
-          name="Bank Name"
-          use-floating-label
-          v-model="formDetails.bank_name"
-          :rules="[FormValidations.RequiredRule]"
-        >
-        </app-text-field>
+        <div class="w-full flex flex-col pb-5">
+          <app-text-field
+            :has-title="false"
+            type="text"
+            placeholder="Bank Name"
+            ref="bankName"
+            name="Bank Name"
+            use-floating-label
+            v-model="formDetails.bank_name"
+            :rules="[FormValidations.RequiredRule]"
+          >
+          </app-text-field>
+        </div>
 
-        <app-text-field
-          :has-title="false"
-          type="text"
-          placeholder="Account Holder Name"
-          ref="accountHolderName"
-          name="Account Holder Name"
-          use-floating-label
-          v-model="formDetails.account_holder_name"
-          :rules="[FormValidations.RequiredRule]"
-        >
-        </app-text-field>
+        <div class="w-full flex flex-col pb-5">
+          <app-text-field
+            :has-title="false"
+            type="text"
+            placeholder="Account Holder Name"
+            ref="accountHolderName"
+            name="Account Holder Name"
+            use-floating-label
+            v-model="formDetails.account_holder_name"
+            :rules="[FormValidations.RequiredRule]"
+          >
+          </app-text-field>
+        </div>
 
-        <app-text-field
-          :has-title="false"
-          type="tel"
-          placeholder="Account Number"
-          ref="accountNumber"
-          name="Account Number"
-          use-floating-label
-          v-model="formDetails.account_number"
-          :rules="[FormValidations.RequiredRule]"
-        >
-        </app-text-field>
+        <div class="w-full flex flex-col pb-5">
+          <app-text-field
+            :has-title="false"
+            type="tel"
+            placeholder="Account Number"
+            ref="accountNumber"
+            name="Account Number"
+            use-floating-label
+            v-model="formDetails.account_number"
+            :rules="[FormValidations.RequiredRule]"
+          >
+          </app-text-field>
+        </div>
 
-        <app-text-field
-          :has-title="false"
-          type="tel"
-          placeholder="Routing Number"
-          ref="routingNumber"
-          name="Routing Number"
-          use-floating-label
-          v-model="formDetails.routing_number"
-          :rules="[FormValidations.RequiredRule]"
-        >
-        </app-text-field>
+        <div class="w-full flex flex-col pb-5">
+          <app-text-field
+            :has-title="false"
+            type="tel"
+            placeholder="Routing Number"
+            ref="routingNumber"
+            name="Routing Number"
+            use-floating-label
+            v-model="formDetails.routing_number"
+            :rules="[FormValidations.RequiredRule]"
+          >
+          </app-text-field>
+        </div>
 
-        <app-text-field
-          :has-title="false"
-          type="text"
-          placeholder="Swift Code"
-          ref="swiftCode"
-          name="Swift Code"
-          use-floating-label
-          v-model="formDetails.swift_code"
-          :rules="[FormValidations.RequiredRule]"
-        >
-        </app-text-field>
-      </div>
+        <div class="w-full flex flex-col pb-5">
+          <app-text-field
+            :has-title="false"
+            type="text"
+            placeholder="Swift Code"
+            ref="swiftCode"
+            name="Swift Code"
+            use-floating-label
+            v-model="formDetails.swift_code"
+            :rules="[FormValidations.RequiredRule]"
+          >
+          </app-text-field>
+        </div>
+      </app-form-wrapper>
 
       <!-- Bottom button -->
       <div
@@ -77,6 +89,7 @@
             variant="secondary"
             :class="`!py-4`"
             @click="continueToNext"
+            :loading="loadingState"
             >Save & Continue</app-button
           >
         </div>
@@ -87,15 +100,17 @@
 
 <script lang="ts">
 import { defineComponent } from "vue";
-import { AppButton, AppTextField } from "@greep/ui-components";
+import { AppButton, AppTextField, AppFormWrapper } from "@greep/ui-components";
 import { Logic } from "@greep/logic";
 import { reactive } from "vue";
+import { ref } from "vue";
 
 export default defineComponent({
   name: "AddBankAccountPage",
   components: {
     AppButton,
     AppTextField,
+    AppFormWrapper,
   },
   setup() {
     const formDetails = reactive({
@@ -106,10 +121,39 @@ export default defineComponent({
       swift_code: "",
     });
 
+    const loadingState = ref(false);
+
+    const formComponent = ref<any>();
+
     const FormValidations = Logic.Form;
 
     const continueToNext = () => {
-      //   modalIsOpen.value = true;
+      const state = formComponent.value.validate();
+
+      if (state) {
+        Logic.Wallet.CreateSavedAccountForm = {
+          unique_id: formDetails.account_number,
+          type: "bank_account",
+          metadata: JSON.stringify(formDetails),
+        };
+
+        loadingState.value = true;
+
+        Logic.Wallet.CreateSavedAccount()?.then(async (response) => {
+          if (response) {
+            await Logic.Wallet.GetSavedAccounts(30, 1);
+            loadingState.value = false;
+            Logic.Common.showAlert({
+              show: true,
+              type: "success",
+              message: "Bank account has been saved",
+            });
+            Logic.Common.goBack();
+          } else {
+            loadingState.value = false;
+          }
+        });
+      }
     };
 
     return {
@@ -117,7 +161,18 @@ export default defineComponent({
       formDetails,
       continueToNext,
       FormValidations,
+      formComponent,
+      loadingState,
     };
+  },
+  data() {
+    return {
+      parentRefs: [],
+    };
+  },
+  mounted() {
+    const parentRefs: any = this.$refs;
+    this.parentRefs = parentRefs;
   },
 });
 </script>

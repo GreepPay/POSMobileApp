@@ -1,6 +1,6 @@
 <template>
   <app-wrapper>
-    <dashboard-layout title="Timms Closet Ventures">
+    <dashboard-layout :title="AuthUser?.profile?.business?.business_name || ''">
       <div
         class="w-full flex flex-col items-center justify-start !space-y-[20px]"
       >
@@ -8,7 +8,7 @@
         <div class="w-full flex flex-col space-y-2 pt-2">
           <div class="w-full flex flex-col px-4">
             <app-image-loader
-              class="w-full h-fit rounded-[35px] flex flex-col justify-center items-center space-y-5 px-4 py-5 bg-[#0A141E]/30"
+              class="w-full h-fit rounded-[35px] flex flex-col justify-center items-center px-4 py-5 bg-[#0A141E]/30"
               :photoUrl="'/images/greep-transparent-logo.svg'"
             >
               <div class="w-full flex flex-row items-center justify-center">
@@ -20,7 +20,7 @@
               </div>
 
               <div
-                class="w-full flex flex-col space-y-[2px] justify-center items-center"
+                class="w-full flex flex-col space-y-[2px] justify-center items-center py-6"
               >
                 <app-normal-text class="text-center !text-white">
                   Total Balance
@@ -29,7 +29,16 @@
                 <app-header-text
                   class="text-center !text-white !text-3xl !font-normal"
                 >
-                  {{ currencySymbol }} 900.00
+                  {{ currencySymbol }}
+                  {{
+                    Logic.Common.convertToMoney(
+                      AuthUser.wallet?.total_balance *
+                        (CurrentGlobalExchangeRate?.mid || 0),
+                      true,
+                      "",
+                      false
+                    )
+                  }}
                 </app-header-text>
               </div>
 
@@ -63,7 +72,7 @@
 
         <!-- Transactions -->
         <div
-          class="w-full flex flex-col h-fit bg-white relative px-4 pt-5 space-y-[5px]"
+          class="w-full flex flex-col h-fit bg-white relative px-4 pt-5 space-y-[5px] min-h-[60vh]"
           id="home_transactions"
         >
           <div
@@ -79,13 +88,22 @@
               >See all</app-normal-text
             >
           </div>
-          <app-transaction
-            class="z-[10]"
-            v-for="transaction in recentTransactions"
-            :key="transaction.id"
-            :data="transaction"
-            @click="Logic.Common.GoToRoute('/transaction/' + transaction.id)"
-          />
+
+          <div v-if="true" class="py-4 !pt-2">
+            <app-empty-state
+              title="No transactions"
+              description="Collect Payments, Make Withdrawals, and Redeem the GRP Tokens you’ve earned."
+            />
+          </div>
+          <template v-else>
+            <app-transaction
+              class="z-[10]"
+              v-for="transaction in recentTransactions"
+              :key="transaction.id"
+              :data="transaction"
+              @click="Logic.Common.GoToRoute('/transaction/' + transaction.id)"
+            />
+          </template>
 
           <!-- Spacer -->
           <div class="h-[40px] py-4"></div>
@@ -104,9 +122,13 @@ import {
   AppTransaction,
   AppCurrencySwitch,
   AppIcon,
+  AppEmptyState,
 } from "@greep/ui-components";
 import { Logic } from "@greep/logic";
 import { ref } from "vue";
+import { onMounted } from "vue";
+import { onIonViewDidEnter } from "@ionic/vue";
+import { User } from "@greep/logic/src/gql/graphql";
 
 enum TransactionType {
   Sent = "sent",
@@ -123,7 +145,30 @@ export default defineComponent({
     AppHeaderText,
     AppTransaction,
     AppCurrencySwitch,
+    AppEmptyState,
     AppIcon,
+  },
+  middlewares: {
+    fetchRules: [
+      {
+        domain: "Wallet",
+        property: "ManyTransactions",
+        method: "GetTransactions",
+        params: [1, 10],
+        requireAuth: true,
+        ignoreProperty: false,
+        silentUpdate: true,
+      },
+      {
+        domain: "Wallet",
+        property: "ManyPointTransactions",
+        method: "GetPointTransactions",
+        params: [1, 10],
+        requireAuth: true,
+        ignoreProperty: false,
+        silentUpdate: true,
+      },
+    ],
   },
   setup() {
     const defaultCurrency = ref("USD");
@@ -131,6 +176,13 @@ export default defineComponent({
     const selectedCurrency = ref("USD");
 
     const currencySymbol = ref("$");
+
+    const ManyTransactions = ref(Logic.Wallet.ManyTransactions);
+    const ManyPointTransactions = ref(Logic.Wallet.ManyPointTransactions);
+    const CurrentGlobalExchangeRate = ref(
+      Logic.Wallet.CurrentGlobalExchangeRate
+    );
+    const AuthUser = ref<User>(Logic.Auth.AuthUser);
 
     const recentTransactions = reactive<
       {
@@ -200,12 +252,39 @@ export default defineComponent({
       },
     ]);
 
+    const setPageDefaults = () => {
+      defaultCurrency.value =
+        Logic.Auth.AuthUser?.profile?.default_currency || "USD";
+      selectedCurrency.value = defaultCurrency.value;
+    };
+
+    onIonViewDidEnter(() => {
+      setPageDefaults();
+    });
+
+    onMounted(() => {
+      // Register reactive data
+      Logic.Wallet.watchProperty("ManyTransactions", ManyTransactions);
+      Logic.Wallet.watchProperty(
+        "ManyPointTransactions",
+        ManyPointTransactions
+      );
+      Logic.Wallet.watchProperty(
+        "CurrentGlobalExchangeRate",
+        CurrentGlobalExchangeRate
+      );
+      Logic.Auth.watchProperty("AuthUser", AuthUser);
+      setPageDefaults();
+    });
+
     return {
       recentTransactions,
       Logic,
       defaultCurrency,
       selectedCurrency,
       currencySymbol,
+      AuthUser,
+      CurrentGlobalExchangeRate,
     };
   },
 });

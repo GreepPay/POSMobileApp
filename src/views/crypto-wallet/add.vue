@@ -1,14 +1,16 @@
 <template>
   <app-wrapper>
     <subpage-layout title="New Crypto Wallet">
-      <div
-        class="w-full flex flex-col space-y-5 justify-start px-4 h-full pt-4"
+      <app-form-wrapper
+        ref="formComponent"
+        :parent-refs="parentRefs"
+        class="w-full flex flex-col justify-start px-4 h-full pt-4"
       >
-        <div class="w-full grid grid-cols-1 gap-3">
+        <div class="w-full flex flex-col pb-5">
           <app-select
             :placeholder="'Choose Crypto Coin'"
             :hasTitle="false"
-            :paddings="'py-4 !px-3'"
+            :paddings="'py-4 !px-4'"
             :options="cryptoOptions"
             ref="crypto"
             use-floating-label
@@ -28,7 +30,7 @@
           :rules="[FormValidations.RequiredRule]"
         >
         </app-text-field>
-      </div>
+      </app-form-wrapper>
 
       <!-- Bottom button -->
       <div
@@ -42,6 +44,7 @@
             variant="secondary"
             :class="`!py-4`"
             @click="continueToNext"
+            :loading="loadingState"
             >Save & Continue</app-button
           >
         </div>
@@ -51,8 +54,13 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from "vue";
-import { AppButton, AppTextField, AppSelect } from "@greep/ui-components";
+import { defineComponent, ref } from "vue";
+import {
+  AppButton,
+  AppTextField,
+  AppSelect,
+  AppFormWrapper,
+} from "@greep/ui-components";
 import { Logic } from "@greep/logic";
 import { reactive } from "vue";
 import { SelectOption } from "@greep/ui-components/src/types";
@@ -63,6 +71,7 @@ export default defineComponent({
     AppButton,
     AppTextField,
     AppSelect,
+    AppFormWrapper,
   },
   setup() {
     const formDetails = reactive({
@@ -72,19 +81,48 @@ export default defineComponent({
 
     const FormValidations = Logic.Form;
 
+    const loadingState = ref(false);
+
+    const formComponent = ref<any>();
+
     const cryptoOptions = reactive<SelectOption[]>([
       {
-        key: "USDC",
+        key: "usdc",
         value: "USDC",
       },
       {
-        key: "XLM",
+        key: "xlm",
         value: "XLM",
       },
     ]);
 
     const continueToNext = () => {
-      //   modalIsOpen.value = true;
+      const state = formComponent.value.validate();
+
+      if (state) {
+        Logic.Wallet.CreateSavedAccountForm = {
+          unique_id: formDetails.wallet_address,
+          type: "crypto_currency",
+          metadata: JSON.stringify(formDetails),
+        };
+
+        loadingState.value = true;
+
+        Logic.Wallet.CreateSavedAccount()?.then(async (response) => {
+          if (response) {
+            await Logic.Wallet.GetSavedAccounts(30, 1);
+            loadingState.value = false;
+            Logic.Common.showAlert({
+              show: true,
+              type: "success",
+              message: "Crypto account has been saved",
+            });
+            Logic.Common.goBack();
+          } else {
+            loadingState.value = false;
+          }
+        });
+      }
     };
 
     return {
@@ -93,7 +131,18 @@ export default defineComponent({
       continueToNext,
       FormValidations,
       cryptoOptions,
+      loadingState,
+      formComponent,
     };
+  },
+  data() {
+    return {
+      parentRefs: [],
+    };
+  },
+  mounted() {
+    const parentRefs: any = this.$refs;
+    this.parentRefs = parentRefs;
   },
 });
 </script>

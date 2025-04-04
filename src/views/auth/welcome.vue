@@ -10,7 +10,9 @@
       <!-- Top section -->
       <div class="w-full flex flex-row items-center justify-center pt-4">
         <app-image-loader
-          photo-url="/images/temps/user-profile.png"
+          :photo-url="
+            AuthUser?.profile?.profile_picture || '/images/profile-image.svg'
+          "
           class="h-[96px] w-[96px] rounded-full xs:w-[80px] xs:h-[80px]"
         />
       </div>
@@ -23,7 +25,9 @@
         >
         <app-normal-text
           class="text-center w-full !text-[#0A141E] sm:!text-sm xs:!text-xs"
-          >Timms Closet Ventures</app-normal-text
+          >{{
+            AuthUser?.profile?.business?.business_name || "User"
+          }}</app-normal-text
         >
       </div>
 
@@ -70,6 +74,9 @@ import {
   AppKeyboard,
 } from "@greep/ui-components";
 import { Logic } from "@greep/logic";
+import { User } from "@greep/logic/src/gql/graphql";
+import { ref } from "vue";
+import { onMounted } from "vue";
 
 export default defineComponent({
   name: "WelcomePage",
@@ -81,6 +88,8 @@ export default defineComponent({
   },
   setup() {
     const FormValidations = Logic.Form;
+
+    const AuthUser = ref<User>(Logic.Auth.AuthUser);
 
     const formData = reactive({
       passcode: "",
@@ -107,8 +116,8 @@ export default defineComponent({
 
       const encryptedAuthData = localStorage.getItem("auth_encrypted_data");
       try {
-        const authData = Logic.Common.decryptData(
-          encryptedAuthData,
+        const authData: any = Logic.Common.decryptData(
+          encryptedAuthData || "",
           authPasscode
         );
 
@@ -138,10 +147,15 @@ export default defineComponent({
       Logic.Common.GoToRoute("/");
     };
 
+    onMounted(() => {
+      Logic.Auth.watchProperty("AuthUser", AuthUser);
+    });
+
     return {
       FormValidations,
       Logic,
       formData,
+      AuthUser,
     };
   },
 });

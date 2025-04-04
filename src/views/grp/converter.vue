@@ -2,7 +2,7 @@
   <app-wrapper>
     <subpage-layout :title="pageTitle" :hideBackBtn="hideBackBtn">
       <div
-        class="w-full flex flex-col items-center justify-start px-4 h-full pt-1 space-y-5"
+        class="w-full flex flex-col items-center justify-start px-4 h-full pt-1"
       >
         <!-- Confirmation details starts -->
         <template v-if="currentPageContent == 'conversion'">
@@ -24,7 +24,7 @@
           </amount-card>
 
           <div
-            class="w-full border-[1.5px] border-[#E0E2E4] rounded-[32px] flex flex-col relative"
+            class="w-full border-[1.5px] border-[#E0E2E4] rounded-[32px] flex flex-col relative mt-5"
           >
             <div
               class="px-4 py-4 flex flex-row justify-between items-center border-b-[1.5px] border-[#E0E2E4]"

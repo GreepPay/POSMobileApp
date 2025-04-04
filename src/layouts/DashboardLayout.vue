@@ -17,7 +17,9 @@
         }"
       >
         <app-image-loader
-          :photo-url="'/images/temps/user-profile.png'"
+          :photo-url="
+            AuthUser?.profile?.profile_picture || '/images/profile-image.svg'
+          "
           custom-class="h-[35px] w-[35px] rounded-full"
           @click="Logic.Common.GoToRoute('/profile')"
         />
@@ -44,6 +46,7 @@
 
 <script lang="ts">
 import { Logic } from "@greep/logic";
+import { User } from "@greep/logic/src/gql/graphql";
 import { AppHeaderText, AppIcon, AppImageLoader } from "@greep/ui-components";
 import { ref, defineComponent, onMounted } from "vue";
 import { useRouter } from "vue-router";
@@ -69,6 +72,8 @@ export default defineComponent({
     const router = useRouter();
     const scrollableContent = ref(null);
     const isScrolled = ref(false);
+
+    const AuthUser = ref<User>(Logic.Auth.AuthUser);
 
     const selectedTab = ref("");
 
@@ -108,6 +113,8 @@ export default defineComponent({
         // @ts-expect-error scrollableContent.value can be null
         scrollableContent.value?.addEventListener("scroll", handleScroll);
       }
+
+      Logic.Auth.watchProperty("AuthUser", AuthUser);
     });
 
     return {
@@ -118,6 +125,7 @@ export default defineComponent({
       isScrolled,
       handleScroll,
       Logic,
+      AuthUser,
     };
   },
 });

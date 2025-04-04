@@ -30,6 +30,10 @@
 	<array>
 		<string>armv7</string>
 	</array>
+	<key>NSCameraUsageDescription</key>
+	<string>This app requires to access your camera so you can add a profile picture</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>This app requires to access your photo library so you can add a profile picture</string>
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>

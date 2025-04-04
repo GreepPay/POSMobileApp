@@ -1,13 +1,13 @@
 <template>
   <app-wrapper>
     <subpage-layout title="Default Currency">
-      <div class="w-full flex flex-col space-y-5 justify-start h-full pt-1">
+      <div class="w-full flex flex-col justify-start h-full pt-1">
         <div class="w-full flex flex-col">
           <app-switch v-model="selectedValue" :items="switchItems" />
         </div>
 
         <div
-          class="w-full flex flex-col items-center justify-start px-4 h-full pt-1"
+          class="w-full flex flex-col items-center justify-start px-4 h-full pt-4"
         >
           <template v-for="(account, index) in allAccounts" :key="index">
             <div
@@ -25,20 +25,20 @@
                 }}</app-normal-text>
               </div>
 
-              <div class="flex flex-row justify-end">
+              <!-- <div class="flex flex-row justify-end">
                 <app-icon
                   :name="`${
                     selectedAccount == account.key ? 'selected' : 'not-selected'
                   }`"
                   class="h-[24px]"
                 />
-              </div>
+              </div> -->
             </div>
           </template>
 
           <div class="w-full flex flex-col pt-2">
             <div
-              @click="Logic.Common.GoToRoute('/banks/add')"
+              @click="goToAddAccount"
               class="w-full flex flex-row space-x-1 px-3 py-3 border-[1.5px] rounded-[12px] items-center border-[#0A141E]"
             >
               <app-icon name="black-plus" custom-class="h-[24px]" />
@@ -65,6 +65,9 @@ import {
 import { Logic } from "@greep/logic";
 import { reactive } from "vue";
 import { ref } from "vue";
+import { onIonViewDidEnter } from "@ionic/vue";
+import { onMounted } from "vue";
+import { watch } from "vue";
 
 export default defineComponent({
   name: "ProfileAccountsSettingsPage",
@@ -73,6 +76,19 @@ export default defineComponent({
     AppIcon,
     AppImageLoader,
     AppSwitch,
+  },
+  middlewares: {
+    fetchRules: [
+      {
+        domain: "Wallet",
+        property: "ManySavedAccounts",
+        method: "GetSavedAccounts",
+        params: [30, 1],
+        requireAuth: true,
+        ignoreProperty: false,
+        silentUpdate: true,
+      },
+    ],
   },
   setup() {
     const FormValidations = Logic.Form;
@@ -84,6 +100,8 @@ export default defineComponent({
     });
 
     const selectedValue = ref("");
+
+    const ManySavedAccounts = ref(Logic.Wallet.ManySavedAccounts);
 
     const switchItems = reactive<
       {
@@ -101,7 +119,7 @@ export default defineComponent({
       },
       {
         name: "Crypto Wallet",
-        key: "crypto_wallet",
+        key: "crypto_currency",
       },
     ]);
 
@@ -120,19 +138,98 @@ export default defineComponent({
       },
     ]);
 
-    const continueToNext = () => {
-      //   modalIsOpen.value = true;
+    const setAccounts = () => {
+      allAccounts.length = 0;
+
+      if (selectedValue.value == "bank_account") {
+        ManySavedAccounts.value?.data
+          ?.filter((item) => item.bank_code == "bank_account")
+          .forEach((savedAccount) => {
+            const metadata: {
+              bank_name: string;
+              account_holder_name: string;
+              account_number: string;
+              routing_number: string;
+              swift_code: string;
+            } = JSON.parse(savedAccount.meta_data || "");
+            allAccounts.push({
+              title: `${metadata.bank_name} (${metadata.account_number})`,
+              key: savedAccount.uuid,
+              logo: `/images/bank-account.svg`,
+            });
+          });
+      }
+
+      if (selectedValue.value == "mobile_money") {
+        ManySavedAccounts.value?.data
+          ?.filter((item) => item.bank_code == "mobile_money")
+          .forEach((savedAccount) => {
+            const metadata: {
+              first_name: string;
+              last_name: string;
+              mobile_number: string;
+              provider: string;
+            } = JSON.parse(savedAccount.meta_data || "");
+            allAccounts.push({
+              title: `${metadata.provider} (${metadata.mobile_number})`,
+              key: savedAccount.uuid,
+              logo: `/images/mobile-money/${metadata.provider}.png`,
+            });
+          });
+      }
+
+      if (selectedValue.value == "crypto_currency") {
+        ManySavedAccounts.value?.data
+          ?.filter((item) => item.bank_code == "crypto_currency")
+          .forEach((savedAccount) => {
+            const metadata: {
+              crypto: string;
+              wallet_address: string;
+            } = JSON.parse(savedAccount.meta_data || "");
+            allAccounts.push({
+              title: `${metadata.crypto.toUpperCase()} (${metadata.wallet_address.substring(
+                0,
+                4
+              )}****${metadata.wallet_address.slice(-4)})`,
+              key: savedAccount.uuid,
+              logo: `/images/crypto/${metadata.crypto}.png`,
+            });
+          });
+      }
     };
+
+    const goToAddAccount = () => {
+      if (selectedValue.value == "bank_account") {
+        Logic.Common.GoToRoute("/banks/add");
+      } else if (selectedValue.value == "mobile_money") {
+        Logic.Common.GoToRoute("/mobile-money/add");
+      } else if (selectedValue.value == "crypto_currency") {
+        Logic.Common.GoToRoute("/crypto-wallet/add");
+      }
+    };
+
+    watch(selectedValue, () => {
+      setAccounts();
+    });
+
+    onIonViewDidEnter(() => {
+      setAccounts();
+    });
+
+    onMounted(() => {
+      Logic.Wallet.watchProperty("ManySavedAccounts", ManySavedAccounts);
+      setAccounts();
+    });
 
     return {
       Logic,
-      continueToNext,
       FormValidations,
       formData,
       switchItems,
       selectedValue,
       selectedAccount,
       allAccounts,
+      goToAddAccount,
     };
   },
 });

@@ -1,26 +1,28 @@
 <template>
   <app-wrapper>
     <subpage-layout title="Profile">
-      <div
-        class="w-full flex flex-col space-y-5 justify-start px-4 h-full pt-1"
-      >
+      <div class="w-full flex flex-col justify-start px-4 h-full pt-1">
         <!-- Profile Information -->
         <amount-card is-wrapper>
-          <div class="w-full flex flex-row space-x-2 justify-center">
+          <div class="w-full flex flex-row space-x-2 justify-center z-4 py-5">
             <div class="w-[96px]">
               <app-image-loader
-                photo-url="/images/temps/user-profile.png"
+                :photo-url="
+                  AuthUser?.profile?.profile_picture ||
+                  '/images/profile-image.svg'
+                "
                 custom-class="!h-[96px] !w-[96px]"
               />
             </div>
             <div class="w-full flex flex-col space-y-[1px] z-1">
               <app-normal-text
                 class="!text-white font-semibold !text-left !text-base"
-                >Timmy Salami</app-normal-text
+                >{{ AuthUser.first_name }}
+                {{ AuthUser.last_name }}</app-normal-text
               >
-              <app-normal-text class="font-light !text-left !text-white"
-                >Timms Closet Ventures</app-normal-text
-              >
+              <app-normal-text class="font-light !text-left !text-white">{{
+                AuthUser.profile?.business?.business_name
+              }}</app-normal-text>
 
               <div class="pt-3">
                 <div
@@ -30,9 +32,13 @@
                   <div class="flex flex-row space-x-1 items-center">
                     <app-icon name="grp-logo-white" custom-class="!h-[24px]" />
 
-                    <app-normal-text class="!text-white font-[500] !text-sm"
-                      >1000</app-normal-text
-                    >
+                    <app-normal-text class="!text-white font-[500] !text-sm">{{
+                      Logic.Common.convertToMoney(
+                        AuthUser.wallet?.point_balance,
+                        true,
+                        ""
+                      )
+                    }}</app-normal-text>
                   </div>
 
                   <app-icon name="arrow-right-white" custom-class="!h-[20px]" />
@@ -43,9 +49,9 @@
         </amount-card>
 
         <!-- Profile items -->
-        <div class="pt-2 flex flex-col space-y-3">
+        <div class="flex flex-col pt-6">
           <div
-            class="w-full px-3 flex flex-row space-x-4 items-center py-2 pb-4 border-b-[1px] border-[#E0E2E4]"
+            class="w-full px-3 flex flex-row space-x-4 mb-3 items-center py-2 pb-4 border-b-[1px] border-[#E0E2E4]"
             v-for="(item, index) in profileItems"
             :key="index"
             @click="Logic.Common.GoToRoute(item.route)"
@@ -88,6 +94,9 @@ import {
 } from "@greep/ui-components";
 import { Logic } from "@greep/logic";
 import AmountCard from "../../components/Common/AmountCard.vue";
+import { User } from "@greep/logic/src/gql/graphql";
+import { ref } from "vue";
+import { onMounted } from "vue";
 
 export default defineComponent({
   name: "ProfilePage",
@@ -99,6 +108,8 @@ export default defineComponent({
     AppIcon,
   },
   setup() {
+    const AuthUser = ref<User>(Logic.Auth.AuthUser);
+
     const profileItems = reactive([
       {
         title: "Personal Info",
@@ -126,9 +137,14 @@ export default defineComponent({
       },
     ]);
 
+    onMounted(() => {
+      Logic.Auth.watchProperty("AuthUser", AuthUser);
+    });
+
     return {
       Logic,
       profileItems,
+      AuthUser,
     };
   },
 });

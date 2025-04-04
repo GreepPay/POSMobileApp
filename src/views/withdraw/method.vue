@@ -72,12 +72,12 @@ export default defineComponent({
     AppNormalText,
   },
   setup() {
-    const selectedMethod = ref<string>("bank_transfer");
+    const selectedMethod = ref<string>("bank_account");
 
     const withdrawMethods = reactive([
       {
         title: "Bank Transfer",
-        key: "bank_transfer",
+        key: "bank_account",
         fee: `$1`,
       },
       {
@@ -93,7 +93,18 @@ export default defineComponent({
     ]);
 
     const continueToNext = () => {
-      Logic.Common.GoToRoute("/withdraw/saved-accounts");
+      const amountFromRoute =
+        Logic.Common.route?.query?.amount?.toString() || "0";
+      const currencyFromRoute = Logic.Common.route?.query?.currency || "USD";
+
+      Logic.Common.GoToRoute(
+        "/withdraw/saved-accounts?method=" +
+          selectedMethod.value +
+          "&amount=" +
+          amountFromRoute +
+          "&currency=" +
+          currencyFromRoute
+      );
     };
 
     return {

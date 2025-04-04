@@ -1,50 +1,58 @@
 <template>
   <app-wrapper>
     <subpage-layout title="New Mobile Money">
-      <div
-        class="w-full flex flex-col space-y-5 justify-start px-4 h-full pt-4"
+      <app-form-wrapper
+        ref="formComponent"
+        :parent-refs="parentRefs"
+        class="w-full flex flex-col justify-start px-4 h-full pt-4"
       >
-        <app-text-field
-          :has-title="false"
-          type="text"
-          placeholder="First Name"
-          ref="firstName"
-          name="First Name"
-          use-floating-label
-          v-model="formDetails.first_name"
-          :rules="[FormValidations.RequiredRule]"
-        >
-        </app-text-field>
+        <div class="w-full flex flex-col pb-4">
+          <app-text-field
+            :has-title="false"
+            type="text"
+            placeholder="First Name"
+            ref="firstName"
+            name="First Name"
+            use-floating-label
+            v-model="formDetails.first_name"
+            :rules="[FormValidations.RequiredRule]"
+          >
+          </app-text-field>
+        </div>
 
-        <app-text-field
-          :has-title="false"
-          type="text"
-          placeholder="Last Name"
-          ref="lastName"
-          name="Last Name"
-          use-floating-label
-          v-model="formDetails.last_name"
-          :rules="[FormValidations.RequiredRule]"
-        >
-        </app-text-field>
+        <div class="w-full flex flex-col pb-4">
+          <app-text-field
+            :has-title="false"
+            type="text"
+            placeholder="Last Name"
+            ref="lastName"
+            name="Last Name"
+            use-floating-label
+            v-model="formDetails.last_name"
+            :rules="[FormValidations.RequiredRule]"
+          >
+          </app-text-field>
+        </div>
 
-        <app-text-field
-          :has-title="false"
-          type="tel"
-          placeholder="Mobile Number"
-          ref="mobileNumber"
-          name="Mobile Number"
-          use-floating-label
-          v-model="formDetails.mobile_number"
-          :rules="[FormValidations.RequiredRule]"
-        >
-        </app-text-field>
+        <div class="w-full flex flex-col pb-4">
+          <app-text-field
+            :has-title="false"
+            type="tel"
+            placeholder="Mobile Number"
+            ref="mobileNumber"
+            name="Mobile Number"
+            use-floating-label
+            v-model="formDetails.mobile_number"
+            :rules="[FormValidations.RequiredRule]"
+          >
+          </app-text-field>
+        </div>
 
-        <div class="w-full grid grid-cols-1 gap-3">
+        <div class="w-full grid grid-cols-1 gap-3 pt-3">
           <app-select
             :placeholder="'Select Provider'"
             :hasTitle="false"
-            :paddings="'py-4 !px-3'"
+            :paddings="'py-4 !px-4'"
             :options="mobileMoneyProviders"
             ref="provider"
             use-floating-label
@@ -52,7 +60,7 @@
           >
           </app-select>
         </div>
-      </div>
+      </app-form-wrapper>
 
       <!-- Bottom button -->
       <div
@@ -66,6 +74,7 @@
             variant="secondary"
             :class="`!py-4`"
             @click="continueToNext"
+            :loading="loadingState"
             >Save & Continue</app-button
           >
         </div>
@@ -75,8 +84,13 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from "vue";
-import { AppButton, AppTextField, AppSelect } from "@greep/ui-components";
+import { defineComponent, ref } from "vue";
+import {
+  AppButton,
+  AppTextField,
+  AppSelect,
+  AppFormWrapper,
+} from "@greep/ui-components";
 import { Logic } from "@greep/logic";
 import { reactive } from "vue";
 import { SelectOption } from "@greep/ui-components/src/types";
@@ -87,6 +101,7 @@ export default defineComponent({
     AppButton,
     AppTextField,
     AppSelect,
+    AppFormWrapper,
   },
   setup() {
     const formDetails = reactive({
@@ -98,31 +113,60 @@ export default defineComponent({
 
     const FormValidations = Logic.Form;
 
+    const loadingState = ref(false);
+
+    const formComponent = ref<any>();
+
     const mobileMoneyProviders = reactive<SelectOption[]>([
       {
-        key: "MTN",
+        key: "mtn",
         value: "MTN",
       },
       {
-        key: "AIRTEL",
+        key: "airtel",
         value: "AIRTEL",
       },
       {
-        key: "VODAFONE",
+        key: "vodacom",
         value: "VODAFONE",
       },
       {
-        key: "TIGO",
+        key: "tigo",
         value: "TIGO",
       },
       {
-        key: "ORANGE",
+        key: "orange",
         value: "ORANGE",
       },
     ]);
 
     const continueToNext = () => {
-      //   modalIsOpen.value = true;
+      const state = formComponent.value.validate();
+
+      if (state) {
+        Logic.Wallet.CreateSavedAccountForm = {
+          unique_id: formDetails.mobile_number,
+          type: "mobile_money",
+          metadata: JSON.stringify(formDetails),
+        };
+
+        loadingState.value = true;
+
+        Logic.Wallet.CreateSavedAccount()?.then(async (response) => {
+          if (response) {
+            await Logic.Wallet.GetSavedAccounts(30, 1);
+            loadingState.value = false;
+            Logic.Common.showAlert({
+              show: true,
+              type: "success",
+              message: "Mobile money account has been saved",
+            });
+            Logic.Common.goBack();
+          } else {
+            loadingState.value = false;
+          }
+        });
+      }
     };
 
     return {
@@ -131,7 +175,18 @@ export default defineComponent({
       continueToNext,
       FormValidations,
       mobileMoneyProviders,
+      loadingState,
+      formComponent,
     };
+  },
+  data() {
+    return {
+      parentRefs: [],
+    };
+  },
+  mounted() {
+    const parentRefs: any = this.$refs;
+    this.parentRefs = parentRefs;
   },
 });
 </script>
