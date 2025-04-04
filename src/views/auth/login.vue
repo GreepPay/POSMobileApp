@@ -22,7 +22,7 @@
           >
           </app-text-field>
 
-          <div class="w-full flex flex-col pt-2">
+          <div class="w-full flex flex-col pt-4">
             <app-text-field
               :has-title="false"
               type="password"

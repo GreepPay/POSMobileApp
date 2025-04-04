@@ -4,10 +4,16 @@
       :registerIonPage="registerIonPage"
       id="ionPageApp"
       :class="`${innerClassRef} h-full ${
-        currentPlatform == 'ios' || currentPlatform == 'android' ? '!pt-6' : ''
+        currentPlatform == 'ios' || currentPlatform == 'android'
+          ? `${mobilePadding}`
+          : ''
       }`"
     >
-      <ion-content :scroll-y="false" id="mainContent" :class="`${innerClassRef} h-full`">
+      <ion-content
+        :scroll-y="false"
+        id="mainContent"
+        :class="`${innerClassRef} h-full`"
+      >
         <slot />
       </ion-content>
     </ion-page>
@@ -40,6 +46,10 @@ export default defineComponent({
     innerClass: {
       type: String,
       default: "bg-white dark:bg-black",
+    },
+    mobilePadding: {
+      type: String,
+      default: "!pt-6",
     },
   },
   components: {

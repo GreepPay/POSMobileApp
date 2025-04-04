@@ -1,5 +1,5 @@
 <template>
-  <app-wrapper>
+  <app-wrapper mobilePadding="!pt-0">
     <dashboard-layout :title="AuthUser?.profile?.business?.business_name || ''">
       <div
         class="w-full flex flex-col items-center justify-start !space-y-[20px]"
@@ -72,7 +72,7 @@
 
         <!-- Transactions -->
         <div
-          class="w-full flex flex-col h-fit bg-white relative px-4 pt-5 space-y-[5px] min-h-[60vh]"
+          class="w-full flex flex-col h-fit bg-white relative px-4 pt-5 space-y-[5px] min-h-[70vh]"
           id="home_transactions"
         >
           <div
@@ -127,8 +127,9 @@ import {
 import { Logic } from "@greep/logic";
 import { ref } from "vue";
 import { onMounted } from "vue";
-import { onIonViewDidEnter } from "@ionic/vue";
+import { getPlatforms, onIonViewDidEnter } from "@ionic/vue";
 import { User } from "@greep/logic/src/gql/graphql";
+import { computed } from "vue";
 
 enum TransactionType {
   Sent = "sent",
@@ -262,6 +263,10 @@ export default defineComponent({
       setPageDefaults();
     });
 
+    const currentPlatform = computed(() => {
+      return getPlatforms()[0];
+    });
+
     onMounted(() => {
       // Register reactive data
       Logic.Wallet.watchProperty("ManyTransactions", ManyTransactions);
@@ -285,6 +290,7 @@ export default defineComponent({
       currencySymbol,
       AuthUser,
       CurrentGlobalExchangeRate,
+      currentPlatform,
     };
   },
 });

@@ -1,6 +1,10 @@
 <template>
-  <app-wrapper>
-    <app-onboarding-layout v-model="currentPage" :page-setting="pageSettings">
+  <app-wrapper mobilePadding="!pt-0">
+    <app-onboarding-layout
+      v-model="currentPage"
+      :page-setting="pageSettings"
+      :topPadding="`${currentPlatform === 'android' ? '!pt-6' : ''}`"
+    >
       <div
         class="w-full flex flex-col items-center justify-start h-full space-y-6 px-4 py-4"
       >
@@ -41,6 +45,9 @@ import AuthSetupPickCurrency from "../../../components/AuthSetup/pick-currency.v
 import AuthSetupVerifyEmail from "../../../components/AuthSetup/verify-email.vue";
 import AuthSetupSetPassword from "../../../components/AuthSetup/set-password.vue";
 import { onMounted } from "vue";
+import { StatusBar, Style } from "@capacitor/status-bar";
+import { computed } from "vue";
+import { getPlatforms } from "@ionic/vue";
 
 export default defineComponent({
   name: "SetupAccountIndex",
@@ -199,6 +206,10 @@ export default defineComponent({
       ],
     });
 
+    const currentPlatform = computed(() => {
+      return getPlatforms()[0];
+    });
+
     const initializeForm = () => {
       Logic.Auth.SignUpForm = {
         email: "",
@@ -215,6 +226,10 @@ export default defineComponent({
 
     onMounted(() => {
       initializeForm();
+      onMounted(() => {
+        StatusBar.setBackgroundColor({ color: "#008651" }); // any hex color
+        StatusBar.setStyle({ style: Style.Light }); // Light or Dark
+      });
     });
 
     return {
@@ -227,6 +242,7 @@ export default defineComponent({
       pickCurrencyRef,
       verifyEmailRef,
       setPasswordRef,
+      currentPlatform,
     };
   },
   data() {

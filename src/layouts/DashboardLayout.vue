@@ -10,11 +10,11 @@
     >
       <!-- Top section -->
       <div
-        class="w-full flex flex-row items-center justify-between py-4 px-4 sticky top-0 z-10"
-        :class="{
-          'bg-[#008651] transition-colors duration-300': isScrolled,
-          'bg-transparent transition-colors duration-300': !isScrolled,
-        }"
+        :class="`w-full flex flex-row items-center justify-between py-4 px-4 sticky top-0 z-10 ${
+          isScrolled
+            ? 'bg-[#008651] transition-colors duration-300'
+            : 'bg-transparent transition-colors duration-300'
+        } ${currentPlatform == 'android' ? '!pt-12' : ''}`"
       >
         <app-image-loader
           :photo-url="
@@ -48,7 +48,8 @@
 import { Logic } from "@greep/logic";
 import { User } from "@greep/logic/src/gql/graphql";
 import { AppHeaderText, AppIcon, AppImageLoader } from "@greep/ui-components";
-import { ref, defineComponent, onMounted } from "vue";
+import { getPlatforms } from "@ionic/vue";
+import { ref, defineComponent, onMounted, computed } from "vue";
 import { useRouter } from "vue-router";
 
 export default defineComponent({
@@ -83,6 +84,10 @@ export default defineComponent({
         isScrolled.value = scrollableContent.value.scrollTop > 20;
       }
     };
+
+    const currentPlatform = computed(() => {
+      return getPlatforms()[0];
+    });
 
     const tabIsActive = (tabName: string) => {
       const mainName = tabName;
@@ -126,6 +131,7 @@ export default defineComponent({
       handleScroll,
       Logic,
       AuthUser,
+      currentPlatform,
     };
   },
 });

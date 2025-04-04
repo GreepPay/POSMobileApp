@@ -7,7 +7,7 @@
       <div
         v-if="slidePosition <= 2"
         class="flex justify-center items-center fixed w-full top-0 left-0 px-4 z-50"
-        style="padding-top: calc(env(safe-area-inset-top) + 16px)"
+        :style="`padding-top: calc(${safeAreaInsetTop}px + 16px)`"
       >
         <div class="w-[80%] rounded-[99px] bg-light-gray-two h-[6px] relative">
           <div
@@ -35,7 +35,7 @@
         >
           <div
             class="w-full flex flex-col items-center h-full relative space-y-2 justify-center r"
-            style="padding-top: calc(env(safe-area-inset-top) + 16px)"
+            :style="`padding-top: calc(${safeAreaInsetTop}px + 16px)`"
           >
             <!-- Main section -->
             <div
@@ -64,7 +64,7 @@
             <!-- Button -->
             <div
               class="flex flex-col justify-center items-center absolute bottom-0 left-0 px-4 pt-4 w-full"
-              style="padding-bottom: calc(env(safe-area-inset-bottom) + 16px)"
+              :style="`padding-bottom: calc(${safeAreaInsetBottom}px + 16px)`"
             >
               <app-button
                 class="!w-full !py-4 font-semibold"
@@ -83,7 +83,7 @@
         >
           <div
             class="w-full flex flex-col items-center h-full relative space-y-2 justify-center r"
-            style="padding-top: calc(env(safe-area-inset-top) + 16px)"
+            :style="`padding-top: calc(${safeAreaInsetTop}px + 16px)`"
           >
             <!-- Main section -->
             <div
@@ -112,7 +112,7 @@
             <!-- Button -->
             <div
               class="flex flex-col justify-center items-center absolute bottom-0 left-0 px-4 pt-4 w-full"
-              style="padding-bottom: calc(env(safe-area-inset-bottom) + 16px)"
+              :style="`padding-bottom: calc(${safeAreaInsetBottom}px + 16px)`"
             >
               <app-button
                 class="!w-full !py-4 font-semibold"
@@ -131,7 +131,7 @@
         >
           <div
             class="w-full flex flex-col items-center h-full relative space-y-2 justify-center r"
-            style="padding-top: calc(env(safe-area-inset-top) + 16px)"
+            :style="`padding-top: calc(${safeAreaInsetTop}px + 16px)`"
           >
             <!-- Main section -->
             <div
@@ -160,7 +160,7 @@
             <!-- Button -->
             <div
               class="flex flex-col justify-center items-center absolute bottom-0 left-0 px-4 pt-4 w-full"
-              style="padding-bottom: calc(env(safe-area-inset-bottom) + 16px)"
+              :style="`padding-bottom: calc(${safeAreaInsetBottom}px + 16px)`"
             >
               <app-button
                 class="!w-full !py-4 font-semibold"
@@ -175,11 +175,11 @@
 
         <!-- Slide 4 -->
         <swiper-slide
-          class="!h-screen !flex !flex-col items-start relative justify-center bg-white"
+          class="!h-screen !flex !flex-col items-start relative justify-center bg-white z-50"
         >
           <div
             class="w-full flex flex-col items-center h-full relative space-y-2 justify-center r"
-            style="padding-top: calc(env(safe-area-inset-top) + 16px)"
+            :style="`padding-top: calc(${safeAreaInsetTop}px + 16px)`"
           >
             <!-- Main section -->
             <div
@@ -197,11 +197,11 @@
 
             <!-- Button -->
             <div
-              class="flex flex-col space-y-3 justify-center items-center absolute bottom-0 left-0 px-4 pt-4 w-full"
-              style="padding-bottom: calc(env(safe-area-inset-bottom) + 16px)"
+              class="flex flex-col justify-center items-center absolute bottom-0 left-0 px-4 pt-4 w-full z-50"
+              :style="`padding-bottom: calc(${safeAreaInsetBottom}px + 16px)`"
             >
               <div
-                class="flex flex-col space-y-2 items-center justify-center w-full"
+                class="flex flex-col space-y-2 items-center justify-center w-full z-50 pb-4"
               >
                 <app-button
                   class="!w-full !py-4 border-secondary"
@@ -213,7 +213,7 @@
               </div>
 
               <app-button
-                class="!w-full !py-4 font-semibold !text-center"
+                class="!w-full !py-4 font-semibold !text-center z-50"
                 variant="secondary"
                 outlined
                 @click="Logic.Common.GoToRoute('/auth/login')"
@@ -241,6 +241,7 @@ import {
 import { ref } from "vue";
 import { watch } from "vue";
 import { SwiperSlide } from "swiper/vue";
+import { safeAreaInsetBottom, safeAreaInsetTop } from "../../composable";
 
 export default defineComponent({
   components: {
@@ -272,6 +273,8 @@ export default defineComponent({
       slidePosition,
       currentSlidePosition,
       totalSlides,
+      safeAreaInsetTop,
+      safeAreaInsetBottom,
     };
   },
 });
