@@ -57,6 +57,7 @@
 
       <div class="w-full flex flex-row items-center justify-center">
         <app-normal-text
+          @click="Logic.Auth.SignOut()"
           class="text-center w-full text-red sm:!text-sm xs:!text-xs"
           >Log Out</app-normal-text
         >
