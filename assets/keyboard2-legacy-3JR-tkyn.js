@@ -1,4 +1,4 @@
-System.register(["./keyboard-legacy-BtNnW8zs.js","./index-legacy-DNa0scl3.js"],(function(e,t){"use strict";var i;return{setters:[e=>{i=e.K},null],execute:function(){
+System.register(["./keyboard-legacy-DCcFK6KG.js","./index-legacy-BSjvlbTT.js"],(function(e,t){"use strict";var i;return{setters:[e=>{i=e.K},null],execute:function(){
 /*!
              * (C) Ionic http://ionicframework.com - MIT License
              */
