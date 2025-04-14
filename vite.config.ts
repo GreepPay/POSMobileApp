@@ -9,7 +9,7 @@ import tailwindcss from "@tailwindcss/vite";
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  base: "/POSMobileApp/", // important
+  base: process.env.VITE_APP_BASE_URL || "/",
   plugins: [vue(), legacy(), tailwindcss()],
   resolve: {
     alias: {

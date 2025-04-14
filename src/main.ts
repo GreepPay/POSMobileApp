@@ -26,8 +26,6 @@ import "@greep/ui-components/dist/library.min.css";
 
 const base = import.meta.env.VITE_APP_BASE_URL || "/";
 
-console.log(base);
-
 routes.then((routes) => {
   const router = createRouter({
     history: createWebHistory(base),
