@@ -1,7 +1,8 @@
 <template>
   <app-wrapper>
     <div
-      :class="`w-full h-screen flex flex-col lg:text-sm mdlg:text-[12px] text-xs   overflow-y-hidden !font-inter bg-white`"
+      :class="`w-full flex flex-col lg:text-sm mdlg:text-[12px] text-xs   overflow-y-hidden !font-inter bg-white`"
+      :style="`height: ${mobileFullHeight ? mobileFullHeight.height : ''};`"
     >
       <!-- Slide indicator -->
       <div
@@ -31,7 +32,8 @@
       >
         <!-- Slide 1 -->
         <swiper-slide
-          class="!h-screen !flex !flex-col items-start relative justify-center bg-white"
+          class="!flex !flex-col items-start relative justify-center bg-white"
+          :style="`height: ${mobileFullHeight ? mobileFullHeight.height : ''};`"
         >
           <div
             class="w-full flex flex-col items-center h-full relative space-y-2 justify-center r"
@@ -79,7 +81,8 @@
 
         <!-- Slide 2 -->
         <swiper-slide
-          class="!h-screen !flex !flex-col items-start relative justify-center bg-white"
+          class="!flex !flex-col items-start relative justify-center bg-white"
+          :style="`height: ${mobileFullHeight ? mobileFullHeight.height : ''};`"
         >
           <div
             class="w-full flex flex-col items-center h-full relative space-y-2 justify-center r"
@@ -127,7 +130,8 @@
 
         <!-- Slide 3 -->
         <swiper-slide
-          class="!h-screen !flex !flex-col items-start relative justify-center bg-white"
+          class="!flex !flex-col items-start relative justify-center bg-white"
+          :style="`height: ${mobileFullHeight ? mobileFullHeight.height : ''};`"
         >
           <div
             class="w-full flex flex-col items-center h-full relative space-y-2 justify-center r"
@@ -175,7 +179,8 @@
 
         <!-- Slide 4 -->
         <swiper-slide
-          class="!h-screen !flex !flex-col items-start relative justify-center bg-white z-50"
+          class="!flex !flex-col items-start relative justify-center bg-white z-50"
+          :style="`height: ${mobileFullHeight ? mobileFullHeight.height : ''};`"
         >
           <div
             class="w-full flex flex-col items-center h-full relative space-y-2 justify-center r"
@@ -229,7 +234,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from "vue";
+import { defineComponent, onMounted } from "vue";
 import AppWrapper from "@/components/AppWrapper.vue";
 import { Logic } from "@greep/logic";
 import {
@@ -242,6 +247,8 @@ import { ref } from "vue";
 import { watch } from "vue";
 import { SwiperSlide } from "swiper/vue";
 import { safeAreaInsetBottom, safeAreaInsetTop } from "../../composable";
+import { onUnmounted } from "vue";
+import { computed } from "vue";
 
 export default defineComponent({
   components: {
@@ -268,6 +275,27 @@ export default defineComponent({
       currentSlidePosition.value = slidePosition.value;
     });
 
+    const innerHeight = ref(window.innerHeight);
+
+    const updateHeight = () => {
+      innerHeight.value = window.innerHeight;
+    };
+
+    onMounted(() => {
+      updateHeight();
+      window.addEventListener("resize", updateHeight);
+    });
+
+    onUnmounted(() => {
+      window.removeEventListener("resize", updateHeight);
+    });
+
+    const mobileFullHeight = computed(() => {
+      return {
+        height: `${innerHeight.value}px`,
+      };
+    });
+
     return {
       Logic,
       slidePosition,
@@ -275,6 +303,7 @@ export default defineComponent({
       totalSlides,
       safeAreaInsetTop,
       safeAreaInsetBottom,
+      mobileFullHeight,
     };
   },
 });
