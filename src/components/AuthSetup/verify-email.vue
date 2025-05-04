@@ -62,8 +62,7 @@ export default defineComponent({
   props: {},
   name: "AuthSetupVerifyEmail",
   setup() {
-    const FormValidations = Logic.Form;
-
+    const FormValidations = Logic.Form; 
     const otpCode = ref("");
 
     const handleOTPChange = () => {

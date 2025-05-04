@@ -24,6 +24,8 @@
             </app-file-attachment>
           </div>
         </div>
+
+        
         <div class="w-full flex flex-col pt-3">
           <app-details :details="profileDetails" />
         </div>
