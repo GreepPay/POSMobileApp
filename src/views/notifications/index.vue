@@ -1,11 +1,9 @@
 <template>
   <app-wrapper>
     <subpage-layout title="Notifications" :hasBottomButton="false">
-      <div
-        class="w-full flex flex-col space-y-5 justify-start px-4 h-full pt-1"
-      >
+      <div class="w-full flex flex-col justify-start px-4 h-full pt-1">
         <!-- Mark as read button -->
-        <div class="w-full flex flex-col">
+        <div class="w-full flex flex-col pb-4">
           <app-button
             class="w-full !py-4 !text-sm"
             outlined

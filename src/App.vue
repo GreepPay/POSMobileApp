@@ -14,6 +14,7 @@ import { getPlatforms } from "@ionic/vue";
 import { useRoute, useRouter } from "vue-router";
 import { Logic } from "@greep/logic";
 import { SetFrontendLogic, AppAlert, AppLoader } from "@greep/ui-components";
+import { SplashScreen } from "@capacitor/splash-screen";
 
 export default defineComponent({
   name: "App",
@@ -66,9 +67,10 @@ export default defineComponent({
       }
     };
 
-    onMounted(() => {
+    onMounted(async () => {
       // Logic.Common.GoToRoute("/auth/login");
       // deep link config
+
       CapacitorApp.addListener(
         "appUrlOpen",
         function (event: URLOpenListenerEvent) {
@@ -94,6 +96,11 @@ export default defineComponent({
       // Register watchers
       Logic.Common.watchProperty("alertSetup", alertSetup);
       Logic.Common.watchProperty("loaderSetup", loaderSetup);
+
+      await SplashScreen.show({
+        showDuration: 3000,
+        autoHide: true,
+      });
     });
 
     return {

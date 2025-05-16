@@ -76,6 +76,7 @@
             variant="secondary"
             :class="`!py-4 !border-red !text-red !border-[1.5px] hover:!bg-red/20 `"
             outlined
+            @click="Logic.Auth.SignOut()"
             >Log Out</app-button
           >
         </div>

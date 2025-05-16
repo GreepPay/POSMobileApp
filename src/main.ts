@@ -24,9 +24,11 @@ import { RouteRecordRaw } from "vue-router";
 // UI component css style
 import "@greep/ui-components/dist/library.min.css";
 
+const base = import.meta.env.VITE_APP_BASE_URL || "/";
+
 routes.then((routes) => {
   const router = createRouter({
-    history: createWebHistory(),
+    history: createWebHistory(base),
     routes: routes.filter((route) => route !== null) as RouteRecordRaw[],
   });
 

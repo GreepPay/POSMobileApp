@@ -49,7 +49,7 @@ export default defineComponent({
   },
   setup() {
     const formDetails = reactive({
-      image: "",
+      photo: "",
     });
 
     const photoUrl = ref("/images/temps/user-profile.png");

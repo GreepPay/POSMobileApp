@@ -10,7 +10,9 @@
     "test:e2e": "cypress run",
     "test:unit": "vitest",
     "lint": "eslint .",
-    "resources": "capacitor-resources -p android,ios"
+    "resources": "capacitor-resources -p android,ios",
+    "build:gh-pages": "vite build --mode gh-pages",
+    "deploy": "npm run build:gh-pages && gh-pages -d dist"
   },
   "dependencies": {
     "@capacitor/android": "7.0.1",
@@ -19,6 +21,7 @@
     "@capacitor/haptics": "7.0.0",
     "@capacitor/ios": "7.0.1",
     "@capacitor/keyboard": "7.0.0",
+    "@capacitor/splash-screen": "^7.0.1",
     "@capacitor/status-bar": "7.0.0",
     "@ionic/vue": "^8.0.0",
     "@ionic/vue-router": "^8.0.0",
@@ -44,10 +47,12 @@
     "cypress": "^13.5.0",
     "eslint": "^8.35.0",
     "eslint-plugin-vue": "^9.9.0",
+    "gh-pages": "^6.3.0",
     "jsdom": "^22.1.0",
     "terser": "^5.4.0",
     "typescript": "~5.6.2",
     "vite": "~5.2.0",
+    "vite-plugin-gh-pages": "^1.0.1",
     "vitest": "^0.34.6",
     "vue-tsc": "^2.1.10"
   },

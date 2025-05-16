@@ -1,11 +1,11 @@
 <template>
   <app-wrapper>
     <div
-      :class="`w-full h-screen flex flex-col lg:text-sm mdlg:text-[12px] text-xs overflow-y-auto !font-inter bg-white space-y-5 sm:!space-y-5 xs:space-y-3 items-center justify-center`"
-      style="
-        padding-top: calc(env(safe-area-inset-top) + 16px);
-        padding-bottom: calc(env(safe-area-inset-bottom) + 16px);
-      "
+      :class="`w-full  flex flex-col lg:text-sm mdlg:text-[12px] text-xs overflow-y-auto !font-inter bg-white space-y-5 sm:!space-y-5 xs:space-y-3 items-center justify-center`"
+      :style="`height: ${
+        mobileFullHeight ? mobileFullHeight.height : ''
+      }; padding-top: calc(env(safe-area-inset-top) + 16px);
+      padding-bottom: calc(env(safe-area-inset-bottom) + 16px);`"
     >
       <!-- Top section -->
       <div class="w-full flex flex-row items-center justify-center pt-4">
@@ -57,6 +57,7 @@
 
       <div class="w-full flex flex-row items-center justify-center">
         <app-normal-text
+          @click="Logic.Auth.SignOut()"
           class="text-center w-full text-red sm:!text-sm xs:!text-xs"
           >Log Out</app-normal-text
         >
@@ -66,7 +67,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, watch, reactive } from "vue";
+import { defineComponent, watch, reactive, onUnmounted } from "vue";
 import {
   AppImageLoader,
   AppHeaderText,
@@ -77,6 +78,7 @@ import { Logic } from "@greep/logic";
 import { User } from "@greep/logic/src/gql/graphql";
 import { ref } from "vue";
 import { onMounted } from "vue";
+import { computed } from "vue";
 
 export default defineComponent({
   name: "WelcomePage",
@@ -147,6 +149,27 @@ export default defineComponent({
       Logic.Common.GoToRoute("/");
     };
 
+    const innerHeight = ref(window.innerHeight);
+
+    const updateHeight = () => {
+      innerHeight.value = window.innerHeight;
+    };
+
+    onMounted(() => {
+      updateHeight();
+      window.addEventListener("resize", updateHeight);
+    });
+
+    onUnmounted(() => {
+      window.removeEventListener("resize", updateHeight);
+    });
+
+    const mobileFullHeight = computed(() => {
+      return {
+        height: `${innerHeight.value}px`,
+      };
+    });
+
     onMounted(() => {
       Logic.Auth.watchProperty("AuthUser", AuthUser);
     });
@@ -156,6 +179,7 @@ export default defineComponent({
       Logic,
       formData,
       AuthUser,
+      mobileFullHeight,
     };
   },
 });
