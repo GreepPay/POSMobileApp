@@ -70,7 +70,12 @@
 
 <script lang="ts">
 import { defineComponent } from "vue";
-import { AppFormWrapper, AppTextField, AppButton } from "@greep/ui-components";
+import {
+  AppFormWrapper,
+  AppTextField,
+  AppButton,
+  AppNormalText,
+} from "@greep/ui-components";
 import { Logic } from "@greep/logic";
 import { reactive } from "vue";
 import { ref } from "vue";
@@ -83,6 +88,7 @@ export default defineComponent({
     AppTextField,
     AppButton,
     SSO,
+    AppNormalText,
   },
   setup() {
     const FormValidations = Logic.Form;

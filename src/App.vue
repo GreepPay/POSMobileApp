@@ -1,6 +1,11 @@
 <template>
   <ion-app class="font-poppins">
     <ion-router-outlet />
+    <app-bottom-bar
+      :tabs="bottomBar"
+      :tab-is-active="tabIsActive"
+      v-if="showBottomNav"
+    />
     <app-alert v-if="alertSetup.show" :setup="alertSetup" />
     <app-loader v-if="loaderSetup.show" :setup="loaderSetup" />
   </ion-app>
@@ -13,8 +18,14 @@ import { App as CapacitorApp, URLOpenListenerEvent } from "@capacitor/app";
 import { getPlatforms } from "@ionic/vue";
 import { useRoute, useRouter } from "vue-router";
 import { Logic } from "@greep/logic";
-import { SetFrontendLogic, AppAlert, AppLoader } from "@greep/ui-components";
+import {
+  SetFrontendLogic,
+  AppAlert,
+  AppLoader,
+  AppBottomBar,
+} from "@greep/ui-components";
 import { SplashScreen } from "@capacitor/splash-screen";
+import { reactive } from "vue";
 
 export default defineComponent({
   name: "App",
@@ -23,6 +34,7 @@ export default defineComponent({
     IonRouterOutlet,
     AppAlert,
     AppLoader,
+    AppBottomBar,
   },
   setup() {
     const router: any = useRouter();
@@ -30,6 +42,9 @@ export default defineComponent({
 
     const alertSetup = ref(Logic.Common.alertSetup);
     const loaderSetup = ref(Logic.Common.loaderSetup);
+    const showBottomNav = ref<any>();
+
+    const selectedTab = ref("");
 
     // Set routers
     Logic.Common.SetRouter(router);
@@ -96,6 +111,7 @@ export default defineComponent({
       // Register watchers
       Logic.Common.watchProperty("alertSetup", alertSetup);
       Logic.Common.watchProperty("loaderSetup", loaderSetup);
+      Logic.Common.watchProperty("showBottomNav", showBottomNav);
 
       await SplashScreen.show({
         showDuration: 3000,
@@ -103,9 +119,44 @@ export default defineComponent({
       });
     });
 
+    const tabIsActive = (tabName: string) => {
+      const mainName = tabName;
+
+      if (mainName == "base" && router.currentRoute.value.path == "/") {
+        return true;
+      } else if (
+        mainName != "base" &&
+        router.currentRoute.value.path.includes(mainName)
+      ) {
+        selectedTab.value = mainName;
+        return true;
+      }
+
+      return false;
+    };
+
+    const bottomBar = reactive([
+      {
+        path: "/",
+        icon: "home",
+        routeTag: "base",
+        name: "Home",
+      },
+      {
+        path: "/orders",
+        icon: "order",
+        routeTag: "orders",
+        name: "Orders",
+      },
+    ]);
+
     return {
       alertSetup,
       loaderSetup,
+      Logic,
+      tabIsActive,
+      showBottomNav,
+      bottomBar,
     };
   },
 });

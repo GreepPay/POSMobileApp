@@ -194,7 +194,7 @@ export default defineComponent({
         method: "GetTransactions",
         params: [1, 10],
         requireAuth: true,
-        ignoreProperty: false,
+        ignoreProperty: true,
         silentUpdate: false,
       },
       {
@@ -203,7 +203,7 @@ export default defineComponent({
         method: "GetPointTransactions",
         params: [1, 10],
         requireAuth: true,
-        ignoreProperty: false,
+        ignoreProperty: true,
         silentUpdate: false,
       },
       {
@@ -212,7 +212,7 @@ export default defineComponent({
         method: "GetNormalFinancialSummary",
         params: [],
         requireAuth: true,
-        ignoreProperty: false,
+        ignoreProperty: true,
         silentUpdate: true,
       },
     ],

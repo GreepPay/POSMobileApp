@@ -5,7 +5,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
 	<key>CFBundleDisplayName</key>
-        <string>Greep POS</string>
+	<string>Greep POS</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -18,10 +18,25 @@
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
 	<string>$(MARKETING_VERSION)</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.googleusercontent.apps.209656620172-vai3mo74m6frd4d31j251solskhcke0c</string>
+			</array>
+		</dict>
+	</array>
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>This app requires to access your camera so you can add a profile picture</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>This app requires to access your photo library so you can add a profile picture</string>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>
@@ -30,10 +45,6 @@
 	<array>
 		<string>armv7</string>
 	</array>
-	<key>NSCameraUsageDescription</key>
-	<string>This app requires to access your camera so you can add a profile picture</string>
-	<key>NSPhotoLibraryUsageDescription</key>
-	<string>This app requires to access your photo library so you can add a profile picture</string>
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>

@@ -97,6 +97,7 @@ import {
   AppTextField,
   AppInfoBox,
   AppButton,
+  AppNormalText,
 } from "@greep/ui-components";
 import { Logic } from "@greep/logic";
 import SSO from "../../../components/Auth/SSO.vue";
@@ -111,6 +112,7 @@ export default defineComponent({
     SSO,
     AppInfoBox,
     AppButton,
+    AppNormalText,
   },
   setup() {
     const formData = reactive({

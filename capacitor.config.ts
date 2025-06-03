@@ -2,7 +2,7 @@ import type { CapacitorConfig } from "@capacitor/cli";
 
 const config: CapacitorConfig = {
   appId: "io.greep.pos.vendor",
-  appName: "Greep POS",
+  appName: "Greep Vendor",
   webDir: "dist",
   plugins: {
     SplashScreen: {
@@ -19,6 +19,10 @@ const config: CapacitorConfig = {
     },
     PushNotifications: {
       presentationOptions: ["badge", "sound", "alert"],
+    },
+    FirebaseAuthentication: {
+      skipNativeAuth: false,
+      providers: ["google.com"],
     },
   },
 };

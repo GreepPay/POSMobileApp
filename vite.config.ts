@@ -16,8 +16,16 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  optimizeDeps: {
+    include: ["firebase/auth"],
+  },
   test: {
     globals: true,
     environment: "jsdom",
+  },
+  build: {
+    commonjsOptions: {
+      include: [/firebase\/auth/, /node_modules/],
+    },
   },
 });
