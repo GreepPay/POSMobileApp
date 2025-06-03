@@ -12,6 +12,10 @@
           <auth-setup-account-info ref="accountInfoRef" />
         </template>
 
+        <template v-if="currentPage == 'business_info'">
+          <auth-setup-business-info ref="businessInfoRef" />
+        </template>
+
         <template v-if="currentPage == 'verify_account'">
           <auth-setup-verify-account ref="verifyAccountRef" />
         </template>
@@ -44,6 +48,7 @@ import AuthSetupVerifyAccount from "../../../components/AuthSetup/verify-account
 import AuthSetupPickCurrency from "../../../components/AuthSetup/pick-currency.vue";
 import AuthSetupVerifyEmail from "../../../components/AuthSetup/verify-email.vue";
 import AuthSetupSetPassword from "../../../components/AuthSetup/set-password.vue";
+import AuthSetupBusinessInfo from "../../../components/AuthSetup/business-info.vue";
 import { onMounted } from "vue";
 import { StatusBar, Style } from "@capacitor/status-bar";
 import { computed } from "vue";
@@ -58,6 +63,7 @@ export default defineComponent({
     AuthSetupVerifyEmail,
     AppOnboardingLayout,
     AuthSetupSetPassword,
+    AuthSetupBusinessInfo,
   },
   setup() {
     const FormValidations = Logic.Form;
@@ -69,12 +75,13 @@ export default defineComponent({
     const pickCurrencyRef = ref<any>(null);
     const setPasswordRef = ref<any>(null);
     const verifyEmailRef = ref<any>(null);
+    const businessInfoRef = ref<any>(null);
 
     const pageSettings = reactive({
       main_title: "Setup POS",
       pages: [
         {
-          title: "Account Info",
+          title: "Personal Info",
           key: "account_info",
           action_btn: {
             label: "Next",
@@ -85,9 +92,32 @@ export default defineComponent({
                 Logic.Auth.SignUpForm.email = formData.email;
                 Logic.Auth.SignUpForm.first_name = formData.firstName;
                 Logic.Auth.SignUpForm.last_name = formData.lastName;
+                Logic.Auth.SignUpForm.phone_number = formData.phone;
+
+                currentPage.value = "business_info";
+              }
+            },
+            is_disabled: false,
+            loading: false,
+          },
+        },
+        {
+          title: "Business Info",
+          key: "business_info",
+          action_btn: {
+            label: "Next",
+            handler: () => {
+              const formData = businessInfoRef.value?.continueWithForm();
+
+              if (Logic.Auth.SignUpForm && formData) {
                 Logic.Auth.SignUpForm.state = formData.state;
                 Logic.Auth.SignUpForm.country = formData.country;
                 Logic.Auth.SignUpForm.business_name = formData.businessName;
+                Logic.Auth.SignUpForm.business_logo = formData.photo;
+                Logic.Auth.SignUpForm.business_category =
+                  formData.businessCategory;
+                Logic.Auth.SignUpForm.business_description =
+                  formData.businessDescription;
 
                 currentPage.value = "verify_account";
               }
@@ -242,6 +272,7 @@ export default defineComponent({
       pickCurrencyRef,
       verifyEmailRef,
       setPasswordRef,
+      businessInfoRef,
       currentPlatform,
     };
   },

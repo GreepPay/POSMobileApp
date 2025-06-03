@@ -2,10 +2,15 @@
   <app-wrapper>
     <subpage-layout title="Transaction Details">
       <div class="w-full flex flex-col items-center justify-start px-4 h-full">
-        <AmountCard :amount="4542" label="Amount Received" />
+        <AmountCard
+          :amount="pageSetup.amount"
+          :label="pageSetup.title"
+          :currencySymbol="currencySymbol"
+        />
 
         <!-- GRP token -->
         <div
+          v-if="pageSetup.has_grp"
           class="w-full flex flex-row items-center justify-between px-3 py-3 border-[1.5px] rounded-[18px] border-light-gray-one mt-4"
         >
           <app-normal-text class="!text-gray-two !text-left">
@@ -16,7 +21,7 @@
             <app-normal-text
               class="!text-black !text-right font-semibold !text-sm"
             >
-              40
+              {{ Logic.Common.convertToMoney(pageSetup.grp_amount, true, "") }}
             </app-normal-text>
             <app-icon name="grp-token" class="!h-[24px]" />
           </div>
@@ -71,6 +76,16 @@ import { AppButton, AppIcon, AppNormalText } from "@greep/ui-components";
 import { Logic } from "@greep/logic";
 import { reactive } from "vue";
 import AmountCard from "@/components/Common/AmountCard.vue";
+import { ref } from "vue";
+import { onMounted } from "vue";
+import {
+  getPointTransaction,
+  getTransaction,
+} from "../../composable/financials";
+import { availableCurrencies } from "../../composable";
+import { onIonViewWillEnter } from "@ionic/vue";
+import { watch } from "vue";
+import { capitalize } from "vue";
 
 export default defineComponent({
   name: "PaymentIdPage",
@@ -80,7 +95,53 @@ export default defineComponent({
     AppNormalText,
     AmountCard,
   },
+  middlewares: {
+    fetchRules: [
+      {
+        domain: "Wallet",
+        property: "SingleTransaction",
+        method: "GetSingleTransaction",
+        params: [],
+        requireAuth: true,
+        ignoreProperty: true,
+        useRouteId: true,
+        condition: {
+          routeSearchItem: "fullPath",
+          searchQuery: "normal",
+        },
+      },
+      {
+        domain: "Wallet",
+        property: "SinglePointTransaction",
+        method: "GetSinglePointTransaction",
+        params: [],
+        requireAuth: true,
+        ignoreProperty: true,
+        useRouteId: true,
+        condition: {
+          routeSearchItem: "fullPath",
+          searchQuery: "point",
+        },
+      },
+    ],
+  },
   setup() {
+    const SingleTransaction = ref(Logic.Wallet.SingleTransaction);
+    const SinglePointTransaction = ref(Logic.Wallet.SinglePointTransaction);
+
+    const transactionGroup = ref<"normal" | "point">("normal");
+
+    const selectedCurrency = ref(
+      Logic.Auth.AuthUser?.profile?.default_currency
+    );
+
+    const pageSetup = reactive({
+      amount: 0,
+      title: "Amount Received",
+      has_grp: false,
+      grp_amount: 0,
+    });
+
     const transactionDetails = reactive<
       {
         title: string;
@@ -109,9 +170,153 @@ export default defineComponent({
       },
     ]);
 
+    const currencySymbol = ref(
+      availableCurrencies.find(
+        (currency) => currency.code === selectedCurrency.value
+      )?.symbol
+    );
+
+    const setupPageContent = () => {
+      // Set group from query params
+
+      transactionGroup.value = Logic.Common.route?.query?.group?.toString() as
+        | "normal"
+        | "point";
+
+      if (transactionGroup.value === "point") {
+        pageSetup.amount = SinglePointTransaction.value?.amount || 0;
+        pageSetup.has_grp = false;
+
+        if (SinglePointTransaction.value) {
+          const transactionType =
+            SinglePointTransaction.value?.dr_or_cr == "credit"
+              ? "Reward"
+              : "Redemption";
+
+          const transactionInfo = getPointTransaction(
+            SinglePointTransaction.value,
+            currencySymbol.value || ""
+          );
+
+          transactionDetails.push({
+            title: "Summary",
+            value: SinglePointTransaction.value?.description || "",
+          });
+          transactionDetails.push({
+            title: "Type",
+            value: transactionType,
+          });
+          transactionDetails.push({
+            title: "Status",
+            value: SinglePointTransaction.value?.status || "Pending",
+          });
+          transactionDetails.push({
+            title: "Reference",
+            value: SinglePointTransaction.value?.reference || "",
+          });
+          transactionDetails.push({
+            title: "Amount",
+            value: `${
+              transactionInfo.currencySymbol
+            } ${Logic.Common.convertToMoney(
+              transactionInfo.amount,
+              true,
+              ""
+            )} (${transactionInfo.subAmount})`,
+          });
+          transactionDetails.push({
+            title: "Time",
+            value: Logic.Common.fomartDate(
+              SingleTransaction.value?.created_at,
+              "HH:mm - MMM DD, YYYY"
+            ),
+          });
+        }
+      } else {
+        pageSetup.amount = SingleTransaction.value?.amount || 0;
+        pageSetup.has_grp = true;
+        pageSetup.grp_amount =
+          SingleTransaction.value?.point_transaction?.amount || 0;
+
+        const transactionType =
+          SingleTransaction.value?.dr_or_cr == "credit"
+            ? "Payment"
+            : "Withdrawal";
+
+        transactionDetails.length = 0;
+
+        if (SingleTransaction.value) {
+          const transactionInfo = getTransaction(
+            SingleTransaction.value,
+            selectedCurrency.value,
+            currencySymbol.value || ""
+          );
+
+          transactionDetails.push({
+            title: "Summary",
+            value: SingleTransaction.value?.description || "",
+          });
+          transactionDetails.push({
+            title: "Type",
+            value: transactionType,
+          });
+          transactionDetails.push({
+            title: "Status",
+            value: capitalize(SingleTransaction.value?.status || "Pending"),
+          });
+          transactionDetails.push({
+            title: "Reference",
+            value: SingleTransaction.value?.reference || "",
+          });
+          transactionDetails.push({
+            title: "Amount",
+            value: `${
+              transactionInfo.currencySymbol
+            } ${Logic.Common.convertToMoney(
+              transactionInfo.amount,
+              true,
+              ""
+            )} (${transactionInfo.subAmount})`,
+          });
+          transactionDetails.push({
+            title: "Time",
+            value: Logic.Common.fomartDate(
+              SingleTransaction.value?.created_at,
+              "HH:mm - MMM DD, YYYY"
+            ),
+          });
+        }
+
+        if (SingleTransaction.value?.dr_or_cr == "credit") {
+          pageSetup.title = "Amount Received";
+        } else {
+          pageSetup.title = "Amount Sent";
+        }
+      }
+    };
+
+    watch([SingleTransaction, SinglePointTransaction, transactionGroup], () => {
+      setupPageContent();
+    });
+
+    onIonViewWillEnter(() => {
+      setupPageContent();
+    });
+
+    onMounted(() => {
+      Logic.Wallet.watchProperty("SingleTransaction", SingleTransaction);
+      Logic.Wallet.watchProperty(
+        "SinglePointTransaction",
+        SinglePointTransaction
+      );
+      setupPageContent();
+    });
+
     return {
       Logic,
       transactionDetails,
+      pageSetup,
+      currencySymbol,
     };
   },
 });

@@ -10,7 +10,7 @@
     >
       <!-- Top section -->
       <div
-        :class="`w-full flex flex-row items-center justify-between py-4 px-4 sticky top-0 z-10 ${
+        :class="`w-full flex flex-row items-center justify-between py-4 px-4 sticky top-0 z-50 ${
           isScrolled
             ? 'bg-[#008651] transition-colors duration-300'
             : 'bg-transparent transition-colors duration-300'
@@ -18,7 +18,7 @@
       >
         <app-image-loader
           :photo-url="
-            AuthUser?.profile?.profile_picture || '/images/profile-image.svg'
+            AuthUser?.profile?.business?.logo || '/images/profile-image.svg'
           "
           custom-class="h-[35px] w-[35px] rounded-full"
           @click="Logic.Common.GoToRoute('/profile')"

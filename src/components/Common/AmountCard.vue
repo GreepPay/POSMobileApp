@@ -20,7 +20,7 @@
         <app-header-text
           class="text-center !text-white !text-3xl !font-normal pt-1"
         >
-          ₺
+          {{ currencySymbol }}
           {{
             !Number.isNaN(parseFloat(amount?.toString() || ""))
               ? Logic.Common.convertToMoney(amount, false, "", false)
@@ -63,6 +63,11 @@ export default defineComponent({
     isWrapper: {
       type: Boolean,
       default: false,
+    },
+    currencySymbol: {
+      type: String,
+      required: false,
+      default: "₺",
     },
   },
   name: "AuthSetupVerifyEmail",

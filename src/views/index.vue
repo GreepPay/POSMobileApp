@@ -16,6 +16,7 @@
                   :default_currency="defaultCurrency"
                   v-model="selectedCurrency"
                   v-model:model-symbol="currencySymbol"
+                  :availableCurrencies="availableCurrencies"
                 />
               </div>
 
@@ -89,7 +90,7 @@
             >
           </div>
 
-          <div v-if="true" class="py-4 !pt-2">
+          <div v-if="!recentTransactions.length" class="py-4 !pt-2">
             <app-empty-state
               title="No transactions"
               description="Collect Payments, Make Withdrawals, and Redeem the GRP Tokens you’ve earned."
@@ -101,7 +102,13 @@
               v-for="transaction in recentTransactions"
               :key="transaction.id"
               :data="transaction"
-              @click="Logic.Common.GoToRoute('/transaction/' + transaction.id)"
+              @click="
+                Logic.Common.GoToRoute(
+                  '/transaction/' +
+                    transaction.id +
+                    `?group=${transaction.transaction_group}`
+                )
+              "
             />
           </template>
 
@@ -114,7 +121,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, reactive } from "vue";
+import { defineComponent, reactive, watch } from "vue";
 import {
   AppImageLoader,
   AppNormalText,
@@ -130,13 +137,12 @@ import { onMounted } from "vue";
 import { getPlatforms, onIonViewDidEnter } from "@ionic/vue";
 import { User } from "@greep/logic/src/gql/graphql";
 import { computed } from "vue";
-
-enum TransactionType {
-  Sent = "sent",
-  Received = "received",
-  Added = "added",
-  Redeemed = "redeemed",
-}
+import { availableCurrencies } from "../composable";
+import {
+  getTransaction,
+  getPointTransaction,
+  TransactionType,
+} from "../composable/financials";
 
 export default defineComponent({
   name: "IndexPage",
@@ -169,14 +175,29 @@ export default defineComponent({
         ignoreProperty: false,
         silentUpdate: true,
       },
+      {
+        domain: "Wallet",
+        property: "CurrentGlobalExchangeRate",
+        method: "GetGlobalExchangeRate",
+        params: [],
+        requireAuth: true,
+        ignoreProperty: false,
+        silentUpdate: true,
+      },
     ],
   },
   setup() {
-    const defaultCurrency = ref("USD");
+    const defaultCurrency = ref(Logic.Auth.AuthUser?.profile?.default_currency);
 
-    const selectedCurrency = ref("USD");
+    const selectedCurrency = ref(
+      Logic.Auth.AuthUser?.profile?.default_currency
+    );
 
-    const currencySymbol = ref("$");
+    const currencySymbol = ref(
+      availableCurrencies.find(
+        (currency) => currency.code === selectedCurrency.value
+      )?.symbol
+    );
 
     const ManyTransactions = ref(Logic.Wallet.ManyTransactions);
     const ManyPointTransactions = ref(Logic.Wallet.ManyPointTransactions);
@@ -193,65 +214,11 @@ export default defineComponent({
         type: TransactionType;
         transactionType: "credit" | "debit";
         date: string;
+        currencySymbol: string;
+        subAmount: string;
+        transaction_group: string;
       }[]
-    >([
-      {
-        id: 1,
-        title: "Payment to John Doe",
-        amount: 50.0,
-        type: TransactionType.Sent,
-        transactionType: "debit",
-        date: "2024-01-26",
-      },
-      {
-        id: 2,
-        title: "Received from Jane Smith",
-        amount: 100.0,
-        type: TransactionType.Received,
-        transactionType: "credit",
-        date: "2024-01-25",
-      },
-      {
-        id: 3,
-        title: "Points Transfer",
-        amount: 200.0,
-        type: TransactionType.Sent,
-        transactionType: "debit",
-        date: "2024-01-24",
-      },
-      {
-        id: 4,
-        title: "Redeemed Points",
-        amount: 25.0,
-        type: TransactionType.Redeemed,
-        transactionType: "credit",
-        date: "2024-01-23",
-      },
-      {
-        id: 5,
-        title: "Payment to Alice Johnson",
-        amount: 75.0,
-        type: TransactionType.Sent,
-        transactionType: "debit",
-        date: "2024-01-22",
-      },
-      {
-        id: 6,
-        title: "Received from Bob Williams",
-        amount: 150.0,
-        type: TransactionType.Received,
-        transactionType: "credit",
-        date: "2024-01-21",
-      },
-      {
-        id: 7,
-        title: "Gift Card Purchase",
-        amount: 300.0,
-        type: TransactionType.Sent,
-        transactionType: "debit",
-        date: "2024-01-20",
-      },
-    ]);
+    >([]);
 
     const setPageDefaults = () => {
       defaultCurrency.value =
@@ -259,13 +226,55 @@ export default defineComponent({
       selectedCurrency.value = defaultCurrency.value;
     };
 
-    onIonViewDidEnter(() => {
-      setPageDefaults();
-    });
-
     const currentPlatform = computed(() => {
       return getPlatforms()[0];
     });
+
+    const setTransactionData = () => {
+      recentTransactions.length = 0;
+
+      // Normal transactions
+      ManyTransactions.value?.data?.forEach((data) => {
+        const transaction = getTransaction(
+          data,
+          selectedCurrency.value,
+          currencySymbol.value || ""
+        );
+        recentTransactions.push(transaction);
+      });
+
+      // Point transactions
+      ManyPointTransactions.value?.data?.forEach((data) => {
+        const pointTransaction = getPointTransaction(
+          data,
+          currencySymbol.value || ""
+        );
+        recentTransactions.push(pointTransaction);
+      });
+
+      // Sort transactions desc by date
+      recentTransactions.sort(
+        (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+      );
+    };
+
+    onIonViewDidEnter(() => {
+      setPageDefaults();
+      setTransactionData();
+      Logic.Auth.GetAuthUser();
+    });
+
+    watch(
+      [
+        ManyPointTransactions,
+        ManyTransactions,
+        currencySymbol,
+        CurrentGlobalExchangeRate,
+      ],
+      () => {
+        setTransactionData();
+      }
+    );
 
     onMounted(() => {
       // Register reactive data
@@ -280,6 +289,7 @@ export default defineComponent({
       );
       Logic.Auth.watchProperty("AuthUser", AuthUser);
       setPageDefaults();
+      setTransactionData();
     });
 
     return {
@@ -291,6 +301,7 @@ export default defineComponent({
       AuthUser,
       CurrentGlobalExchangeRate,
       currentPlatform,
+      availableCurrencies,
     };
   },
 });

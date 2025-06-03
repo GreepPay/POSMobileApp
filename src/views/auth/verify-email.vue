@@ -17,7 +17,7 @@
           class="!py-4 col-span-4"
           @click="handleNext"
         >
-          Next
+          Continue
         </app-button>
       </div>
     </subpage-layout>

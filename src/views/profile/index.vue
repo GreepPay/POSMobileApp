@@ -8,7 +8,7 @@
             <div class="w-[96px]">
               <app-image-loader
                 :photo-url="
-                  AuthUser?.profile?.profile_picture ||
+                  AuthUser?.profile?.business?.logo ||
                   '/images/profile-image.svg'
                 "
                 custom-class="!h-[96px] !w-[96px]"
@@ -117,6 +117,12 @@ export default defineComponent({
         logo: "personal-info",
         logo_size: "!h-[22px]",
         route: "/profile/info",
+      },
+      {
+        title: "Business Info",
+        logo: "business-info",
+        logo_size: "!h-[22px]",
+        route: "/profile/business-info",
       },
       {
         title: "Default Currency",

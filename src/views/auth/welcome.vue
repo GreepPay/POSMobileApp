@@ -11,7 +11,7 @@
       <div class="w-full flex flex-row items-center justify-center pt-4">
         <app-image-loader
           :photo-url="
-            AuthUser?.profile?.profile_picture || '/images/profile-image.svg'
+            AuthUser?.profile?.business?.logo || '/images/profile-image.svg'
           "
           class="h-[96px] w-[96px] rounded-full xs:w-[80px] xs:h-[80px]"
         />
