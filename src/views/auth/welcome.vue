@@ -94,7 +94,7 @@ export default defineComponent({
     const AuthUser = ref<User>(Logic.Auth.AuthUser);
 
     const formData = reactive({
-      passcode: "12345",
+      passcode: "",
     });
 
     watch(formData, async () => {
