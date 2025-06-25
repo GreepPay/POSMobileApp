@@ -33,76 +33,11 @@
         <!-- P2P ads -->
         <div class="w-full flex flex-col px-4">
           <template v-for="(item, index) in p2pAdverts" :key="index">
-            <div
-              class="px-4 py-4 mb-3 border-[1.5px] rounded-[12px] border-[#E0E2E4] flex flex-col"
+            <app-exchange-ad
+              :item="item"
               @click="Logic.Common.GoToRoute('/chat/2')"
             >
-              <div class="flex flex-col pb-3 border-b-[1px] border-[#E0E2E4]">
-                <app-header-text>
-                  {{ item.currency.symbol
-                  }}{{
-                    Logic.Common.convertToMoney(item.rate_per_usd, true, "")
-                  }}
-                </app-header-text>
-                <app-normal-text class="!text-gray-500 !text-sm">
-                  For 1 USDC
-                </app-normal-text>
-              </div>
-
-              <!-- Limit -->
-              <div class="flex flex-col py-3 border-b-[1px] border-[#E0E2E4]">
-                <div class="flex flex-col">
-                  <app-normal-text class="!text-gray-500 pb-1">
-                    Cash Limit
-                  </app-normal-text>
-                  <app-normal-text class="!text-sm font-[500]">
-                    {{ item.currency.symbol
-                    }}{{
-                      Logic.Common.convertToMoney(item.limit.min, true, "")
-                    }}
-                    - {{ item.currency.symbol
-                    }}{{
-                      Logic.Common.convertToMoney(item.limit.max, true, "")
-                    }}
-                  </app-normal-text>
-                </div>
-
-                <div class="flex flex-col pt-3">
-                  <app-normal-text class="!text-gray-500 pb-1">
-                    Payout Options
-                  </app-normal-text>
-                  <app-normal-text class="!text-sm font-[500]">
-                    {{ item.payout_options.join(", ") }}
-                  </app-normal-text>
-                </div>
-              </div>
-
-              <!-- Trader -->
-              <div class="flex flex-col pt-3">
-                <div class="w-full flex flex-row items-center">
-                  <div class="w-[43px]">
-                    <app-avatar :src="item.trader.photo_url" :size="40" />
-                  </div>
-                  <div class="flex flex-col space-y-[1px] pl-1">
-                    <app-normal-text class="!font-semibold !line-clamp-1">
-                      {{ item.trader.name }}
-                    </app-normal-text>
-                    <div class="flex flex-row space-x-1 items-center">
-                      <app-normal-text class="!text-gray-500 !line-clamp-1">
-                        {{ item.trader.no_of_trades }} trade{{
-                          parseFloat(item.trader.no_of_trades) > 1 ? "s" : ""
-                        }}
-                      </app-normal-text>
-                      <span class="h-[4px] w-[4px] rounded-full !bg-gray-500">
-                      </span>
-                      <app-normal-text class="!text-gray-500 !line-clamp-1">
-                        {{ item.trader.success_rate }} success
-                      </app-normal-text>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+            </app-exchange-ad>
           </template>
           <!-- Spacer -->
           <div class="!h-[50px] pt-5"></div>
@@ -114,12 +49,7 @@
 
 <script lang="ts">
 import { defineComponent } from "vue";
-import {
-  AppNormalText,
-  AppSelect,
-  AppHeaderText,
-  AppAvatar,
-} from "@greep/ui-components";
+import { AppSelect, AppExchangeAd } from "@greep/ui-components";
 import { Logic } from "@greep/logic";
 import { reactive } from "vue";
 import { ref } from "vue";
@@ -128,10 +58,8 @@ import { SelectOption } from "@greep/ui-components/src/types";
 export default defineComponent({
   name: "WithdrawP2PMarketPage",
   components: {
-    AppHeaderText,
-    AppNormalText,
     AppSelect,
-    AppAvatar,
+    AppExchangeAd,
   },
   setup() {
     const selectedMethod = ref<string>("cash");
@@ -178,6 +106,7 @@ export default defineComponent({
         currency: {
           code: string;
           symbol: string;
+          name: string;
         };
         rate_per_usd: number;
         limit: {
@@ -197,6 +126,7 @@ export default defineComponent({
         currency: {
           code: "TRY",
           symbol: "₺",
+          name: "Lira (₺)",
         },
         rate_per_usd: 30.0,
         limit: {
@@ -215,6 +145,7 @@ export default defineComponent({
         currency: {
           code: "TRY",
           symbol: "₺",
+          name: "Lira (₺)",
         },
         rate_per_usd: 30.5,
         limit: {
@@ -233,6 +164,7 @@ export default defineComponent({
         currency: {
           code: "TRY",
           symbol: "₺",
+          name: "Lira (₺)",
         },
         rate_per_usd: 29.8,
         limit: {
@@ -251,6 +183,7 @@ export default defineComponent({
         currency: {
           code: "TRY",
           symbol: "₺",
+          name: "Lira (₺)",
         },
         rate_per_usd: 30.2,
         limit: {
@@ -269,6 +202,7 @@ export default defineComponent({
         currency: {
           code: "TRY",
           symbol: "₺",
+          name: "Lira (₺)",
         },
         rate_per_usd: 30.1,
         limit: {
@@ -287,6 +221,7 @@ export default defineComponent({
         currency: {
           code: "TRY",
           symbol: "₺",
+          name: "Lira (₺)",
         },
         rate_per_usd: 30.3,
         limit: {

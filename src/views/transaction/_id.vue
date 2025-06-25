@@ -56,9 +56,9 @@
       <!-- Bottom button -->
       <div
         class="w-full fixed bg-white dark:bg-black bottom-0 left-0 pt-4 px-4"
-        style="
-          padding-bottom: calc(env(safe-area-inset-bottom) + 16px) !important;
-        "
+        :style="`
+          ${getBottomPadding}
+        `"
       >
         <div class="w-full flex flex-col">
           <app-button variant="secondary" outlined class="!py-4"
@@ -82,7 +82,7 @@ import {
   getPointTransaction,
   getTransaction,
 } from "../../composable/financials";
-import { availableCurrencies } from "../../composable";
+import { availableCurrencies, getBottomPadding } from "../../composable";
 import { onIonViewWillEnter } from "@ionic/vue";
 import { watch } from "vue";
 import { capitalize } from "vue";
@@ -132,7 +132,7 @@ export default defineComponent({
     const transactionGroup = ref<"normal" | "point">("normal");
 
     const selectedCurrency = ref(
-      Logic.Auth.AuthUser?.profile?.default_currency
+      Logic.Auth.AuthUser?.businesses[0]?.default_currency
     );
 
     const pageSetup = reactive({
@@ -317,6 +317,7 @@ export default defineComponent({
       transactionDetails,
       pageSetup,
       currencySymbol,
+      getBottomPadding,
     };
   },
 });

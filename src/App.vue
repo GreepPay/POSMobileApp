@@ -70,8 +70,13 @@ export default defineComponent({
       if (currentAuthUser) {
         Logic.Auth.GetAuthUser();
 
-        if (localStorage.getItem("auth_passcode")) {
+        if (
+          localStorage.getItem("auth_passcode") &&
+          localStorage.getItem("auth_encrypted_data")
+        ) {
           Logic.Common.GoToRoute("/auth/welcome");
+        } else {
+          Logic.Auth.SignOut();
         }
       } else {
         // Go to start page
@@ -141,6 +146,24 @@ export default defineComponent({
         icon: "home",
         routeTag: "base",
         name: "Home",
+      },
+      {
+        path: "/p2p",
+        icon: "ads",
+        routeTag: "p2p",
+        name: "P2P",
+      },
+      // {
+      //   path: "/shop",
+      //   icon: "shop",
+      //   routeTag: "shop",
+      //   name: "Shop",
+      // },
+      {
+        path: "/events",
+        icon: "events",
+        routeTag: "events",
+        name: "Events",
       },
       {
         path: "/orders",

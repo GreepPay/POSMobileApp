@@ -19,7 +19,7 @@
               placeholder="Enter Address"
               ref="email"
               name="Email address"
-              use-floating-label
+              usePermanentFloatingLabel
               v-model="formData.email"
               :rules="[FormValidations.RequiredRule, FormValidations.EmailRule]"
             >
@@ -33,36 +33,33 @@
               placeholder="Password"
               ref="email"
               name="Password"
-              use-floating-label
+              usePermanentFloatingLabel
               v-model="formData.password"
               :rules="[FormValidations.RequiredRule]"
             >
             </app-text-field>
           </div>
         </app-form-wrapper>
-      </div>
 
-      <!-- Bottom section -->
-      <div
-        class="w-full flex flex-col px-4 fixed z-50 bottom-0 left-0 pt-4 bg-white"
-        style="padding-bottom: calc(env(safe-area-inset-bottom) + 16px)"
-      >
-        <app-button
-          variant="secondary"
-          class="!py-4 col-span-4"
-          @click="handleNext"
-          :loading="loadingState"
-        >
-          Login
-        </app-button>
+        <!-- Bottom section -->
+        <div class="w-full flex flex-col pt-0 bg-white">
+          <app-button
+            variant="secondary"
+            class="!py-4 col-span-4"
+            @click="handleNext"
+            :loading="loadingState"
+          >
+            Login
+          </app-button>
 
-        <app-normal-text
-          class="pt-3 !text-center !text-[#999999]"
-          @click="Logic.Common.GoToRoute('/auth/signup')"
-        >
-          Don’t have an account?
-          <span class="font-[500] !text-primary">Sign Up</span>
-        </app-normal-text>
+          <app-normal-text
+            class="pt-3 !text-center !text-[#999999]"
+            @click="Logic.Common.GoToRoute('/auth/signup')"
+          >
+            Don’t have an account?
+            <span class="font-[500] !text-primary">Sign Up</span>
+          </app-normal-text>
+        </div>
       </div>
     </subpage-layout>
   </app-wrapper>
@@ -80,6 +77,7 @@ import { Logic } from "@greep/logic";
 import { reactive } from "vue";
 import { ref } from "vue";
 import SSO from "../../components/Auth/SSO.vue";
+import { User } from "@greep/logic/src/gql/graphql";
 
 export default defineComponent({
   name: "LoginPage",
@@ -116,9 +114,90 @@ export default defineComponent({
           await Logic.Auth.SignIn(true);
           await Logic.Auth.GetAuthUser();
           loadingState.value = false;
+
+          const authUser: User = Logic.Auth.AuthUser;
+
+          // Check if user has a profile set
+          if (!authUser?.email_verified_at) {
+            Logic.Auth.ResendEmailOTP(
+              Logic.Auth.AuthUser?.email || localStorage.getItem("auth_email")
+            );
+            // Save auth email and pass
+            localStorage.setItem(
+              "auth_email",
+              Logic.Auth.SignInForm?.email || ""
+            );
+            localStorage.setItem(
+              "auth_pass",
+              Logic.Auth.SignInForm?.password || ""
+            );
+            Logic.Common.GoToRoute("/auth/verify-email");
+            return;
+          }
+
+          // Check if user has a profile set
+          if (!Logic.Auth.AuthUser?.first_name) {
+            // Save auth email and pass
+            localStorage.setItem(
+              "auth_email",
+              Logic.Auth.SignInForm?.email || ""
+            );
+            localStorage.setItem(
+              "auth_pass",
+              Logic.Auth.SignInForm?.password || ""
+            );
+            Logic.Common.GoToRoute("/auth/setup-account");
+            return;
+          }
+
+          if (authUser.businesses?.length == 0) {
+            // Save auth email and pass
+            localStorage.setItem(
+              "auth_email",
+              Logic.Auth.SignInForm?.email || ""
+            );
+            localStorage.setItem(
+              "auth_pass",
+              Logic.Auth.SignInForm?.password || ""
+            );
+            Logic.Common.GoToRoute(`/auth/setup`);
+            return;
+          } else {
+            const businesses = authUser.businesses;
+            if (
+              businesses &&
+              businesses.some((business) => business.wallet === null)
+            ) {
+              const businessWithoutWallet = businesses.find(
+                (item) => !item.wallet
+              );
+              Logic.Common.GoToRoute(
+                `/auth/setup?business=${businessWithoutWallet?.id}`
+              );
+              return;
+            }
+          }
+
+          if (authUser.transaction_pin) {
+            const authLoginData = {
+              email: formData.email,
+              password: formData.password,
+            };
+
+            // Encrypt data
+            const encryptedData = Logic.Common.encryptData(
+              authLoginData,
+              authUser.transaction_pin
+            );
+
+            localStorage.setItem("auth_encrypted_data", encryptedData);
+            localStorage.setItem("auth_passcode", authUser.transaction_pin);
+          }
+
           // Check if passcode has been set
           if (localStorage.getItem("auth_passcode")) {
             Logic.Common.GoToRoute("/");
+            return;
           } else {
             // Save auth email and pass
             localStorage.setItem(
@@ -130,6 +209,7 @@ export default defineComponent({
               Logic.Auth.SignInForm?.password || ""
             );
             Logic.Common.GoToRoute("/auth/set-passcode");
+            return;
           }
         } catch {
           loadingState.value = false;

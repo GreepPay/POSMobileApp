@@ -7,7 +7,9 @@
         </div>
       </template>
 
-      <div class="w-full flex flex-col items-center justify-center px-4">
+      <div
+        class="w-full flex flex-col items-center justify-center px-4 h-full -mt-[35%]"
+      >
         <app-image-loader
           class="w-full h-fit rounded-[32px] flex flex-col relative justify-center items-center space-y-5 px-4 py-5 xs:!py-4 bg-[linear-gradient(359.13deg,#10BB76_25.37%,#008651_99.25%)]"
           :photoUrl="''"
@@ -38,15 +40,12 @@
           </div>
         </app-image-loader>
 
-        <div
-          class="w-full flex flex-col items-center justify-center flex-grow pt-10"
-        >
-          <app-normal-text
-            class="text-center font-semibold !text-base pb-3 z-30"
-          >
+        <div class="w-full flex flex-col items-center justify-center !pt-7">
+          <app-normal-text class="text-center font-semibold !text-base z-30">
             Scan QR code to pay
           </app-normal-text>
-          <div class="w-[90%] h-[300px] xs:h-[250px]">
+          <div class="!h-[20px]"></div>
+          <div class="w-[90%] h-[300px] xs:h-[250px] mt-3">
             <div class="w-full h-full flex items-center justify-center">
               <app-qr-code v-if="qrCodeData" :data="qrCodeData" />
             </div>
@@ -57,9 +56,9 @@
       <!-- Bottom button -->
       <div
         class="w-full fixed bg-white dark:bg-black bottom-0 left-0 pt-4 px-4 grid-cols-12 grid gap-3"
-        style="
-          padding-bottom: calc(env(safe-area-inset-bottom) + 16px) !important;
-        "
+        :style="`
+          ${getBottomPadding}
+        `"
       >
         <div class="col-span-4 flex flex-col">
           <app-button
@@ -100,7 +99,7 @@ import { onMounted } from "vue";
 import { onIonViewWillEnter } from "@ionic/vue";
 import { computed } from "vue";
 import { User } from "@greep/logic/src/gql/graphql";
-import { availableCurrencies } from "../../composable";
+import { availableCurrencies, getBottomPadding } from "../../composable";
 
 export default defineComponent({
   name: "RequestQRPage",
@@ -128,14 +127,14 @@ export default defineComponent({
     const qrCodeData = computed(() => {
       return JSON.stringify({
         amount: amount.value,
-        currency: AuthUser.value?.profile?.default_currency || "TRY",
+        currency: AuthUser.value?.businesses[0]?.default_currency || "TRY",
         uuid: AuthUser.value?.uuid || "",
       });
     });
 
     const currentCurrency = computed(() => {
       return availableCurrencies.filter(
-        (item) => item.code == AuthUser.value?.profile?.default_currency
+        (item) => item.code == AuthUser.value?.businesses[0]?.default_currency
       )[0]?.symbol;
     });
 
@@ -159,6 +158,7 @@ export default defineComponent({
       qrCodeData,
       continueToNext,
       currentCurrency,
+      getBottomPadding,
     };
   },
 });

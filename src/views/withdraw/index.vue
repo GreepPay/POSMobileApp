@@ -101,9 +101,9 @@
       <!-- Bottom button -->
       <div
         class="w-full fixed bg-white dark:bg-black bottom-0 left-0 pt-4 px-4"
-        style="
-          padding-bottom: calc(env(safe-area-inset-bottom) + 16px) !important;
-        "
+        :style="`
+          ${getBottomPadding}
+        `"
       >
         <div class="w-full flex flex-col">
           <app-button
@@ -127,10 +127,8 @@
         "
         :innerClass="'!px-0 !pt-0'"
       >
-        <div
-          class="w-full flex flex-col px-4 pb-4 !overflow-y-auto !max-h-[400px]"
-        >
-          <div class="w-full flex flex-col py-3 bg-white sticky top-0 left-0">
+        <div class="w-full flex flex-col pb-4 !overflow-y-auto !max-h-[400px]">
+          <div class="w-full flex flex-col pb-3 bg-white sticky top-0 left-0">
             <app-header-text class="text-left !text-lg">
               Choose Method
             </app-header-text>
@@ -195,6 +193,7 @@
             showRedirectInfoModal = false;
           }
         "
+        :contentClass="'!px-0'"
       >
         <div class="w-full flex flex-col items-center pt-4">
           <img :src="partnerLogoUrl" class="!h-[70px]" />
@@ -245,7 +244,10 @@ import { Logic } from "@greep/logic";
 import { User, WithdrawMethod } from "@greep/logic/src/gql/graphql";
 import { onMounted } from "vue";
 import { computed } from "vue";
-import { withdrawalAvailableCurrencies } from "../../composable";
+import {
+  getBottomPadding,
+  withdrawalAvailableCurrencies,
+} from "../../composable";
 import { Browser } from "@capacitor/browser";
 
 interface BridgeKYCInitiaionResponse {
@@ -365,10 +367,12 @@ export default defineComponent({
 
     const modalIsOpen = ref(false);
 
-    const defaultCurrency = ref(Logic.Auth.AuthUser?.profile?.default_currency);
+    const defaultCurrency = ref(
+      Logic.Auth.AuthUser?.businesses[0]?.default_currency
+    );
 
     const selectedCurrency = ref(
-      Logic.Auth.AuthUser?.profile?.default_currency
+      Logic.Auth.AuthUser?.businesses[0]?.default_currency
     );
 
     const currencySymbol = ref(
@@ -629,7 +633,7 @@ export default defineComponent({
 
     const setPageDefaults = () => {
       defaultCurrency.value =
-        Logic.Auth.AuthUser?.profile?.default_currency || "USD";
+        Logic.Auth.AuthUser?.businesses[0]?.default_currency || "USD";
       selectedCurrency.value = defaultCurrency.value;
     };
 
@@ -670,6 +674,7 @@ export default defineComponent({
       partnerName,
       modalRedirectButtonCopy,
       redirectButtonAction,
+      getBottomPadding,
     };
   },
 });

@@ -115,7 +115,7 @@ export default defineComponent({
       }
     };
 
-    const otpIsFilledConfirm = () => {
+    const otpIsFilledConfirm = async () => {
       if (confirmPinValue.value) {
         if (confirmPinValue.value == pinValue.value) {
           const authLoginData = {
@@ -129,6 +129,19 @@ export default defineComponent({
               authLoginData,
               pinValue.value
             );
+
+            Logic.User.UpdateProfileForm = {
+              auth_passcode: pinValue.value,
+            };
+
+            Logic.Common.showLoader({
+              show: true,
+              loading: true,
+            });
+
+            await Logic.User.UpdateProfile();
+
+            Logic.Common.hideLoader();
 
             // Save encrypted data to local storage
             localStorage.setItem("auth_encrypted_data", encryptedData);

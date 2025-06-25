@@ -3,7 +3,7 @@
     <ion-page
       :registerIonPage="registerIonPage"
       id="ionPageApp"
-      :class="`${innerClassRef} h-full ${
+      :class="`${innerClassRef}  ${
         currentPlatform == 'ios' || currentPlatform == 'android'
           ? `${mobilePadding}`
           : ''
@@ -12,7 +12,7 @@
       <ion-content
         :scroll-y="false"
         id="mainContent"
-        :class="`${innerClassRef} h-full`"
+        :class="`${innerClassRef} `"
       >
         <slot />
       </ion-content>
