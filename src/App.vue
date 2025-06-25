@@ -57,10 +57,12 @@ export default defineComponent({
     localStorage.setItem("app_version", "1.00");
 
     // Set app url
+    console.log('(import.meta as any).env.VITE_API_URL', (import.meta as any).env.VITE_API_URL);
+    
     Logic.Common.SetApiUrl(
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore
-      (import.meta as any).env.VITE_API_URL ?? "http://localhost:3000/graphql"
+      'https://api-pos-dev.greep.io/graphql' ?? "http://localhost:3000/graphql"
     );
 
     const handleMountActions = () => {

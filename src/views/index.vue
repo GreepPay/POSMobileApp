@@ -351,8 +351,8 @@ export default defineComponent({
         soon: false,
       },
       {
-        icon: "quick-actions/assets",
-        route_path: "#",
+        icon: "quick-actions/graph",
+        route_path: "/insights",
         name: "Insights",
         soon: true,
       },
@@ -448,6 +448,7 @@ export default defineComponent({
   },
 });
 </script>
+
 <style scoped>
 #home_transactions:before {
   content: "";
