@@ -513,9 +513,9 @@
       <!-- Bottom button -->
       <div
         class="w-full fixed bg-white dark:bg-black bottom-0 left-0 pt-4 px-4"
-        style="
-          padding-bottom: calc(env(safe-area-inset-bottom) + 16px) !important;
-        "
+        :style="`
+          ${getBottomPadding}
+        `"
       >
         <div
           :class="`w-full flex flex-col ${canMoveForward ? '' : 'opacity-50'}`"
@@ -554,6 +554,7 @@ import { computed } from "vue";
 import { watch } from "vue";
 import { Country } from "country-state-city";
 import countryIso3Code from "../../assets/countryIso3Code.json";
+import { getBottomPadding } from "../../composable";
 
 interface MyKoboFields {
   first_name: {
@@ -916,6 +917,7 @@ export default defineComponent({
       photoProofResidence,
       proofOfLiveness,
       countriesForPassport,
+      getBottomPadding,
     };
   },
   data() {

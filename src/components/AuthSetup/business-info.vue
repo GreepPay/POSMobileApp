@@ -1,5 +1,7 @@
 <template>
-  <div class="w-full flex flex-col items-center justify-start h-full space-y-6">
+  <div
+    class="w-full flex flex-col items-center justify-start h-full space-y-6 !mb-[130px]"
+  >
     <!-- Form -->
     <app-form-wrapper
       ref="formComponent"
@@ -7,14 +9,6 @@
       class="w-full flex flex-col space-y-[23px] h-full"
       v-if="!hideContent"
     >
-      <!-- Info box -->
-      <app-info-box v-if="!authUser">
-        <app-normal-text custom-class="!leading-5">
-          <span class="font-semibold">Let's keep rolling!</span>
-          Showcase know your business and tell us where it is located.
-        </app-normal-text>
-      </app-info-box>
-
       <div class="w-full flex flex-row pb-3">
         <div
           :style="`background-image: url(${photoUrl});  background-size: cover;
@@ -39,67 +33,124 @@
       <app-text-field
         :has-title="false"
         type="text"
-        placeholder="Business Name *"
+        placeholder="Your legal business name"
         ref="businessName"
-        name="Business Name"
+        name="Name"
         v-model="formData.businessName"
-        use-floating-label
+        usePermanentFloatingLabel
         :rules="[FormValidations.RequiredRule]"
       >
       </app-text-field>
 
-      <app-text-field
-        :has-title="false"
-        type="text"
-        placeholder="Business Category *"
+      <app-select
+        :placeholder="'Select business category'"
+        :hasTitle="false"
+        :paddings="'py-4 !px-4'"
+        :options="ecommerceCategories"
+        name="Category"
         ref="businessCategory"
-        name="Business Category"
+        usePermanentFloatingLabel
         v-model="formData.businessCategory"
-        use-floating-label
-        :rules="[FormValidations.RequiredRule]"
+        auto-complete
       >
-      </app-text-field>
+      </app-select>
 
       <app-text-field
         :has-title="false"
         type="text"
-        placeholder="Business Description *"
+        placeholder="Enter your business details"
         ref="businessDescription"
-        name="Business Description"
+        name="Description"
         v-model="formData.businessDescription"
-        use-floating-label
+        usePermanentFloatingLabel
         is-textarea
         :max-character="1500"
         :rules="[FormValidations.RequiredRule]"
       >
       </app-text-field>
 
-      <div class="w-full grid grid-cols-2 gap-3">
-        <app-select
-          :placeholder="'Country'"
-          :hasTitle="false"
-          :paddings="'py-4 !px-3'"
-          :options="countries"
-          ref="country"
-          use-floating-label
-          v-model="countryCode"
-          auto-complete
+      <div class="w-full flex flex-col">
+        <app-normal-text
+          class="w-full !font-[500] pt-1 mb-6 !text-sm !text-gray-500"
         >
-        </app-select>
+          Business Location
+        </app-normal-text>
 
-        <app-select
-          v-if="showStateSelector"
-          :placeholder="'State'"
-          :hasTitle="false"
-          :paddings="'py-4 !px-3'"
-          :options="states"
-          ref="state"
-          v-model="stateIsoCode"
-          use-floating-label
-          auto-complete
-        >
-        </app-select>
+        <div class="w-full flex flex-col">
+          <div class="w-full flex flex-col pb-6">
+            <app-select
+              :placeholder="'Select country'"
+              :hasTitle="false"
+              :paddings="'py-4 !px-4'"
+              :options="countries"
+              name="Country"
+              ref="country"
+              usePermanentFloatingLabel
+              v-on:update:model-value="
+                (data) => {
+                  formData.country = data;
+                }
+              "
+              v-model="countryCode"
+              auto-complete
+            >
+            </app-select>
+          </div>
+          <div class="w-full flex flex-col pb-6">
+            <app-select
+              v-if="showStateSelector"
+              :placeholder="'Select state'"
+              :hasTitle="false"
+              :paddings="'py-4 !px-4'"
+              :options="states"
+              ref="state"
+              name="State"
+              v-on:update:model-value="
+                (data) => {
+                  formData.state = data;
+                }
+              "
+              v-model="stateIsoCode"
+              usePermanentFloatingLabel
+              auto-complete
+            >
+            </app-select>
+          </div>
+        </div>
       </div>
+
+      <!-- Info box -->
+      <app-info-box>
+        <app-normal-text custom-class="!leading-5">
+          Address below is for where we pickup your items; we handle your
+          delivery.
+        </app-normal-text>
+      </app-info-box>
+
+      <app-text-field
+        :has-title="false"
+        type="text"
+        placeholder="Enter full business address"
+        ref="businessAddress"
+        name="Address"
+        v-model="formData.address"
+        usePermanentFloatingLabel
+        :rules="[FormValidations.RequiredRule]"
+      >
+      </app-text-field>
+
+      <app-text-field
+        :has-title="false"
+        type="text"
+        placeholder="Optional helpful address info"
+        ref="businessAddressNote"
+        name="Address Note"
+        v-model="formData.address_note"
+        usePermanentFloatingLabel
+        is-textarea
+        :rules="[FormValidations.RequiredRule]"
+      >
+      </app-text-field>
 
       <!-- Spacer -->
       <div class="h-[30px]"></div>
@@ -116,14 +167,14 @@ import {
   AppTextField,
   AppInfoBox,
   AppNormalText,
-  AppSelect,
   AppIcon,
   AppFileAttachment,
+  AppSelect,
 } from "@greep/ui-components";
 import { Logic } from "@greep/logic";
-import { Country, State } from "country-state-city";
 import { SelectOption } from "@greep/ui-components/src/types";
 import { User } from "@greep/logic/src/gql/graphql";
+import { Country, State } from "country-state-city";
 
 export default defineComponent({
   components: {
@@ -155,7 +206,34 @@ export default defineComponent({
       country: "",
       state: "",
       photo: null,
+      address: "",
+      address_note: "",
     });
+
+    const ecommerceCategories = reactive<SelectOption[]>([
+      { key: "payment-solutions", value: "Payment Solutions" },
+      { key: "currency-exchange", value: "Currency Exchange" },
+      { key: "fashion-and-apparel", value: "Fashion & Apparel" },
+      { key: "electronics", value: "Electronics" },
+      { key: "home-and-kitchen", value: "Home & Kitchen" },
+      { key: "beauty-and-personal-care", value: "Beauty & Personal Care" },
+      { key: "health-and-wellness", value: "Health & Wellness" },
+      { key: "sports-and-outdoors", value: "Sports & Outdoors" },
+      { key: "baby-and-kids", value: "Baby & Kids" },
+      { key: "automotive", value: "Automotive" },
+      { key: "books-and-media", value: "Books & Media" },
+      { key: "food-and-grocery", value: "Food & Grocery" },
+      { key: "pet-supplies", value: "Pet Supplies" },
+      { key: "jewelry-and-accessories", value: "Jewelry & Accessories" },
+      { key: "office-supplies", value: "Office Supplies" },
+      { key: "toys-and-games", value: "Toys & Games" },
+      { key: "furniture", value: "Furniture" },
+      { key: "tools-and-diy", value: "Tools & DIY" },
+      { key: "arts-and-crafts", value: "Arts & Crafts" },
+      { key: "music-and-instruments", value: "Music & Instruments" },
+      { key: "travel-and-luggage", value: "Travel & Luggage" },
+      { key: "green-products", value: "Green Products" },
+    ]);
 
     const showStateSelector = ref(true);
     const formComponent = ref<any>(null);
@@ -172,37 +250,15 @@ export default defineComponent({
       countries.push(
         ...allCountries.map((country) => ({
           key: country.isoCode,
-          value: ` ${country.flag} ${country.name}`,
-          extras: country.name,
+          value: `${country.flag} ${country.name}`,
           extraInfo: "",
         }))
       );
     };
 
-    const setStates = () => {
-      if (countryCode.value) {
-        const allStates = State.getStatesOfCountry(countryCode.value);
-        states.length = 0;
-        states.push(
-          ...allStates.map((state) => ({
-            key: state.isoCode,
-            value: state.name,
-            extras: state.name,
-            extraInfo: "",
-          }))
-        );
-      }
-    };
-
     const continueWithForm = () => {
       const state = formComponent.value?.validate();
       if (state) {
-        // Proceed with form submission
-        formData.country =
-          Country.getCountryByCode(countryCode.value)?.name || "";
-        formData.state =
-          State.getStateByCodeAndCountry(stateIsoCode.value, countryCode.value)
-            ?.name || "";
         return formData;
       } else {
         return;
@@ -225,21 +281,6 @@ export default defineComponent({
           photoUrl.value = props.authUser.profile?.business?.logo;
         }
 
-        if (props.authUser.profile?.business?.country) {
-          const country = countries.find(
-            (c) => c.extras == props.authUser?.profile?.business?.country
-          );
-          countryCode.value = country?.key || "";
-        }
-
-        if (props.authUser.profile?.business?.city) {
-          setStates();
-          const state = states.find(
-            (s) => s.extras == props.authUser?.profile?.business?.city
-          );
-          stateIsoCode.value = state?.key || "";
-        }
-
         setTimeout(() => {
           hideContent.value = false;
         }, 100);
@@ -247,9 +288,23 @@ export default defineComponent({
     };
 
     onMounted(() => {
-      setCountries();
       setDefaultValues();
+      setCountries();
     });
+
+    const setStates = () => {
+      if (countryCode.value) {
+        const allStates = State.getStatesOfCountry(countryCode.value);
+        states.length = 0;
+        states.push(
+          ...allStates.map((state) => ({
+            key: state.name,
+            value: state.name,
+            extraInfo: "",
+          }))
+        );
+      }
+    };
 
     watch(countryCode, () => {
       setStates();
@@ -272,6 +327,7 @@ export default defineComponent({
       continueWithForm,
       photoUrl,
       hideContent,
+      ecommerceCategories,
     };
   },
   data() {

@@ -1,39 +1,46 @@
 <template>
   <div
     class="w-full flex flex-col lg:text-sm mdlg:text-[12px] relative h-full text-xs overflow-y-hidden font-poppins"
-    style="
-      padding-top: calc(env(safe-area-inset-top) + 0px) !important;
+    :style="`
+      padding-top: calc(env(safe-area-inset-top) + ${
+        currentPlatform == 'android' ? '8' : '0'
+      }px) !important;
       padding-bottom: calc(env(safe-area-inset-bottom) + 16px) !important;
-    "
+    `"
   >
     <div
       class="w-full flex flex-col relative h-full min-h-screen overflow-y-auto"
     >
       <!-- Top section -->
-      <div
-        class="w-full flex flex-row items-center py-4 bg-white px-4 sticky top-0 z-50"
-        :class="hideBackBtn ? ' justify-center ' : ' justify-between '"
-      >
-        <div class="flex justify-start" v-if="!hideBackBtn">
-          <app-icon
-            name="arrow-left"
-            :customClass="'h-[22px]'"
-            @click="handleBack"
-          />
+      <div class="w-full flex flex-col pt-4 bg-white sticky top-0 z-50">
+        <div
+          :class="`w-full flex flex-row items-center px-4 ${
+            hideBackBtn ? 'justify-center ' : 'justify-between'
+          }  ${hasExtraRow ? '' : 'pb-4'}`"
+        >
+          <div class="flex justify-start" v-if="!hideBackBtn">
+            <app-icon
+              name="arrow-left"
+              :customClass="'h-[22px]'"
+              @click="handleBack"
+            />
+          </div>
+
+          <div class="flex justify-center flex-1">
+            <app-header-text class="!text-left">
+              {{ title }}
+            </app-header-text>
+          </div>
+
+          <div v-if="!hasExtraTopContent" class="flex justify-start invisible">
+            <app-icon name="arrow-left" :customClass="'h-[22px]'" />
+          </div>
+          <template v-else>
+            <slot name="extra-top-content" />
+          </template>
         </div>
 
-        <div class="flex justify-center flex-1">
-          <app-header-text class="!text-left">
-            {{ title }}
-          </app-header-text>
-        </div>
-
-        <div v-if="!hasExtraTopContent" class="flex justify-start invisible">
-          <app-icon name="arrow-left" :customClass="'h-[22px]'" />
-        </div>
-        <template v-else>
-          <slot name="extra-top-content" />
-        </template>
+        <slot name="extra-row-content" />
       </div>
 
       <!-- Content -->
@@ -51,6 +58,8 @@
 import { defineComponent } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { AppHeaderText, AppIcon } from "@greep/ui-components";
+import { computed } from "vue";
+import { getPlatforms } from "@ionic/vue";
 
 export default defineComponent({
   components: {
@@ -77,6 +86,10 @@ export default defineComponent({
     hasBottomButton: {
       type: Boolean,
       default: true,
+    },
+    hasExtraRow: {
+      type: Boolean,
+      default: false,
     },
   },
   name: "SubPageLayout",
@@ -105,6 +118,10 @@ export default defineComponent({
       }
     };
 
+    const currentPlatform = computed(() => {
+      return getPlatforms()[0];
+    });
+
     const handleBack = () => {
       if (props.useEmitBack) emit("back");
       else goBack();
@@ -113,6 +130,7 @@ export default defineComponent({
     return {
       handleBack,
       goToRoute,
+      currentPlatform,
     };
   },
 });

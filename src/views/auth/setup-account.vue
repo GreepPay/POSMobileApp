@@ -31,14 +31,14 @@
             </div>
           </div>
 
-          <div class="w-full flex flex-col pb-5">
+          <div class="w-full flex flex-col pb-6">
             <app-text-field
               :has-title="false"
               type="text"
-              placeholder="First Name"
+              placeholder="James"
               ref="firstName"
               name="First Name"
-              use-floating-label
+              usePermanentFloatingLabel
               v-model="formData.first_name"
               :update-value="formData.first_name"
               :rules="[FormValidations.RequiredRule]"
@@ -46,14 +46,14 @@
             </app-text-field>
           </div>
 
-          <div class="w-full flex flex-col pb-5">
+          <div class="w-full flex flex-col pb-6">
             <app-text-field
               :has-title="false"
               type="text"
-              placeholder="Last Name"
+              placeholder="Micheal"
               ref="lastName"
               name="Last Name"
-              use-floating-label
+              usePermanentFloatingLabel
               v-model="formData.last_name"
               :update-value="formData.last_name"
               :rules="[FormValidations.RequiredRule]"
@@ -61,15 +61,16 @@
             </app-text-field>
           </div>
 
-          <div class="w-full grid grid-cols-12 gap-3 pb-5">
+          <div class="w-full grid grid-cols-12 gap-3 pb-6">
             <div class="col-span-3 flex flex-col">
               <app-select
                 :placeholder="'Country'"
                 :hasTitle="false"
                 :paddings="'py-4 !px-3'"
                 :options="countries"
+                name="Code"
                 ref="country"
-                use-floating-label
+                usePermanentFloatingLabel
                 v-model="phoneCountryCode"
                 auto-complete
               >
@@ -79,10 +80,10 @@
               <app-text-field
                 :has-title="false"
                 type="tel"
-                placeholder="Phone Number"
+                placeholder="0000000000"
                 ref="phoneNumber"
                 name="Phone Number"
-                use-floating-label
+                usePermanentFloatingLabel
                 v-model="formData.phone_number"
                 :update-value="formData.phone_number"
                 :rules="[FormValidations.RequiredRule]"
@@ -90,41 +91,17 @@
               </app-text-field>
             </div>
           </div>
-
-          <div class="w-full flex flex-col pb-5">
-            <app-select
-              :placeholder="'Country'"
-              :hasTitle="false"
-              :paddings="'py-4 !px-4'"
-              :options="countries"
-              ref="country"
-              use-floating-label
-              v-model="countryCode"
-              auto-complete
-            >
-            </app-select>
-          </div>
-          <div class="w-full flex flex-col pb-5">
-            <app-select
-              v-if="showStateSelector"
-              :placeholder="'State'"
-              :hasTitle="false"
-              :paddings="'py-4 !px-4'"
-              :options="states"
-              ref="state"
-              v-model="stateIsoCode"
-              use-floating-label
-              auto-complete
-            >
-            </app-select>
-          </div>
         </app-form-wrapper>
       </div>
 
       <!-- Bottom section -->
       <div
-        class="w-full flex flex-col px-4 fixed z-50 bottom-0 left-0 pt-4 bg-white"
-        style="padding-bottom: calc(env(safe-area-inset-bottom) + 16px)"
+        :class="`w-full flex flex-col px-4 fixed z-50 bottom-0 left-0 pt-4 bg-white ${
+          formIsValid ? '' : 'opacity-50'
+        }`"
+        :style="`
+          ${getBottomPadding}
+        `"
       >
         <app-button
           variant="secondary"
@@ -152,10 +129,12 @@ import {
 import { Logic } from "@greep/logic";
 import { reactive } from "vue";
 import { ref } from "vue";
-import { Country, State } from "country-state-city";
+import { Country } from "country-state-city";
 import { SelectOption } from "@greep/ui-components/src/types";
 import { onMounted } from "vue";
 import { watch } from "vue";
+import { computed } from "vue";
+import { getBottomPadding } from "../../composable";
 
 export default defineComponent({
   components: {
@@ -211,35 +190,54 @@ export default defineComponent({
           altValue: `${country.flag} ${country.name} (${country.phonecode})`,
           extraInfo: "",
         });
-
-        baseCountries.push({
-          key: country.isoCode,
-          value: ` ${country.flag} ${country.name}`,
-          extras: country.name,
-          extraInfo: "",
-        });
       });
     };
 
-    const setStates = () => {
-      if (countryCode.value) {
-        const allStates = State.getStatesOfCountry(countryCode.value);
-        states.length = 0;
-        states.push(
-          ...allStates.map((state) => ({
-            key: state.isoCode,
-            value: state.name,
-            extras: state.name,
-            extraInfo: "",
-          }))
-        );
+    const formIsValid = computed(() => {
+      return (
+        formData.first_name !== "" &&
+        formData.last_name !== "" &&
+        formData.phone_number !== ""
+      );
+    });
+
+    const handleNext = async () => {
+      const state = formComponent.value.validate();
+
+      if (state && formIsValid.value) {
+        if (loadingState.value) return;
+
+        try {
+          loadingState.value = true;
+
+          formData.phone_number = Logic.Form.getPhoneNumber(
+            phoneCountryCode.value,
+            formData.phone_number
+          );
+
+          Logic.User.UpdateProfileForm = {
+            first_name: formData.first_name,
+            last_name: formData.last_name,
+            phone_number: formData.phone_number,
+            country: formData.country,
+            state: formData.state,
+            profile_photo: formData.photo ? formData.photo : undefined,
+          };
+
+          await Logic.User.UpdateProfile();
+          await Logic.Auth.GetAuthUser();
+
+          Logic.Common.hideLoader();
+          Logic.Common.GoToRoute("/auth/setup");
+        } catch {
+          //
+        } finally {
+          loadingState.value = false;
+        }
       }
     };
 
-    const handleNext = async () => {};
-
     watch(countryCode, () => {
-      setStates();
       showStateSelector.value = false;
       setTimeout(() => {
         showStateSelector.value = true;
@@ -265,6 +263,8 @@ export default defineComponent({
       stateIsoCode,
       baseCountries,
       states,
+      formIsValid,
+      getBottomPadding,
     };
   },
   data() {

@@ -1,6 +1,9 @@
 <template>
   <div
-    class="w-full flex flex-col sticky bottom-0 left-0 py-4 !border-t-[1.5px] !border-[#F0F3F6] bg-white z-5"
+    class="w-full flex flex-col fixed bottom-0 left-0 py-4 !border-t-[1.5px] !border-[#F0F3F6] bg-white z-5"
+    :style="`
+      ${getBottomPadding}
+    `"
   >
     <!-- Extra widget slot -->
     <slot name="extra-widget" />
@@ -42,6 +45,7 @@ import { defineComponent } from "vue";
 import { AppIcon } from "@greep/ui-components";
 import { Logic } from "@greep/logic";
 import { ref } from "vue";
+import { getBottomPadding } from "../../composable";
 
 export default defineComponent({
   components: {
@@ -87,6 +91,7 @@ export default defineComponent({
       onInput,
       handleKeyEvent,
       inputmode,
+      getBottomPadding,
     };
   },
 });

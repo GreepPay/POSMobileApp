@@ -64,7 +64,7 @@
             <div
               v-for="(item, index) in quickActions"
               :key="index"
-              class="col-span-3 flex flex-col space-y-1 items-center justify-center"
+              class="col-span-3 flex flex-col space-y-1 items-center justify-center relative"
               @click="Logic.Common.GoToRoute(item.route_path)"
             >
               <app-icon :name="item.icon" custom-class="!h-[56px]" />
@@ -72,12 +72,18 @@
               <app-normal-text class="!text-[#616161] !text-center !font-[500]">
                 {{ item.name }}
               </app-normal-text>
+
+              <span
+                v-if="item.soon"
+                class="px-3 py-[3px] bg-primary rounded-full !text-[10px] !text-white absolute top-[-20%] right-0"
+                >Soon</span
+              >
             </div>
           </div>
         </div>
 
         <!-- Switch Tab -->
-        <div class="w-full flex flex-col px-4">
+        <!-- <div class="w-full flex flex-col px-4">
           <app-tabs
             :tabs="homeTab"
             v-model:activeTab="activeTab"
@@ -86,15 +92,28 @@
             customClass="!overflow-x-hidden"
             type="badge"
           />
+        </div> -->
+
+        <div class="w-full flex justify-between items-center px-4">
+          <app-normal-text class="font-semibold !text-gray-800 !text-sm">
+            Transactions
+          </app-normal-text>
+
+          <app-normal-text
+            class="text-primary"
+            @click="Logic.Common.GoToRoute('/transaction')"
+          >
+            See all
+          </app-normal-text>
         </div>
 
         <!-- Transactions -->
         <div
-          class="w-full flex flex-col h-fit bg-white relative px-4 pt-1 space-y-[5px] min-h-[70vh]"
+          class="w-full flex flex-col h-fit bg-white relative px-4 space-y-[5px] min-h-[70vh]"
           id="home_transactions"
         >
           <template v-if="activeTab == 'latest'">
-            <div v-if="!recentTransactions.length" class="py-4 !pt-2">
+            <div v-if="!recentTransactions.length" class="py-4 !pt-2 z-10">
               <app-empty-state
                 title="No transactions"
                 description="Collect Payments, Make Withdrawals, and Redeem the GRP Tokens you’ve earned."
@@ -168,7 +187,7 @@ import {
   AppIcon,
   AppEmptyState,
   DefaultPageLayout,
-  AppTabs,
+  // AppTabs,
   AppButton,
 } from "@greep/ui-components";
 import { Logic } from "@greep/logic";
@@ -195,7 +214,7 @@ export default defineComponent({
     AppEmptyState,
     AppIcon,
     DefaultPageLayout,
-    AppTabs,
+    // AppTabs,
     AppButton,
   },
   layout: "Dashboard",
@@ -231,10 +250,12 @@ export default defineComponent({
     ],
   },
   setup() {
-    const defaultCurrency = ref(Logic.Auth.AuthUser?.profile?.default_currency);
+    const defaultCurrency = ref(
+      Logic.Auth.AuthUser?.businesses[0]?.default_currency
+    );
 
     const selectedCurrency = ref(
-      Logic.Auth.AuthUser?.profile?.default_currency
+      Logic.Auth.AuthUser?.businesses[0]?.default_currency
     );
 
     const currencySymbol = ref(
@@ -315,27 +336,31 @@ export default defineComponent({
         icon: "quick-actions/request",
         route_path: "/request",
         name: "Request",
+        soon: false,
       },
       {
         icon: "quick-actions/send",
         route_path: "#",
         name: "Send",
+        soon: true,
       },
       {
         icon: "quick-actions/withdraw",
         route_path: "/withdraw",
         name: "Withdraw",
+        soon: false,
       },
       {
         icon: "quick-actions/assets",
         route_path: "#",
-        name: "Assets",
+        name: "Insights",
+        soon: true,
       },
     ]);
 
     const setPageDefaults = () => {
       defaultCurrency.value =
-        Logic.Auth.AuthUser?.profile?.default_currency || "USD";
+        Logic.Auth.AuthUser?.businesses[0]?.default_currency || "USD";
       selectedCurrency.value = defaultCurrency.value;
     };
 

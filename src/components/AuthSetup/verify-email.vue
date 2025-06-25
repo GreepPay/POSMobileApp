@@ -1,10 +1,10 @@
 <template>
-  <div class="w-full flex flex-col items-center justify-start h-full space-y-6">
+  <div class="w-full flex flex-col items-center justify-start space-y-6">
     <!-- Form -->
     <app-form-wrapper
       ref="formComponent"
       :parent-refs="parentRefs"
-      class="w-full flex flex-col space-y-[20px] h-full"
+      class="w-full flex flex-col space-y-[20px]"
     >
       <div
         class="w-full flex flex-col space-y-2 pt-4 justify-center items-center"
@@ -31,7 +31,7 @@
 
           <app-normal-text
             class="text-center text-primary font-semibold"
-            @click="resentVerifyEmail"
+            @click="resendVerifyEmail"
           >
             Resend?
           </app-normal-text>
@@ -69,8 +69,10 @@ export default defineComponent({
       // formData.otp_code = value;
     };
 
-    const resentVerifyEmail = () => {
-      Logic.Auth.ResendEmailOTP(localStorage.getItem("auth_email") || "");
+    const resendVerifyEmail = () => {
+      Logic.Auth.ResendEmailOTP(
+        Logic.Auth.AuthUser?.email || localStorage.getItem("auth_email")
+      );
       Logic.Common.showAlert({
         show: true,
         message:
@@ -91,7 +93,7 @@ export default defineComponent({
       otpCode,
       FormValidations,
       handleOTPChange,
-      resentVerifyEmail,
+      resendVerifyEmail,
       continueWithForm,
     };
   },

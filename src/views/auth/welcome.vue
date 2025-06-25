@@ -104,7 +104,11 @@ export default defineComponent({
     });
 
     const isFilled = async () => {
-      const authPasscode = localStorage.getItem("auth_passcode");
+      let authPasscode = localStorage.getItem("auth_passcode");
+
+      if (!authPasscode) {
+        authPasscode = Logic.Auth.AuthUser?.transaction_pin;
+      }
 
       if (formData.passcode != authPasscode) {
         Logic.Common.showAlert({

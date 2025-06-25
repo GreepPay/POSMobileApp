@@ -1,7 +1,9 @@
 <template>
   <app-wrapper>
     <subpage-layout title="Collect Payment">
-      <div class="w-full flex flex-col items-center justify-start px-4 pt-3">
+      <div
+        class="w-full flex flex-col items-center justify-center px-4 pt-3 h-full -mt-[40%]"
+      >
         <app-image-loader
           class="w-full rounded-[35px] flex flex-col relative justify-center items-center space-y-5 px-4 py-5 xs:!py-4 bg-[linear-gradient(359.13deg,#10BB76_25.37%,#008651_99.25%)]"
           :photoUrl="''"
@@ -32,9 +34,7 @@
           </div>
         </app-image-loader>
 
-        <div
-          class="w-full flex flex-col flex-grow justify-center items-center pt-7"
-        >
+        <div class="w-full flex flex-col justify-center items-center pt-7">
           <app-keyboard v-model="amount" />
         </div>
       </div>
@@ -42,9 +42,9 @@
       <!-- Bottom button -->
       <div
         class="w-full fixed bg-white dark:bg-black bottom-0 left-0 pt-4 px-4"
-        style="
-          padding-bottom: calc(env(safe-area-inset-bottom) + 16px) !important;
-        "
+        :style="`
+          ${getBottomPadding}
+        `"
       >
         <div class="w-full flex flex-col">
           <app-button
@@ -72,7 +72,7 @@ import { ref } from "vue";
 import { Logic } from "@greep/logic";
 import { User } from "@greep/logic/src/gql/graphql";
 import { onMounted } from "vue";
-import { availableCurrencies } from "../../composable";
+import { availableCurrencies, getBottomPadding } from "../../composable";
 import { computed } from "vue";
 
 export default defineComponent({
@@ -97,7 +97,7 @@ export default defineComponent({
 
     const currentCurrency = computed(() => {
       return availableCurrencies.filter(
-        (item) => item.code == AuthUser.value?.profile?.default_currency
+        (item) => item.code == AuthUser.value?.businesses[0]?.default_currency
       )[0]?.symbol;
     });
 
@@ -112,6 +112,7 @@ export default defineComponent({
       AuthUser,
       availableCurrencies,
       currentCurrency,
+      getBottomPadding,
     };
   },
 });

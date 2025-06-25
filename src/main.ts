@@ -41,7 +41,7 @@ routes.then((routes) => {
   const app = createApp(App)
     .use(IonicVue, {
       rippleEffect: false,
-      scrollPadding: false,
+      // scrollPadding: false,
       mode: "ios",
     })
     .component("auth-layout", AuthLayout)

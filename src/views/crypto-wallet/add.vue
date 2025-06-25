@@ -41,9 +41,9 @@
       <!-- Bottom button -->
       <div
         class="w-full fixed bg-white dark:bg-black bottom-0 left-0 pt-4 px-4"
-        style="
-          padding-bottom: calc(env(safe-area-inset-bottom) + 16px) !important;
-        "
+        :style="`
+          ${getBottomPadding}
+        `"
       >
         <div class="w-full flex flex-col">
           <app-button
@@ -71,6 +71,7 @@ import { Logic } from "@greep/logic";
 import { reactive } from "vue";
 import { SelectOption } from "@greep/ui-components/src/types";
 import { onIonViewWillEnter } from "@ionic/vue";
+import { getBottomPadding } from "../../composable";
 
 export default defineComponent({
   name: "AddCryptoWalletPage",
@@ -227,6 +228,7 @@ export default defineComponent({
       cryptoOptions,
       loadingState,
       formComponent,
+      getBottomPadding,
       showCryptoOptions,
     };
   },

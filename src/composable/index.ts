@@ -82,6 +82,15 @@ export const safeAreaInsetBottom = computed(() => {
   return isAndroid && bottomInset === 0 ? 20 : bottomInset;
 });
 
+export const getBottomPadding = computed(() => {
+  // Replace this with your actual platform detection logic
+  const isAndroid = getPlatforms()[0] === "android";
+
+  return isAndroid
+    ? "padding-bottom: calc(env(safe-area-inset-bottom) + 20px) !important;"
+    : "padding-bottom: calc(env(safe-area-inset-bottom) + 16px) !important;";
+});
+
 export interface MessageInfo {
   text_content: string;
   user_uuid: string;
@@ -102,51 +111,57 @@ export interface MessageInfo {
 export const withdrawalAvailableCurrencies = reactive([
   {
     code: "TRY",
-    name: "Turkish Lira",
+    name: "Turkish Lira (₺)",
     symbol: "₺",
     loading: false,
     icon_extension: "svg",
     country_code: "TR",
+    allow_p2p: true,
   },
   {
     code: "USD",
-    name: "United States Dollar",
+    name: "United States Dollar ($)",
     symbol: "$",
     loading: false,
     icon_extension: "svg",
     country_code: "US",
+    allow_p2p: false,
   },
   {
     code: "EUR",
-    name: "Euro",
+    name: "Euro (€)",
     symbol: "€",
     loading: false,
     icon_extension: "svg",
     country_code: "EU",
+    allow_p2p: false,
   },
   {
     code: "USDC",
-    name: "USDC",
+    name: "USDC ($)",
     symbol: "$",
     loading: false,
     icon_extension: "svg",
     country_code: "US",
+    allow_p2p: false,
   },
   {
     code: "EURC",
-    name: "EURC",
+    name: "EURC (€)",
     symbol: "€",
     loading: false,
     icon_extension: "png",
     country_code: "EU",
+    allow_p2p: false,
   },
   {
     code: "USDT",
-    name: "USDT",
+    name: "USDT ($)",
     symbol: "$",
     loading: false,
     icon_extension: "svg",
     country_code: "US",
+    allow_p2p: false,
   },
   // {
   //   code: "BTC",
@@ -166,34 +181,38 @@ export const withdrawalAvailableCurrencies = reactive([
   // },
   {
     code: "NGN",
-    name: "Nigerian Naira",
+    name: "Nigerian Naira (₦)",
     symbol: "₦",
     loading: false,
     icon_extension: "svg",
     country_code: "NG",
+    allow_p2p: false,
   },
   {
     code: "GHS",
-    name: "Ghanaian Cedis",
+    name: "Ghanaian Cedis (₵)",
     symbol: "₵",
     loading: false,
     icon_extension: "svg",
     country_code: "GH",
+    allow_p2p: false,
   },
   {
     code: "KES",
-    name: "Kenyan Shilling",
+    name: "Kenyan Shilling (KES)",
     symbol: "KES",
     loading: false,
     icon_extension: "png",
     country_code: "KE",
+    allow_p2p: false,
   },
   {
     code: "ZAR",
-    name: "South African Rand",
+    name: "South African Rand (R)",
     symbol: "R",
     loading: false,
     icon_extension: "svg",
     country_code: "ZA",
+    allow_p2p: false,
   },
 ]);

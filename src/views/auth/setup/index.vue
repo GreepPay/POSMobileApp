@@ -3,16 +3,25 @@
     <app-onboarding-layout
       v-model="currentPage"
       :page-setting="pageSettings"
-      :topPadding="`${currentPlatform === 'android' ? '!pt-6' : ''}`"
+      :topPadding="`${currentPlatform === 'android' ? '!pt-6 !pb-0' : '!pb-0'}`"
+      variant="white"
     >
       <div
-        class="w-full flex flex-col items-center justify-start h-full space-y-6 px-4 py-4"
+        class="w-full flex flex-col items-center justify-start h-full px-4 py-3 pt-4"
       >
-        <template v-if="currentPage == 'account_info'">
-          <auth-setup-account-info ref="accountInfoRef" />
+        <div class="w-full flex flex-col mb-4">
+          <app-normal-text class="!text-sm">
+            {{
+              pageSettings.pages?.find((item) => item.key == currentPage)?.title
+            }}
+          </app-normal-text>
+        </div>
+
+        <template v-if="currentPage == 'business_type'">
+          <auth-setup-business-type ref="businessTypeRef" />
         </template>
 
-        <template v-if="currentPage == 'business_info'">
+        <template v-if="currentPage == 'business_profile'">
           <auth-setup-business-info ref="businessInfoRef" />
         </template>
 
@@ -33,7 +42,7 @@
         </template>
 
         <!-- Spacer -->
-        <div class="!h-[100px] py-5 w-full"></div>
+        <div class="py-[60px] w-full"></div>
       </div>
     </app-onboarding-layout>
   </app-wrapper>
@@ -41,83 +50,121 @@
 
 <script lang="ts">
 import { defineComponent, ref, reactive } from "vue";
-import { AppOnboardingLayout } from "@greep/ui-components";
+import { AppOnboardingLayout, AppNormalText } from "@greep/ui-components";
 import { Logic } from "@greep/logic";
-import AuthSetupAccountInfo from "../../../components/AuthSetup/account-info.vue";
 import AuthSetupVerifyAccount from "../../../components/AuthSetup/verify-account.vue";
 import AuthSetupPickCurrency from "../../../components/AuthSetup/pick-currency.vue";
 import AuthSetupVerifyEmail from "../../../components/AuthSetup/verify-email.vue";
 import AuthSetupSetPassword from "../../../components/AuthSetup/set-password.vue";
 import AuthSetupBusinessInfo from "../../../components/AuthSetup/business-info.vue";
+import AuthSetupBusinessType from "../../../components/AuthSetup/business-type.vue";
 import { onMounted } from "vue";
 import { StatusBar, Style } from "@capacitor/status-bar";
 import { computed } from "vue";
-import { getPlatforms } from "@ionic/vue";
+import { getPlatforms, onIonViewDidEnter } from "@ionic/vue";
 
 export default defineComponent({
-  name: "SetupAccountIndex",
+  name: "SetupAccountPageIndex",
   components: {
-    AuthSetupAccountInfo,
     AuthSetupVerifyAccount,
     AuthSetupPickCurrency,
     AuthSetupVerifyEmail,
     AppOnboardingLayout,
     AuthSetupSetPassword,
     AuthSetupBusinessInfo,
+    AuthSetupBusinessType,
+    AppNormalText,
   },
   setup() {
     const FormValidations = Logic.Form;
 
-    const currentPage = ref("account_info");
+    const currentPage = ref("business_type");
 
-    const accountInfoRef = ref<any>(null);
     const verifyAccountRef = ref<any>(null);
-    const pickCurrencyRef = ref<any>(null);
-    const setPasswordRef = ref<any>(null);
-    const verifyEmailRef = ref<any>(null);
     const businessInfoRef = ref<any>(null);
+    const pickCurrencyRef = ref<any>(null);
+    const businessTypeRef = ref<any>(null);
+
+    const currentBusinessId = ref("");
 
     const pageSettings = reactive({
-      main_title: "Setup POS",
+      main_title: "Setup Business Profile",
       pages: [
         {
-          title: "Personal Info",
-          key: "account_info",
+          title: "Business Type",
+          key: "business_type",
           action_btn: {
             label: "Next",
             handler: () => {
-              const formData = accountInfoRef.value?.continueWithForm();
+              const businessType = businessTypeRef.value?.continueWithForm();
 
-              if (Logic.Auth.SignUpForm && formData) {
-                Logic.Auth.SignUpForm.email = formData.email;
-                Logic.Auth.SignUpForm.first_name = formData.firstName;
-                Logic.Auth.SignUpForm.last_name = formData.lastName;
-                Logic.Auth.SignUpForm.phone_number = formData.phone;
-
-                currentPage.value = "business_info";
+              if (currentBusinessId.value) {
+                Logic.User.UpdateBusinessProfileForm = {
+                  business_uuid: currentBusinessId.value,
+                  business_type: businessType,
+                };
+              } else {
+                Logic.User.CreateBusinessProfileForm = {
+                  business_name: "",
+                  business_type: businessType,
+                  location: "",
+                };
               }
+
+              currentPage.value = "business_profile";
             },
             is_disabled: false,
             loading: false,
           },
         },
         {
-          title: "Business Info",
-          key: "business_info",
+          title: "Business Profile",
+          key: "business_profile",
           action_btn: {
             label: "Next",
             handler: () => {
               const formData = businessInfoRef.value?.continueWithForm();
 
-              if (Logic.Auth.SignUpForm && formData) {
-                Logic.Auth.SignUpForm.state = formData.state;
-                Logic.Auth.SignUpForm.country = formData.country;
-                Logic.Auth.SignUpForm.business_name = formData.businessName;
-                Logic.Auth.SignUpForm.business_logo = formData.photo;
-                Logic.Auth.SignUpForm.business_category =
-                  formData.businessCategory;
-                Logic.Auth.SignUpForm.business_description =
-                  formData.businessDescription;
+              if (formData) {
+                if (currentBusinessId.value) {
+                  if (Logic.User.UpdateBusinessProfileForm) {
+                    Logic.User.UpdateBusinessProfileForm.country =
+                      formData.country;
+                    Logic.User.UpdateBusinessProfileForm.city = formData.state;
+                    Logic.User.UpdateBusinessProfileForm.business_name =
+                      formData.businessName;
+                    Logic.User.UpdateBusinessProfileForm.business_logo =
+                      formData.photo;
+                    Logic.User.UpdateBusinessProfileForm.category =
+                      formData.businessCategory;
+                    Logic.User.UpdateBusinessProfileForm.description =
+                      formData.businessDescription;
+                    Logic.User.UpdateBusinessProfileForm.address =
+                      JSON.stringify({
+                        address: formData.address,
+                        note: formData.address_note,
+                      });
+                  }
+                } else {
+                  if (Logic.User.CreateBusinessProfileForm) {
+                    Logic.User.CreateBusinessProfileForm.country =
+                      formData.country;
+                    Logic.User.CreateBusinessProfileForm.city = formData.state;
+                    Logic.User.CreateBusinessProfileForm.business_name =
+                      formData.businessName;
+                    Logic.User.CreateBusinessProfileForm.business_logo =
+                      formData.photo;
+                    Logic.User.CreateBusinessProfileForm.category =
+                      formData.businessCategory;
+                    Logic.User.CreateBusinessProfileForm.description =
+                      formData.businessDescription;
+                    Logic.User.CreateBusinessProfileForm.address =
+                      JSON.stringify({
+                        address: formData.address,
+                        note: formData.address_note,
+                      });
+                  }
+                }
 
                 currentPage.value = "verify_account";
               }
@@ -127,17 +174,38 @@ export default defineComponent({
           },
         },
         {
-          title: "Verify Account",
+          title: "Account Verification",
           key: "verify_account",
           action_btn: {
             label: "Next",
             handler: () => {
               const formData = verifyAccountRef.value?.continueWithForm();
-              if (formData && Logic.Auth.SignUpForm) {
-                Logic.Auth.SignUpForm.documents = [
-                  formData.international_passport,
-                  formData.business_document,
-                ];
+
+              if (formData) {
+                const documents = [];
+
+                if (formData.international_passport) {
+                  documents.push(formData.international_passport);
+                }
+
+                if (formData.business_document) {
+                  documents.push(formData.business_document);
+                }
+
+                if (formData.business_document_2) {
+                  documents.push(formData.business_document_2);
+                }
+
+                if (currentBusinessId.value) {
+                  if (Logic.User.UpdateBusinessProfileForm) {
+                    Logic.User.UpdateBusinessProfileForm.documents = documents;
+                  }
+                } else {
+                  if (Logic.User.CreateBusinessProfileForm) {
+                    Logic.User.CreateBusinessProfileForm.documents = documents;
+                  }
+                }
+
                 currentPage.value = "pick_currency";
               }
             },
@@ -150,83 +218,48 @@ export default defineComponent({
           key: "pick_currency",
           action_btn: {
             label: "Next",
-            handler: () => {
+            handler: async () => {
               const formData = pickCurrencyRef.value?.continueWithForm();
-              if (formData && Logic.Auth.SignUpForm) {
-                Logic.Auth.SignUpForm.default_currency =
-                  formData.preferred_currency;
-                currentPage.value = "set_password";
-              }
-            },
-            is_disabled: false,
-          },
-        },
-        {
-          title: "Set Password",
-          key: "set_password",
-          action_btn: {
-            label: "Next",
-            handler: () => {
-              const formData = setPasswordRef.value?.continueWithForm();
-              if (formData && Logic.Auth.SignUpForm) {
-                Logic.Auth.SignUpForm.password = formData.password;
 
-                pageSettings.pages[3].action_btn.loading = true;
-                // Send signup request
-                Logic.Auth.SignUp(true, (progress) => {
-                  console.log(progress);
-                })?.then((response) => {
-                  if (response) {
-                    currentPage.value = "verify_email";
-                    pageSettings.pages[3].action_btn.loading = true;
-                  } else {
-                    pageSettings.pages[3].action_btn.loading = true;
+              if (formData) {
+                if (currentBusinessId.value) {
+                  if (Logic.User.UpdateBusinessProfileForm) {
+                    Logic.User.UpdateBusinessProfileForm.default_currency =
+                      formData.preferred_currency;
                   }
-                });
-              }
-            },
-            is_disabled: false,
-            loading: false,
-          },
-        },
-        {
-          title: "Verify Email",
-          key: "verify_email",
-          action_btn: {
-            label: "Next",
-            handler: () => {
-              const otpCode = verifyEmailRef.value?.continueWithForm();
-
-              if (otpCode) {
-                Logic.Auth.VerifyUserOTPForm = {
-                  user_uuid: Logic.Auth.AuthUser?.uuid,
-                  otp: otpCode,
-                };
-
-                pageSettings.pages[4].action_btn.loading = true;
-
-                Logic.Auth.VerifyUserOTP()?.then(async (response) => {
-                  if (response) {
-                    Logic.Auth.SignInForm = {
-                      email: localStorage.getItem("auth_email"),
-                      password: localStorage.getItem("auth_pass"),
-                    };
-
-                    await Logic.Auth.SignIn(true);
-                    await Logic.Auth.GetAuthUser();
-
-                    pageSettings.pages[4].action_btn.loading = false;
-
-                    // Check if passcode has been set
-                    if (localStorage.getItem("auth_passcode")) {
-                      Logic.Common.GoToRoute("/");
-                    } else {
-                      Logic.Common.GoToRoute("/auth/set-passcode");
-                    }
-                  } else {
-                    pageSettings.pages[4].action_btn.loading = false;
+                } else {
+                  if (Logic.User.CreateBusinessProfileForm) {
+                    Logic.User.CreateBusinessProfileForm.default_currency =
+                      formData.preferred_currency;
                   }
-                });
+                }
+
+                if (pageSettings.pages[3].action_btn.loading) {
+                  return;
+                }
+
+                try {
+                  pageSettings.pages[3].action_btn.loading = true;
+
+                  if (currentBusinessId.value) {
+                    await Logic.User.UpdateBusinessProfile();
+                  } else {
+                    await Logic.User.CreateBusinessProfile();
+                  }
+
+                  await Logic.Auth.GetAuthUser();
+
+                  // Check if passcode has been set
+                  if (localStorage.getItem("auth_passcode")) {
+                    Logic.Common.GoToRoute("/");
+                  } else {
+                    Logic.Common.GoToRoute("/auth/set-passcode");
+                  }
+                } catch {
+                  //
+                } finally {
+                  pageSettings.pages[3].action_btn.loading = false;
+                }
               }
             },
             is_disabled: false,
@@ -254,12 +287,22 @@ export default defineComponent({
       };
     };
 
+    const setBusinessId = () => {
+      currentBusinessId.value =
+        Logic.Common.route?.query?.business?.toString() || "";
+    };
+
+    onIonViewDidEnter(() => {
+      setBusinessId();
+    });
+
     onMounted(() => {
       initializeForm();
       onMounted(() => {
-        StatusBar.setBackgroundColor({ color: "#008651" }); // any hex color
+        StatusBar.setBackgroundColor({ color: "#ffffff" }); // any hex color
         StatusBar.setStyle({ style: Style.Light }); // Light or Dark
       });
+      setBusinessId();
     });
 
     return {
@@ -267,13 +310,11 @@ export default defineComponent({
       Logic,
       currentPage,
       pageSettings,
-      accountInfoRef,
       verifyAccountRef,
       pickCurrencyRef,
-      verifyEmailRef,
-      setPasswordRef,
       businessInfoRef,
       currentPlatform,
+      businessTypeRef,
     };
   },
   data() {

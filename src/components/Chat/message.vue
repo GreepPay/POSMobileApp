@@ -21,7 +21,7 @@
 
     <!-- For Text Message Type -->
     <template v-if="message?.type == 'text'">
-      <div class="min-w-[100px] max-w-[80%] flex flex-col">
+      <div class="min-w-[100px] max-w-[90%] flex flex-col">
         <!-- Message box -->
         <div
           :class="`w-full flex flex-col rounded-[24px] px-3 py-3 ${

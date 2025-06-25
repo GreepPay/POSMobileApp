@@ -230,7 +230,7 @@ export default defineComponent({
     const filterIsLoading = ref(false);
 
     const selectedCurrency = ref(
-      Logic.Auth.AuthUser?.profile?.default_currency
+      Logic.Auth.AuthUser?.businesses[0]?.default_currency
     );
 
     const currencySymbol = ref(

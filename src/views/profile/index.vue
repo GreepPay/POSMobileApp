@@ -11,7 +11,7 @@
                   AuthUser?.profile?.business?.logo ||
                   '/images/profile-image.svg'
                 "
-                custom-class="!h-[96px] !w-[96px]"
+                custom-class="!h-[96px] !w-[96px] rounded-full"
               />
             </div>
             <div class="w-full flex flex-col space-y-[1px] z-1">
@@ -67,9 +67,9 @@
       <!-- Bottom button -->
       <div
         class="w-full fixed bg-white dark:bg-black bottom-0 left-0 pt-4 px-4"
-        style="
-          padding-bottom: calc(env(safe-area-inset-bottom) + 16px) !important;
-        "
+        :style="`
+          ${getBottomPadding}
+        `"
       >
         <div class="w-full flex flex-col">
           <app-button
@@ -98,6 +98,7 @@ import AmountCard from "../../components/Common/AmountCard.vue";
 import { User } from "@greep/logic/src/gql/graphql";
 import { ref } from "vue";
 import { onMounted } from "vue";
+import { getBottomPadding } from "../../composable";
 
 export default defineComponent({
   name: "ProfilePage",
@@ -151,6 +152,7 @@ export default defineComponent({
       Logic,
       profileItems,
       AuthUser,
+      getBottomPadding,
     };
   },
 });

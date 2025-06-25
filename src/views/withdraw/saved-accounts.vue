@@ -46,9 +46,9 @@
       <!-- Bottom button -->
       <div
         class="w-full fixed bg-white dark:bg-black bottom-0 left-0 pt-4 px-4"
-        style="
-          padding-bottom: calc(env(safe-area-inset-bottom) + 16px) !important;
-        "
+        :style="`
+          ${getBottomPadding}
+        `"
       >
         <div class="w-full flex flex-col">
           <app-button
@@ -77,7 +77,10 @@ import { reactive } from "vue";
 import { ref } from "vue";
 import { onMounted } from "vue";
 import { onIonViewDidEnter } from "@ionic/vue";
-import { withdrawalAvailableCurrencies } from "../../composable";
+import {
+  getBottomPadding,
+  withdrawalAvailableCurrencies,
+} from "../../composable";
 
 export default defineComponent({
   name: "SavedAccountsPage",
@@ -353,6 +356,7 @@ export default defineComponent({
       continueToNext,
       goToAddAccount,
       loadingState,
+      getBottomPadding,
     };
   },
 });

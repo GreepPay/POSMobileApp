@@ -1,17 +1,16 @@
 <template>
   <app-wrapper>
     <div
-      class="w-full flex flex-col lg:text-sm mdlg:text-[12px] relative text-xs font-poppins overflow-y-auto"
+      class="w-full flex flex-col lg:text-sm mdlg:text-[12px] relative text-xs font-poppins"
       style="padding-top: calc(env(safe-area-inset-top) + 0px) !important"
-      :style="`height: ${
-        mobileFullHeight ? mobileFullHeight.height : ''
-      } !important;`"
     >
       <!-- Top bar -->
       <chat-top-bar />
 
       <!-- Chat content -->
-      <div class="w-full flex flex-col px-4 pt-5">
+      <div
+        class="w-full flex flex-col px-4 pt-4 !pb-[100px] h-[70vh] overflow-y-auto"
+      >
         <template v-for="(message, index) in messages" :key="index">
           <chat-message :message="message" class="mb-4" />
         </template>

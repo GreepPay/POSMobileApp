@@ -18,7 +18,7 @@
               placeholder="Email Address"
               ref="emailAddress"
               name="Email Address"
-              use-floating-label
+              usePermanentFloatingLabel
               v-model="formData.email"
               :rules="[FormValidations.RequiredRule, FormValidations.EmailRule]"
             >
@@ -32,7 +32,7 @@
               placeholder="Password"
               ref="password"
               name="Password"
-              use-floating-label
+              usePermanentFloatingLabel
               v-model="formData.password"
               :rules="[
                 FormValidations.RequiredRule,
@@ -49,7 +49,7 @@
               placeholder="Confirm Password"
               ref="confirmPassword"
               name="Confirm Password"
-              use-floating-label
+              usePermanentFloatingLabel
               v-model="formData.confirm_password"
               :rules="[
                 FormValidations.RequiredRule,
@@ -64,7 +64,7 @@
 
           <!-- Info box -->
           <app-info-box>
-            <app-normal-text>
+            <app-normal-text class="!leading-5">
               By creating an account, you agree to our
               <span class="font-[500] !text-primary">Terms & Conditions </span>
               & <span class="font-[500] !text-primary">Privacy Policy </span>
@@ -74,7 +74,14 @@
 
         <div class="w-full flex flex-col pt-3">
           <div class="w-full flex flex-col">
-            <app-button variant="secondary" class="!py-4"> Sign Up </app-button>
+            <app-button
+              variant="secondary"
+              class="!py-4"
+              :loading="buttonIsLoading"
+              @click.prevent="signUpUser"
+            >
+              Sign Up
+            </app-button>
           </div>
 
           <app-normal-text
@@ -103,6 +110,7 @@ import { Logic } from "@greep/logic";
 import SSO from "../../../components/Auth/SSO.vue";
 import { reactive } from "vue";
 import { ref } from "vue";
+import { MutationSignUpArgs } from "@greep/logic/src/gql/graphql";
 
 export default defineComponent({
   name: "SignupPage",
@@ -121,15 +129,47 @@ export default defineComponent({
       confirm_password: "",
     });
 
+    const buttonIsLoading = ref(false);
+
     const formComp = ref();
 
     const FormValidations = Logic.Form;
+
+    const signUpUser = async () => {
+      const state = formComp.value.validate();
+
+      if (state) {
+        if (buttonIsLoading.value) return;
+
+        const form: MutationSignUpArgs = {
+          email: formData.email,
+          password: formData.confirm_password,
+          default_currency: "USDC",
+        };
+
+        Logic.Auth.SignUpForm = form;
+
+        buttonIsLoading.value = true;
+
+        try {
+          await Logic.Auth.SignUp(true, () => {});
+
+          Logic.Common.GoToRoute("/auth/verify-email");
+        } catch (e) {
+          //
+        } finally {
+          buttonIsLoading.value = false;
+        }
+      }
+    };
 
     return {
       FormValidations,
       Logic,
       formData,
       formComp,
+      buttonIsLoading,
+      signUpUser,
     };
   },
   data() {
