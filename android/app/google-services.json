@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "209656620172",
+    "project_id": "greep-cb4ee",
+    "storage_bucket": "greep-cb4ee.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:209656620172:android:070337ebc35b017b0487a9",
+        "android_client_info": {
+          "package_name": "io.greep.pos.vendor"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCrF23NozJh3dnL4OWuVVRDWwZ7OnTAOrY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

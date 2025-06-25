@@ -1,6 +1,11 @@
 <template>
   <app-wrapper mobilePadding="!pt-0">
-    <dashboard-layout :title="AuthUser?.profile?.business?.business_name || ''">
+    <default-page-layout
+      :title="'Home'"
+      :photoUrl="
+        AuthUser?.profile?.business?.logo || '/images/profile-image.svg'
+      "
+    >
       <div
         class="w-full flex flex-col items-center justify-start !space-y-[20px]"
       >
@@ -8,19 +13,27 @@
         <div class="w-full flex flex-col space-y-2 pt-2">
           <div class="w-full flex flex-col px-4">
             <app-image-loader
-              class="w-full h-fit rounded-[35px] flex flex-col justify-center items-center px-4 py-5 bg-[#0A141E]/30"
-              :photoUrl="'/images/greep-transparent-logo.svg'"
+              class="w-full h-fit rounded-[24px] flex flex-col overflow-x-hidden overflow-y-hidden justify-center items-center px-4 py-5 !bg-[linear-gradient(to_bottom,#10BB76,#00683F)] relative"
+              photo-url=""
             >
-              <div class="w-full flex flex-row items-center justify-center">
+              <img
+                class="absolute top-0 left-0 w-full"
+                src="/images/greep-transparent-logo.svg"
+              />
+
+              <div
+                class="w-full flex flex-row items-center justify-center z-10"
+              >
                 <app-currency-switch
                   :default_currency="defaultCurrency"
                   v-model="selectedCurrency"
                   v-model:model-symbol="currencySymbol"
+                  :availableCurrencies="availableCurrencies"
                 />
               </div>
 
               <div
-                class="w-full flex flex-col space-y-[2px] justify-center items-center py-6"
+                class="w-full flex flex-col space-y-[2px] justify-center items-center pt-4 z-10"
               >
                 <app-normal-text class="text-center !text-white">
                   Total Balance
@@ -41,80 +54,111 @@
                   }}
                 </app-header-text>
               </div>
-
-              <!-- Action buttons -->
-              <div class="w-full grid grid-cols-2 gap-3">
-                <div
-                  class="col-span-1 py-4 px-4 rounded-[999px] border-[1px] flex flex-row space-x-1 justify-center items-center"
-                  @click="Logic.Common.GoToRoute('/withdraw')"
-                >
-                  <app-icon name="withdrawal" custom-class="!h-[20px]" />
-
-                  <app-normal-text class="!text-white !text-sm">
-                    Withdraw
-                  </app-normal-text>
-                </div>
-
-                <div
-                  class="col-span-1 py-4 px-4 rounded-[999px] border-[1px] flex flex-row space-x-1 justify-center items-center bg-white"
-                  @click="Logic.Common.GoToRoute('/request')"
-                >
-                  <app-icon name="request" custom-class="!h-[20px]" />
-
-                  <app-normal-text class="!text-[#1F8F69] !text-sm">
-                    Request
-                  </app-normal-text>
-                </div>
-              </div>
             </app-image-loader>
           </div>
+
+          <!-- Quick Actions -->
+          <div
+            class="w-full grid grid-cols-12 items-center px-4 pt-3 pb-5 !border-b-[11px] !border-[#F0F3F6]"
+          >
+            <div
+              v-for="(item, index) in quickActions"
+              :key="index"
+              class="col-span-3 flex flex-col space-y-1 items-center justify-center"
+              @click="Logic.Common.GoToRoute(item.route_path)"
+            >
+              <app-icon :name="item.icon" custom-class="!h-[56px]" />
+
+              <app-normal-text class="!text-[#616161] !text-center !font-[500]">
+                {{ item.name }}
+              </app-normal-text>
+            </div>
+          </div>
+        </div>
+
+        <!-- Switch Tab -->
+        <div class="w-full flex flex-col px-4">
+          <app-tabs
+            :tabs="homeTab"
+            v-model:activeTab="activeTab"
+            tabsClass="!w-full flex border-[1.5px] !border-veryLightGray rounded-full"
+            tabClass="!flex-1 text-center border-none !mr-0 py-3"
+            customClass="!overflow-x-hidden"
+            type="badge"
+          />
         </div>
 
         <!-- Transactions -->
         <div
-          class="w-full flex flex-col h-fit bg-white relative px-4 pt-5 space-y-[5px] min-h-[70vh]"
+          class="w-full flex flex-col h-fit bg-white relative px-4 pt-1 space-y-[5px] min-h-[70vh]"
           id="home_transactions"
         >
-          <div
-            class="w-full flex flex-row items-center justify-between z-[2] pb-1"
-          >
-            <app-normal-text class="font-semibold !text-gray-800 !text-sm"
-              >Transactions</app-normal-text
-            >
+          <template v-if="activeTab == 'latest'">
+            <div v-if="!recentTransactions.length" class="py-4 !pt-2">
+              <app-empty-state
+                title="No transactions"
+                description="Collect Payments, Make Withdrawals, and Redeem the GRP Tokens you’ve earned."
+              />
+            </div>
+            <template v-else>
+              <app-transaction
+                class="z-[10]"
+                v-for="transaction in recentTransactions"
+                :key="transaction.id"
+                :data="transaction"
+                @click="
+                  Logic.Common.GoToRoute(
+                    '/transaction/' +
+                      transaction.id +
+                      `?group=${transaction.transaction_group}`
+                  )
+                "
+              />
 
-            <app-normal-text
-              class="text-primary"
-              @click="Logic.Common.GoToRoute('/transaction')"
-              >See all</app-normal-text
-            >
-          </div>
+              <div class="w-full flex flex-col pt-3">
+                <app-button
+                  @click="Logic.Common.GoToRoute('/transaction')"
+                  variant="primary"
+                  outlined
+                  class="py-3 !font-[500] !border-[#F0F3F6]"
+                >
+                  See all
+                </app-button>
+              </div>
+            </template>
+          </template>
 
-          <div v-if="true" class="py-4 !pt-2">
-            <app-empty-state
-              title="No transactions"
-              description="Collect Payments, Make Withdrawals, and Redeem the GRP Tokens you’ve earned."
-            />
-          </div>
-          <template v-else>
-            <app-transaction
-              class="z-[10]"
-              v-for="transaction in recentTransactions"
-              :key="transaction.id"
-              :data="transaction"
-              @click="Logic.Common.GoToRoute('/transaction/' + transaction.id)"
-            />
+          <template v-if="activeTab == 'tools'">
+            <div class="w-full grid grid-cols-12 gap-4">
+              <div
+                v-for="(item, index) in tools"
+                :key="index"
+                class="col-span-6 flex flex-col z-10 px-3 py-3 border-[1.5px] border-[#F0F3F6] rounded-[12px]"
+              >
+                <app-icon :name="item.icon" custom-class="23px" />
+
+                <div class="w-full flex flex-col pt-1">
+                  <app-normal-text class="!font-semibold !text-sm !text-left">
+                    {{ item.name }}
+                  </app-normal-text>
+                  <app-normal-text class="!text-[#616161] pt-[2px] !text-left">
+                    {{ item.sub_title }}
+                  </app-normal-text>
+                </div>
+              </div>
+            </div>
           </template>
 
           <!-- Spacer -->
-          <div class="h-[40px] py-4"></div>
+          <div class="h-[90px] py-4"></div>
         </div>
       </div>
-    </dashboard-layout>
+    </default-page-layout>
   </app-wrapper>
 </template>
 
 <script lang="ts">
-import { defineComponent, reactive } from "vue";
+import { defineComponent, reactive, watch } from "vue";
 import {
   AppImageLoader,
   AppNormalText,
@@ -123,6 +167,9 @@ import {
   AppCurrencySwitch,
   AppIcon,
   AppEmptyState,
+  DefaultPageLayout,
+  AppTabs,
+  AppButton,
 } from "@greep/ui-components";
 import { Logic } from "@greep/logic";
 import { ref } from "vue";
@@ -130,13 +177,12 @@ import { onMounted } from "vue";
 import { getPlatforms, onIonViewDidEnter } from "@ionic/vue";
 import { User } from "@greep/logic/src/gql/graphql";
 import { computed } from "vue";
-
-enum TransactionType {
-  Sent = "sent",
-  Received = "received",
-  Added = "added",
-  Redeemed = "redeemed",
-}
+import { availableCurrencies } from "../composable";
+import {
+  getTransaction,
+  getPointTransaction,
+  TransactionType,
+} from "../composable/financials";
 
 export default defineComponent({
   name: "IndexPage",
@@ -148,14 +194,18 @@ export default defineComponent({
     AppCurrencySwitch,
     AppEmptyState,
     AppIcon,
+    DefaultPageLayout,
+    AppTabs,
+    AppButton,
   },
+  layout: "Dashboard",
   middlewares: {
     fetchRules: [
       {
         domain: "Wallet",
         property: "ManyTransactions",
         method: "GetTransactions",
-        params: [1, 10],
+        params: [1, 5],
         requireAuth: true,
         ignoreProperty: false,
         silentUpdate: true,
@@ -164,7 +214,16 @@ export default defineComponent({
         domain: "Wallet",
         property: "ManyPointTransactions",
         method: "GetPointTransactions",
-        params: [1, 10],
+        params: [1, 5],
+        requireAuth: true,
+        ignoreProperty: false,
+        silentUpdate: true,
+      },
+      {
+        domain: "Wallet",
+        property: "CurrentGlobalExchangeRate",
+        method: "GetGlobalExchangeRate",
+        params: [],
         requireAuth: true,
         ignoreProperty: false,
         silentUpdate: true,
@@ -172,11 +231,17 @@ export default defineComponent({
     ],
   },
   setup() {
-    const defaultCurrency = ref("USD");
+    const defaultCurrency = ref(Logic.Auth.AuthUser?.profile?.default_currency);
 
-    const selectedCurrency = ref("USD");
+    const selectedCurrency = ref(
+      Logic.Auth.AuthUser?.profile?.default_currency
+    );
 
-    const currencySymbol = ref("$");
+    const currencySymbol = ref(
+      availableCurrencies.find(
+        (currency) => currency.code === selectedCurrency.value
+      )?.symbol
+    );
 
     const ManyTransactions = ref(Logic.Wallet.ManyTransactions);
     const ManyPointTransactions = ref(Logic.Wallet.ManyPointTransactions);
@@ -193,63 +258,78 @@ export default defineComponent({
         type: TransactionType;
         transactionType: "credit" | "debit";
         date: string;
+        currencySymbol: string;
+        subAmount: string;
+        transaction_group: string;
       }[]
-    >([
+    >([]);
+
+    const activeTab = ref("latest");
+
+    const homeTab = reactive([
       {
-        id: 1,
-        title: "Payment to John Doe",
-        amount: 50.0,
-        type: TransactionType.Sent,
-        transactionType: "debit",
-        date: "2024-01-26",
+        key: "latest",
+        label: "Latest",
       },
       {
-        id: 2,
-        title: "Received from Jane Smith",
-        amount: 100.0,
-        type: TransactionType.Received,
-        transactionType: "credit",
-        date: "2024-01-25",
+        key: "tools",
+        label: "Tools",
+      },
+    ]);
+
+    const tools = reactive([
+      {
+        icon: "tools/pos",
+        name: "POS Hardware",
+        sub_title: "Get & manage",
+        route_path: "#",
       },
       {
-        id: 3,
-        title: "Points Transfer",
-        amount: 200.0,
-        type: TransactionType.Sent,
-        transactionType: "debit",
-        date: "2024-01-24",
+        icon: "tools/vendor",
+        name: "Vendor",
+        sub_title: "Sell products",
+        route_path: "#",
       },
       {
-        id: 4,
-        title: "Redeemed Points",
-        amount: 25.0,
-        type: TransactionType.Redeemed,
-        transactionType: "credit",
-        date: "2024-01-23",
+        icon: "tools/exchanger",
+        name: "Exchanger",
+        sub_title: "Sell currency",
+        route_path: "#",
       },
       {
-        id: 5,
-        title: "Payment to Alice Johnson",
-        amount: 75.0,
-        type: TransactionType.Sent,
-        transactionType: "debit",
-        date: "2024-01-22",
+        icon: "tools/events",
+        name: "Host Events",
+        sub_title: "Sell tickets",
+        route_path: "#",
       },
       {
-        id: 6,
-        title: "Received from Bob Williams",
-        amount: 150.0,
-        type: TransactionType.Received,
-        transactionType: "credit",
-        date: "2024-01-21",
+        icon: "tools/delivery",
+        name: "Item Delivery",
+        sub_title: "Ride to earn",
+        route_path: "#",
+      },
+    ]);
+
+    const quickActions = reactive([
+      {
+        icon: "quick-actions/request",
+        route_path: "/request",
+        name: "Request",
       },
       {
-        id: 7,
-        title: "Gift Card Purchase",
-        amount: 300.0,
-        type: TransactionType.Sent,
-        transactionType: "debit",
-        date: "2024-01-20",
+        icon: "quick-actions/send",
+        route_path: "#",
+        name: "Send",
+      },
+      {
+        icon: "quick-actions/withdraw",
+        route_path: "/withdraw",
+        name: "Withdraw",
+      },
+      {
+        icon: "quick-actions/assets",
+        route_path: "#",
+        name: "Assets",
       },
     ]);
 
@@ -259,13 +339,55 @@ export default defineComponent({
       selectedCurrency.value = defaultCurrency.value;
     };
 
-    onIonViewDidEnter(() => {
-      setPageDefaults();
-    });
-
     const currentPlatform = computed(() => {
       return getPlatforms()[0];
     });
+
+    const setTransactionData = () => {
+      recentTransactions.length = 0;
+
+      // Normal transactions
+      ManyTransactions.value?.data?.forEach((data) => {
+        const transaction = getTransaction(
+          data,
+          selectedCurrency.value,
+          currencySymbol.value || ""
+        );
+        recentTransactions.push(transaction);
+      });
+
+      // Point transactions
+      ManyPointTransactions.value?.data?.forEach((data) => {
+        const pointTransaction = getPointTransaction(
+          data,
+          currencySymbol.value || ""
+        );
+        recentTransactions.push(pointTransaction);
+      });
+
+      // Sort transactions desc by date
+      recentTransactions.sort(
+        (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+      );
+    };
+
+    onIonViewDidEnter(() => {
+      setPageDefaults();
+      setTransactionData();
+      Logic.Auth.GetAuthUser();
+    });
+
+    watch(
+      [
+        ManyPointTransactions,
+        ManyTransactions,
+        currencySymbol,
+        CurrentGlobalExchangeRate,
+      ],
+      () => {
+        setTransactionData();
+      }
+    );
 
     onMounted(() => {
       // Register reactive data
@@ -280,6 +402,7 @@ export default defineComponent({
       );
       Logic.Auth.watchProperty("AuthUser", AuthUser);
       setPageDefaults();
+      setTransactionData();
     });
 
     return {
@@ -291,6 +414,11 @@ export default defineComponent({
       AuthUser,
       CurrentGlobalExchangeRate,
       currentPlatform,
+      availableCurrencies,
+      quickActions,
+      homeTab,
+      activeTab,
+      tools,
     };
   },
 });

@@ -2,31 +2,35 @@
   <app-wrapper>
     <subpage-layout title="Sign In">
       <div
-        class="w-full flex flex-col items-center justify-start h-full space-y-6 px-4"
+        class="w-full flex flex-col items-center justify-start h-full space-y-3 px-4 pt-6"
       >
+        <SSO from-action="signIn" />
+
         <!-- Form -->
         <app-form-wrapper
           ref="formComponent"
           :parent-refs="parentRefs"
           class="w-full flex flex-col pt-2"
         >
-          <app-text-field
-            :has-title="false"
-            type="email"
-            placeholder="Enter email address"
-            ref="email"
-            name="Email address"
-            use-floating-label
-            v-model="formData.email"
-            :rules="[FormValidations.RequiredRule, FormValidations.EmailRule]"
-          >
-          </app-text-field>
+          <div class="w-full flex flex-col pb-5">
+            <app-text-field
+              :has-title="false"
+              type="email"
+              placeholder="Enter Address"
+              ref="email"
+              name="Email address"
+              use-floating-label
+              v-model="formData.email"
+              :rules="[FormValidations.RequiredRule, FormValidations.EmailRule]"
+            >
+            </app-text-field>
+          </div>
 
-          <div class="w-full flex flex-col pt-4">
+          <div class="w-full flex flex-col pb-5">
             <app-text-field
               :has-title="false"
               type="password"
-              placeholder="Enter password"
+              placeholder="Password"
               ref="email"
               name="Password"
               use-floating-label
@@ -49,8 +53,16 @@
           @click="handleNext"
           :loading="loadingState"
         >
-          Next
+          Login
         </app-button>
+
+        <app-normal-text
+          class="pt-3 !text-center !text-[#999999]"
+          @click="Logic.Common.GoToRoute('/auth/signup')"
+        >
+          Don’t have an account?
+          <span class="font-[500] !text-primary">Sign Up</span>
+        </app-normal-text>
       </div>
     </subpage-layout>
   </app-wrapper>
@@ -58,10 +70,16 @@
 
 <script lang="ts">
 import { defineComponent } from "vue";
-import { AppFormWrapper, AppTextField, AppButton } from "@greep/ui-components";
+import {
+  AppFormWrapper,
+  AppTextField,
+  AppButton,
+  AppNormalText,
+} from "@greep/ui-components";
 import { Logic } from "@greep/logic";
 import { reactive } from "vue";
 import { ref } from "vue";
+import SSO from "../../components/Auth/SSO.vue";
 
 export default defineComponent({
   name: "LoginPage",
@@ -69,6 +87,8 @@ export default defineComponent({
     AppFormWrapper,
     AppTextField,
     AppButton,
+    SSO,
+    AppNormalText,
   },
   setup() {
     const FormValidations = Logic.Form;

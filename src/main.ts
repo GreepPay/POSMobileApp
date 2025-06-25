@@ -42,6 +42,7 @@ routes.then((routes) => {
     .use(IonicVue, {
       rippleEffect: false,
       scrollPadding: false,
+      mode: "ios",
     })
     .component("auth-layout", AuthLayout)
     .component("dashboard-layout", DashboardLayout)

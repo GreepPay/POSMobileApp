@@ -15,8 +15,11 @@
     "deploy": "npm run build:gh-pages && gh-pages -d dist"
   },
   "dependencies": {
+    "@capacitor-community/apple-sign-in": "^7.0.1",
+    "@capacitor-firebase/authentication": "^7.2.0",
     "@capacitor/android": "7.0.1",
     "@capacitor/app": "7.0.0",
+    "@capacitor/browser": "^7.0.1",
     "@capacitor/core": "7.0.1",
     "@capacitor/haptics": "7.0.0",
     "@capacitor/ios": "7.0.1",
@@ -29,6 +32,7 @@
     "@tailwindcss/typography": "^0.5.16",
     "@tailwindcss/vite": "^4.0.0",
     "country-state-city": "^3.2.1",
+    "firebase": "^11.8.1",
     "ionicons": "^7.0.0",
     "swiper": "^11.2.6",
     "tailwindcss": "^4.0.0",

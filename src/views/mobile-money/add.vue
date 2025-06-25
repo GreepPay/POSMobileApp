@@ -34,21 +34,36 @@
           </app-text-field>
         </div>
 
-        <div class="w-full flex flex-col pb-4">
-          <app-text-field
-            :has-title="false"
-            type="tel"
-            placeholder="Mobile Number"
-            ref="mobileNumber"
-            name="Mobile Number"
-            use-floating-label
-            v-model="formDetails.mobile_number"
-            :rules="[FormValidations.RequiredRule]"
-          >
-          </app-text-field>
+        <div class="w-full grid grid-cols-12 gap-3 pb-4">
+          <div class="col-span-3 flex flex-col">
+            <app-select
+              :placeholder="'Country'"
+              :hasTitle="false"
+              :paddings="'py-4 !px-3'"
+              :options="countries"
+              ref="country"
+              v-model="countryPhoneCode"
+              auto-complete
+            >
+            </app-select>
+          </div>
+          <div class="col-span-9 flex flex-col">
+            <app-text-field
+              :has-title="false"
+              type="tel"
+              placeholder="Phone Number"
+              ref="phoneNumber"
+              name="Mobile Number"
+              use-floating-label
+              v-model="formDetails.mobile_number"
+              :update-value="formDetails.mobile_number"
+              :rules="[FormValidations.RequiredRule]"
+            >
+            </app-text-field>
+          </div>
         </div>
 
-        <div class="w-full grid grid-cols-1 gap-3 pt-3">
+        <div class="w-full grid grid-cols-1 gap-3">
           <app-select
             :placeholder="'Select Provider'"
             :hasTitle="false"
@@ -56,7 +71,12 @@
             :options="mobileMoneyProviders"
             ref="provider"
             use-floating-label
-            v-model="formDetails.provider"
+            @OnOptionSelected="
+              (data) => {
+                formDetails.provider = data.value;
+              }
+            "
+            v-model="formDetails.network_id"
           >
           </app-select>
         </div>
@@ -84,7 +104,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref } from "vue";
+import { defineComponent, onMounted, ref } from "vue";
 import {
   AppButton,
   AppTextField,
@@ -94,6 +114,7 @@ import {
 import { Logic } from "@greep/logic";
 import { reactive } from "vue";
 import { SelectOption } from "@greep/ui-components/src/types";
+import { Country } from "country-state-city";
 
 export default defineComponent({
   name: "AddMobileMoneyPage",
@@ -103,47 +124,65 @@ export default defineComponent({
     AppSelect,
     AppFormWrapper,
   },
+  middlewares: {
+    fetchRules: [
+      {
+        domain: "Wallet",
+        property: "CurrentYellowCardNetworks",
+        method: "GetYellowCardNetwork",
+        params: [],
+        requireAuth: true,
+        ignoreProperty: true,
+        silentUpdate: true,
+        useRouteQuery: true,
+        queries: ["country_code"],
+      },
+    ],
+  },
   setup() {
     const formDetails = reactive({
       first_name: "",
       last_name: "",
+      account_holder_name: "",
       mobile_number: "",
       provider: "",
+      country: "",
+      network_id: "",
+      channel_id: "",
     });
+
+    const countryPhoneCode = ref("+234");
+
+    const CurrentYellowCardNetworks = ref(
+      Logic.Wallet.CurrentYellowCardNetworks
+    );
 
     const FormValidations = Logic.Form;
 
     const loadingState = ref(false);
 
+    const amount = ref("");
+    const selectedCurrency = ref("");
+    const channelId = ref("");
+    const countryCode = ref("");
+    const countries = reactive<SelectOption[]>([]);
+
     const formComponent = ref<any>();
 
-    const mobileMoneyProviders = reactive<SelectOption[]>([
-      {
-        key: "mtn",
-        value: "MTN",
-      },
-      {
-        key: "airtel",
-        value: "AIRTEL",
-      },
-      {
-        key: "vodacom",
-        value: "VODAFONE",
-      },
-      {
-        key: "tigo",
-        value: "TIGO",
-      },
-      {
-        key: "orange",
-        value: "ORANGE",
-      },
-    ]);
+    const mobileMoneyProviders = reactive<SelectOption[]>([]);
 
     const continueToNext = () => {
       const state = formComponent.value.validate();
 
       if (state) {
+        formDetails.country = countryCode.value;
+        formDetails.channel_id = channelId.value;
+
+        formDetails.account_holder_name =
+          formDetails.first_name + " " + formDetails.last_name;
+
+        formDetails.mobile_number = `${countryPhoneCode.value}${formDetails.mobile_number}`;
+
         Logic.Wallet.CreateSavedAccountForm = {
           unique_id: formDetails.mobile_number,
           type: "mobile_money",
@@ -169,6 +208,59 @@ export default defineComponent({
       }
     };
 
+    const setCountries = () => {
+      countries.length = 0;
+      const allCountries = Country.getAllCountries();
+      countries.push(
+        ...allCountries.map((country) => ({
+          key: country.phonecode.startsWith("+")
+            ? country.phonecode
+            : `+${country.phonecode}`,
+          value: country.phonecode.startsWith("+")
+            ? country.phonecode
+            : `+${country.phonecode}`,
+          altValue: `${country.flag} ${country.name} (${country.phonecode})`,
+          extraInfo: "",
+        }))
+      );
+    };
+
+    const setMobileMoneyOptions = () => {
+      mobileMoneyProviders.length = 0;
+
+      CurrentYellowCardNetworks.value?.forEach((network) => {
+        if (network.accountNumberType == "phone") {
+          mobileMoneyProviders.push({
+            key: network.id,
+            value: network.name || "",
+            extraInfo: "",
+          });
+        }
+      });
+    };
+
+    const setDefaults = () => {
+      amount.value = Logic.Common.route?.query?.amount?.toString() || "0";
+      selectedCurrency.value =
+        Logic.Common.route?.query?.currency?.toString() || "USD";
+
+      channelId.value =
+        Logic.Common.route?.query?.channel_id?.toString() || "0";
+
+      countryCode.value =
+        Logic.Common.route?.query?.country_code?.toString() || "0";
+    };
+
+    onMounted(() => {
+      Logic.Wallet.watchProperty(
+        "CurrentYellowCardNetworks",
+        CurrentYellowCardNetworks
+      );
+      setDefaults();
+      setMobileMoneyOptions();
+      setCountries();
+    });
+
     return {
       Logic,
       formDetails,
@@ -177,6 +269,8 @@ export default defineComponent({
       mobileMoneyProviders,
       loadingState,
       formComponent,
+      countryPhoneCode,
+      countries,
     };
   },
   data() {

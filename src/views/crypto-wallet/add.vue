@@ -14,7 +14,13 @@
             :options="cryptoOptions"
             ref="crypto"
             use-floating-label
-            v-model="formDetails.crypto"
+            v-if="showCryptoOptions"
+            @OnOptionSelected="
+              (data) => {
+                formDetails.crypto = data.value;
+              }
+            "
+            v-model="formDetails.channel_id"
           >
           </app-select>
         </div>
@@ -54,7 +60,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref } from "vue";
+import { defineComponent, onMounted, ref } from "vue";
 import {
   AppButton,
   AppTextField,
@@ -64,6 +70,7 @@ import {
 import { Logic } from "@greep/logic";
 import { reactive } from "vue";
 import { SelectOption } from "@greep/ui-components/src/types";
+import { onIonViewWillEnter } from "@ionic/vue";
 
 export default defineComponent({
   name: "AddCryptoWalletPage",
@@ -77,7 +84,16 @@ export default defineComponent({
     const formDetails = reactive({
       crypto: "",
       wallet_address: "",
+      country: "",
+      network_id: "",
+      channel_id: "",
     });
+
+    const amount = ref("");
+    const selectedCurrency = ref("");
+    const channelId = ref("");
+    const countryCode = ref("");
+    const showCryptoOptions = ref(false);
 
     const FormValidations = Logic.Form;
 
@@ -87,12 +103,59 @@ export default defineComponent({
 
     const cryptoOptions = reactive<SelectOption[]>([
       {
-        key: "usdc",
-        value: "USDC",
+        key: "usdc_stellar",
+        value: "USDC (Stellar)",
+        extraInfo: "",
       },
       {
-        key: "xlm",
-        value: "XLM",
+        key: "usdc_ethereum",
+        value: "USDC (Ethereum network)",
+        extraInfo: "",
+      },
+      {
+        key: "usdc_polygon",
+        value: "USDC (Polygon network)",
+        extraInfo: "",
+      },
+      {
+        key: "usdc_base",
+        value: "USDC (Base network)",
+        extraInfo: "",
+      },
+      {
+        key: "usdc_arbitrum",
+        value: "USDC (Arbitrum network)",
+        extraInfo: "",
+      },
+      {
+        key: "usdc_avalanche_c_chain",
+        value: "USDC (Avalanche network)",
+        extraInfo: "",
+      },
+      {
+        key: "usdc_optimism",
+        value: "USDC (Optimism network)",
+        extraInfo: "",
+      },
+      {
+        key: "usdc_solana",
+        value: "USDC (Solana network)",
+        extraInfo: "",
+      },
+      {
+        key: "usdt_ethereum",
+        value: "USDT (Ethereum network)",
+        extraInfo: "",
+      },
+      {
+        key: "usdt_tron",
+        value: "USDT (Tron network)",
+        extraInfo: "",
+      },
+      {
+        key: "eurc_solana",
+        value: "EURC (Solana network)",
+        extraInfo: "",
       },
     ]);
 
@@ -100,6 +163,8 @@ export default defineComponent({
       const state = formComponent.value.validate();
 
       if (state) {
+        formDetails.country = countryCode.value;
+
         Logic.Wallet.CreateSavedAccountForm = {
           unique_id: formDetails.wallet_address,
           type: "crypto_currency",
@@ -125,6 +190,35 @@ export default defineComponent({
       }
     };
 
+    const setDefaults = () => {
+      amount.value = Logic.Common.route?.query?.amount?.toString() || "0";
+      selectedCurrency.value =
+        Logic.Common.route?.query?.currency?.toString() || "USD";
+
+      channelId.value =
+        Logic.Common.route?.query?.channel_id?.toString() || "0";
+
+      countryCode.value =
+        Logic.Common.route?.query?.country_code?.toString() || "0";
+
+      formDetails.channel_id = channelId.value;
+    };
+
+    onMounted(() => {
+      setDefaults();
+      setTimeout(() => {
+        showCryptoOptions.value = true;
+      }, 300);
+    });
+
+    onIonViewWillEnter(() => {
+      setDefaults();
+      showCryptoOptions.value = false;
+      setTimeout(() => {
+        showCryptoOptions.value = true;
+      }, 300);
+    });
+
     return {
       Logic,
       formDetails,
@@ -133,6 +227,7 @@ export default defineComponent({
       cryptoOptions,
       loadingState,
       formComponent,
+      showCryptoOptions,
     };
   },
   data() {

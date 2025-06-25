@@ -11,7 +11,7 @@
     >
       <!-- Top section -->
       <div
-        class="w-full flex flex-row items-center py-4 bg-white px-4 sticky top-0 z-10"
+        class="w-full flex flex-row items-center py-4 bg-white px-4 sticky top-0 z-50"
         :class="hideBackBtn ? ' justify-center ' : ' justify-between '"
       >
         <div class="flex justify-start" v-if="!hideBackBtn">

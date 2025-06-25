@@ -13,9 +13,11 @@
               placeholder="From"
               ref="from"
               name="from"
-              v-model="filterSetup.from"
+              v-model="filterFrom"
               custom-class="!border-[1.5px] border-[#E0E2E4] !rounded-r-[0px] px-4 py-4 !bg-transparent"
               :input-style="`!text-sm`"
+              :updateValue="filterFrom"
+              :watchUpdates="true"
             >
               <template #inner-suffix>
                 <app-icon name="calendar" custom-class="h-[22px]" />
@@ -29,9 +31,11 @@
               placeholder="To"
               ref="to"
               name="to"
-              v-model="filterSetup.to"
+              v-model="filterTo"
               custom-class="!border-[1.5px] border-[#E0E2E4] !rounded-l-[0px] !border-l-[0px] px-4 py-4 !bg-transparent"
               :input-style="`!text-sm`"
+              :updateValue="filterTo"
+              :watchUpdates="true"
             >
               <template #inner-suffix>
                 <app-icon name="calendar" custom-class="h-[22px]" />
@@ -43,43 +47,74 @@
         <div
           class="w-full flex flex-col space-y-1 border-[#E0E2E4] border-[1.5px] px-4 py-4 rounded-[16px]"
         >
-          <app-select
-            v-model="filterSetup.period"
-            :options="monthFilterOption"
-            is-wrapper
-            @OnOptionSelected="
-              (option) => {
-                currentOptionName = option.value;
-              }
-            "
-          >
-            <div
-              class="flex flex-row space-x-[3px] items-center w-full justify-start"
+          <div class="w-full flex flex-row items-center justify-between">
+            <app-select
+              v-model="filterSetup.period"
+              :options="monthFilterOption"
+              is-wrapper
+              @OnOptionSelected="
+                (option) => {
+                  currentOptionName = option.value;
+                  if (option.extraInfo) {
+                    filterFrom = option.extraInfo[0];
+                    filterTo = option.extraInfo[1];
+                  } else {
+                    filterFrom = '';
+                    filterTo = '';
+                  }
+                }
+              "
             >
-              <app-normal-text
-                custom-class="!text-black !font-semibold !text-left !text-sm"
-                >{{ currentOptionName }}</app-normal-text
+              <div
+                class="flex flex-row space-x-[3px] items-center w-full justify-start"
               >
-              <app-icon name="dropdown" custom-class="!h-[6px]" />
+                <app-normal-text
+                  custom-class="!text-black !font-semibold !text-left !text-sm"
+                  >{{ currentOptionName }}</app-normal-text
+                >
+                <app-icon name="dropdown" custom-class="!h-[6px]" />
+              </div>
+            </app-select>
+
+            <div>
+              <app-loading class="!text-green" v-if="filterIsLoading" />
             </div>
-          </app-select>
+          </div>
 
           <div class="w-full flex flex-row items-center space-x-3">
             <app-normal-text
               custom-class="!text-black !font-[500] !text-left !text-sm"
-              >In | ₺30,000</app-normal-text
+              >In | {{ currencySymbol }}
+              {{
+                Logic.Common.convertToMoney(
+                  (NormalFinancialSummary?.credit || 0) *
+                    (CurrentGlobalExchangeRate?.mid || 0),
+                  true,
+                  "",
+                  false
+                )
+              }}</app-normal-text
             >
 
             <app-normal-text
               custom-class="!text-black !font-[500] !text-left !text-sm"
-              >Out | ₺30,000</app-normal-text
+              >Out | {{ currencySymbol }}
+              {{
+                Logic.Common.convertToMoney(
+                  (NormalFinancialSummary?.debit || 0) *
+                    (CurrentGlobalExchangeRate?.mid || 0),
+                  true,
+                  "",
+                  false
+                )
+              }}</app-normal-text
             >
           </div>
         </div>
 
         <!-- Transaction history -->
-        <div class="w-full flex flex-col space-y-3">
-          <div v-if="true" class="py-4 !pt-2">
+        <div class="w-full flex flex-col">
+          <div v-if="recentTransactions.length === 0" class="py-4 !pt-2">
             <app-empty-state
               title="No transactions"
               description="Collect Payments, Make Withdrawals, and Redeem the GRP Tokens you’ve earned."
@@ -91,7 +126,13 @@
               v-for="transaction in recentTransactions"
               :key="transaction.id"
               :data="transaction"
-              @click="Logic.Common.GoToRoute('/transaction/' + transaction.id)"
+              @click="
+                Logic.Common.GoToRoute(
+                  '/transaction/' +
+                    transaction.id +
+                    `?group=${transaction.transaction_group}`
+                )
+              "
             />
           </template>
         </div>
@@ -112,11 +153,20 @@ import {
   AppIcon,
   AppTransaction,
   AppEmptyState,
+  AppLoading,
 } from "@greep/ui-components";
 import { Logic } from "@greep/logic";
 import { reactive } from "vue";
 import { SelectOption } from "@greep/logic/src/logic/types/common";
 import { ref } from "vue";
+import { onMounted } from "vue";
+import {
+  getPointTransaction,
+  getTransaction,
+} from "../../composable/financials";
+import { availableCurrencies } from "../../composable";
+import { onIonViewDidEnter } from "@ionic/vue";
+import { watch } from "vue";
 
 enum TransactionType {
   Sent = "sent",
@@ -134,6 +184,38 @@ export default defineComponent({
     AppIcon,
     AppTransaction,
     AppEmptyState,
+    AppLoading,
+  },
+  middlewares: {
+    fetchRules: [
+      {
+        domain: "Wallet",
+        property: "ManyTransactions",
+        method: "GetTransactions",
+        params: [1, 10],
+        requireAuth: true,
+        ignoreProperty: true,
+        silentUpdate: false,
+      },
+      {
+        domain: "Wallet",
+        property: "ManyPointTransactions",
+        method: "GetPointTransactions",
+        params: [1, 10],
+        requireAuth: true,
+        ignoreProperty: true,
+        silentUpdate: false,
+      },
+      {
+        domain: "Wallet",
+        property: "NormalFinancialSummary",
+        method: "GetNormalFinancialSummary",
+        params: [],
+        requireAuth: true,
+        ignoreProperty: true,
+        silentUpdate: true,
+      },
+    ],
   },
   setup() {
     const filterSetup = reactive({
@@ -142,58 +224,31 @@ export default defineComponent({
       period: "",
     });
 
-    const currentOptionName = ref("January, 2025");
+    const filterFrom = ref(filterSetup.from);
+    const filterTo = ref(filterSetup.to);
 
-    const monthFilterOption = reactive<SelectOption[]>([
-      {
-        value: "January, 2025",
-        key: "january_2025",
-      },
-      {
-        value: "February, 2025",
-        key: "february_2025",
-      },
-      {
-        value: "March, 2025",
-        key: "march_2025",
-      },
-      {
-        value: "April, 2025",
-        key: "april_2025",
-      },
-      {
-        value: "May, 2025",
-        key: "may_2025",
-      },
-      {
-        value: "June, 2025",
-        key: "june_2025",
-      },
-      {
-        value: "July, 2025",
-        key: "july_2025",
-      },
-      {
-        value: "August, 2025",
-        key: "august_2025",
-      },
-      {
-        value: "September, 2025",
-        key: "september_2025",
-      },
-      {
-        value: "October, 2025",
-        key: "october_2025",
-      },
-      {
-        value: "November, 2025",
-        key: "november_2025",
-      },
-      {
-        value: "December, 2025",
-        key: "december_2025",
-      },
-    ]);
+    const filterIsLoading = ref(false);
+
+    const selectedCurrency = ref(
+      Logic.Auth.AuthUser?.profile?.default_currency
+    );
+
+    const currencySymbol = ref(
+      availableCurrencies.find(
+        (currency) => currency.code === selectedCurrency.value
+      )?.symbol
+    );
+
+    const currentOptionName = ref("All Time");
+
+    const monthFilterOption = reactive<SelectOption[]>([]);
+
+    const ManyTransactions = ref(Logic.Wallet.ManyTransactions);
+    const ManyPointTransactions = ref(Logic.Wallet.ManyPointTransactions);
+    const NormalFinancialSummary = ref(Logic.Wallet.NormalFinancialSummary);
+    const CurrentGlobalExchangeRate = ref(
+      Logic.Wallet.CurrentGlobalExchangeRate
+    );
 
     const recentTransactions = reactive<
       {
@@ -203,65 +258,171 @@ export default defineComponent({
         type: TransactionType;
         transactionType: "credit" | "debit";
         date: string;
+        currencySymbol: string;
+        subAmount: string;
+        transaction_group: string;
       }[]
-    >([
-      {
-        id: 1,
-        title: "Payment to John Doe",
-        amount: 50.0,
-        type: TransactionType.Sent,
-        transactionType: "debit",
-        date: "2024-01-26",
-      },
-      {
-        id: 2,
-        title: "Received from Jane Smith",
-        amount: 100.0,
-        type: TransactionType.Received,
-        transactionType: "credit",
-        date: "2024-01-25",
-      },
-      {
-        id: 3,
-        title: "Points Transfer",
-        amount: 200.0,
-        type: TransactionType.Sent,
-        transactionType: "debit",
-        date: "2024-01-24",
-      },
-      {
-        id: 4,
-        title: "Redeemed Points",
-        amount: 25.0,
-        type: TransactionType.Redeemed,
-        transactionType: "credit",
-        date: "2024-01-23",
-      },
-      {
-        id: 5,
-        title: "Payment to Alice Johnson",
-        amount: 75.0,
-        type: TransactionType.Sent,
-        transactionType: "debit",
-        date: "2024-01-22",
-      },
-      {
-        id: 6,
-        title: "Received from Bob Williams",
-        amount: 150.0,
-        type: TransactionType.Received,
-        transactionType: "credit",
-        date: "2024-01-21",
-      },
-      {
-        id: 7,
-        title: "Gift Card Purchase",
-        amount: 300.0,
-        type: TransactionType.Sent,
-        transactionType: "debit",
-        date: "2024-01-20",
-      },
-    ]);
+    >([]);
+
+    const setDefaultMonthOptions = () => {
+      monthFilterOption.length = 0;
+      monthFilterOption.push({
+        value: "All Time",
+        key: "all_time",
+      });
+
+      const currentDate = new Date();
+
+      for (let i = 0; i < 10; i++) {
+        const month = currentDate.getMonth();
+        const year = currentDate.getFullYear();
+        const monthName = currentDate.toLocaleString("default", {
+          month: "long",
+        });
+        const firstDayOfMonth = new Date(year, month, 1);
+        const lastDayOfMonth = new Date(year, month + 1, 0);
+
+        const formattedFirstDay = firstDayOfMonth.toLocaleDateString("en-US", {
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+        });
+
+        const formattedLastDay = lastDayOfMonth.toLocaleDateString("en-US", {
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+        });
+
+        monthFilterOption.push({
+          value: `${monthName}, ${year}`,
+          key: `${monthName.toLowerCase()}_${year}`,
+          extraInfo: [formattedFirstDay, formattedLastDay],
+        });
+
+        currentDate.setMonth(month - 1);
+      }
+    };
+
+    const applyFilters = () => {
+      const allPromiseActions: any[] = [];
+
+      if (!filterFrom.value || !filterTo.value) {
+        filterIsLoading.value = false;
+        return;
+      }
+
+      if (filterIsLoading.value) {
+        return;
+      }
+
+      // For transaction
+      allPromiseActions.push(
+        Logic.Wallet.GetTransactions(
+          1,
+          10,
+          "CREATED_AT",
+          "DESC",
+          `{
+          column: CREATED_AT
+          operator: BETWEEN
+          value: ["${filterFrom.value}", "${filterTo.value}"]
+        }`,
+          true
+        ).then((transactions) => {
+          ManyTransactions.value = transactions;
+        })
+      );
+      // For point transaction
+      allPromiseActions.push(
+        Logic.Wallet.GetPointTransactions(
+          1,
+          10,
+          "CREATED_AT",
+          "DESC",
+          `{
+          column: CREATED_AT
+          operator: BETWEEN
+          value: ["${filterFrom.value}", "${filterTo.value}"]
+        }`,
+          true
+        ).then((pointTransactions) => {
+          ManyPointTransactions.value = pointTransactions;
+        })
+      );
+      // For financial summary
+      allPromiseActions.push(
+        Logic.Wallet.GetNormalFinancialSummary(filterFrom.value, filterTo.value)
+      );
+
+      filterIsLoading.value = true;
+
+      Promise.all(allPromiseActions)
+        .then(() => {
+          filterIsLoading.value = false;
+        })
+        .catch((error) => {
+          console.error("Error fetching data:", error);
+          filterIsLoading.value = false;
+        });
+    };
+
+    const setTransactionData = () => {
+      recentTransactions.length = 0;
+
+      // Normal transactions
+      ManyTransactions.value?.data?.forEach((data) => {
+        const transaction = getTransaction(
+          data,
+          selectedCurrency.value,
+          currencySymbol.value || ""
+        );
+        recentTransactions.push(transaction);
+      });
+
+      // Point transactions
+      ManyPointTransactions.value?.data?.forEach((data) => {
+        const pointTransaction = getPointTransaction(
+          data,
+          currencySymbol.value || ""
+        );
+        recentTransactions.push(pointTransaction);
+      });
+
+      // Sort transactions desc by date
+      recentTransactions.sort(
+        (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+      );
+    };
+
+    watch([ManyTransactions, ManyPointTransactions], () => {
+      setTransactionData();
+    });
+
+    watch([filterFrom, filterTo], () => {
+      Logic.Common.debounce(() => {
+        applyFilters();
+      }, 400);
+    });
+
+    onIonViewDidEnter(() => {
+      setTransactionData();
+      setDefaultMonthOptions();
+    });
+
+    onMounted(() => {
+      // Register reactive data
+      Logic.Wallet.watchProperty(
+        "CurrentGlobalExchangeRate",
+        CurrentGlobalExchangeRate
+      );
+      Logic.Wallet.watchProperty(
+        "NormalFinancialSummary",
+        NormalFinancialSummary
+      );
+      setTransactionData();
+      setDefaultMonthOptions();
+    });
 
     return {
       Logic,
@@ -269,6 +430,12 @@ export default defineComponent({
       filterSetup,
       monthFilterOption,
       currentOptionName,
+      NormalFinancialSummary,
+      currencySymbol,
+      CurrentGlobalExchangeRate,
+      filterIsLoading,
+      filterFrom,
+      filterTo,
     };
   },
 });
