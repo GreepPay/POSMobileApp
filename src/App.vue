@@ -57,6 +57,7 @@ export default defineComponent({
     localStorage.setItem("app_version", "1.00");
 
     // Set app url
+    
     Logic.Common.SetApiUrl(
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore

@@ -17,7 +17,7 @@
             <div class="w-full flex flex-col space-y-[1px] z-1">
               <app-normal-text
                 class="!text-white font-semibold !text-left !text-base"
-                >{{ AuthUser.first_name }}
+                > {{ AuthUser.first_name }}
                 {{ AuthUser.last_name }}</app-normal-text
               >
               <app-normal-text class="font-light !text-left !text-white">{{
@@ -38,7 +38,7 @@
                         true,
                         ""
                       )
-                    }}</app-normal-text>
+                    }} </app-normal-text>
                   </div>
 
                   <app-icon name="arrow-right-white" custom-class="!h-[20px]" />
@@ -110,8 +110,7 @@ export default defineComponent({
     AppIcon,
   },
   setup() {
-    const AuthUser = ref<User>(Logic.Auth.AuthUser);
-
+    const AuthUser = ref<User>(Logic.Auth.AuthUser); 
     const profileItems = reactive([
       {
         title: "Personal Info",

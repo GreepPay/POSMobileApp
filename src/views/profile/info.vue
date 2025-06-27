@@ -3,8 +3,8 @@
     <subpage-layout title="Personal Info" hasExtraTopContent>
       <template #extra-top-content>
         <span @click="Logic.Common.GoToRoute('/profile/edit-profile')"
-          ><app-icon name="edit" custom-class="!h-[22px]"
-        /></span>
+          > <app-icon name="edit" custom-class="!h-[22px]"
+        /> </span>
       </template>
       <div class="w-full flex flex-col space-y-5 justify-start px-4 h-full">
         <div class="w-full flex flex-col pt-3">
