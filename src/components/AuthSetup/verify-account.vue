@@ -58,8 +58,8 @@
           <div
             class="flex flex-col w-full space-y-3 px-4 py-4 !border-[1.5px] !border-dashed !border-veryLightGray rounded-[10px]"
           >
-            <app-normal-text class="w-full text-left font-semibold">
-              Business Registration
+            <app-normal-text class="w-full text-left font-semibold !text-sm">
+              Business Registration (Optional)
             </app-normal-text>
 
             <div
@@ -93,8 +93,8 @@
           <div
             class="flex flex-col w-full space-y-3 px-4 py-4 !border-[1.5px] !border-dashed !border-veryLightGray rounded-[10px]"
           >
-            <app-normal-text class="w-full text-left font-semibold">
-              Other Business Document
+            <app-normal-text class="w-full text-left font-semibold !text-sm">
+              Other Business Document (optional)
             </app-normal-text>
 
             <div class="w-full flex flex-row items-center justify-between">
@@ -154,7 +154,7 @@ export default defineComponent({
     });
 
     const continueWithForm = () => {
-      if (formData.international_passport && formData.business_document) {
+      if (formData.international_passport) {
         return formData;
       } else {
         return;

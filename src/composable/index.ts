@@ -125,7 +125,7 @@ export const withdrawalAvailableCurrencies = reactive([
     loading: false,
     icon_extension: "svg",
     country_code: "US",
-    allow_p2p: false,
+    allow_p2p: true,
   },
   {
     code: "EUR",
@@ -134,7 +134,7 @@ export const withdrawalAvailableCurrencies = reactive([
     loading: false,
     icon_extension: "svg",
     country_code: "EU",
-    allow_p2p: false,
+    allow_p2p: true,
   },
   {
     code: "USDC",

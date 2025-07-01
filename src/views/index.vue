@@ -354,7 +354,7 @@ export default defineComponent({
         icon: "quick-actions/graph",
         route_path: "/insights",
         name: "Insights",
-        soon: true,
+        soon: false,
       },
     ]);
 

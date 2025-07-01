@@ -53,13 +53,12 @@
           </app-normal-text>
           <app-text-field
             :has-title="false"
-            type="tel"
+            type="number"
             placeholder="0.00"
             ref="sellRate"
             name="Exchange Rate"
             v-model="formData.sell_rate"
             input-style="!text-sm !font-[500]"
-            is-formatted
             :rules="[FormValidations.RequiredRule]"
           >
             <template #inner-suffix>
@@ -68,6 +67,13 @@
               </app-normal-text>
             </template>
           </app-text-field>
+          <div class="w-full flex flex-row pt-2 items-center">
+            <app-icon name="gray-exchange" class="h-[23px] mr-1" />
+            <app-normal-text class="!font-[500] !text-right !text-gray-500">
+              1 USDC = {{ currentSellCurrency?.symbol
+              }}{{ Logic.Common.convertToMoney(formData.sell_rate, true, "") }}
+            </app-normal-text>
+          </div>
         </div>
 
         <div
@@ -78,13 +84,12 @@
           </app-normal-text>
           <app-text-field
             :has-title="false"
-            type="tel"
+            type="number"
             placeholder="0.00"
             ref="minSellAmount"
             name="Minimum Sell Amount"
             v-model="formData.min_sell"
             input-style="!text-sm !font-[500]"
-            is-formatted
             :rules="[FormValidations.RequiredRule]"
           >
             <template #inner-suffix>
@@ -93,6 +98,12 @@
               </app-normal-text>
             </template>
           </app-text-field>
+          <div class="w-full flex flex-row pt-2 items-center">
+            <app-normal-text class="!font-[500] !text-right !text-gray-500">
+              Min = {{ currentSellCurrency?.symbol
+              }}{{ Logic.Common.convertToMoney(formData.min_sell, true, "") }}
+            </app-normal-text>
+          </div>
         </div>
 
         <div
@@ -103,13 +114,12 @@
           </app-normal-text>
           <app-text-field
             :has-title="false"
-            type="tel"
+            type="number"
             placeholder="0.00"
             ref="maxSellAmount"
             name="Maximum Sell Amount"
             v-model="formData.max_sell"
             input-style="!text-sm !font-[500]"
-            is-formatted
             :rules="[FormValidations.RequiredRule]"
           >
             <template #inner-suffix>
@@ -118,6 +128,12 @@
               </app-normal-text>
             </template>
           </app-text-field>
+          <div class="w-full flex flex-row pt-2 items-center">
+            <app-normal-text class="!font-[500] !text-right !text-gray-500">
+              Max = {{ currentSellCurrency?.symbol
+              }}{{ Logic.Common.convertToMoney(formData.max_sell, true, "") }}
+            </app-normal-text>
+          </div>
         </div>
 
         <div
@@ -175,6 +191,7 @@ import {
   AppTextField,
   AppButton,
   AppCheckbox,
+  AppIcon,
 } from "@greep/ui-components";
 import { Logic } from "@greep/logic";
 import { reactive } from "vue";
@@ -196,6 +213,7 @@ export default defineComponent({
     AppTextField,
     AppButton,
     AppCheckbox,
+    AppIcon,
   },
   middlewares: {
     fetchRules: [
