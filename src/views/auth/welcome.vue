@@ -51,7 +51,7 @@
       </div>
 
       <!-- Keyboard -->
-      <div class="w-full pt-4 flex flex-col">
+      <div class="w-full pt-4 flex flex-col px-4">
         <app-keyboard v-model="formData.passcode" />
       </div>
 

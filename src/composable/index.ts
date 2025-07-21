@@ -1,3 +1,4 @@
+import { Currency } from "@greep/ui-components/src/types";
 import { getPlatforms } from "@ionic/vue";
 import { computed, reactive } from "vue";
 
@@ -69,7 +70,7 @@ export const safeAreaInsetTop = computed(() => {
 
 export const safeAreaInsetBottom = computed(() => {
   // Replace this with your actual platform detection logic
-  const isAndroid = getPlatforms()[0] === "android";
+  const isAndroid = getPlatforms()[0] === "android" || getPlatforms()[0] === "pwa";
 
   const bottomInset = Number(
     String(
@@ -92,6 +93,7 @@ export const getBottomPadding = computed(() => {
 });
 
 export interface MessageInfo {
+  id: string;
   text_content: string;
   user_uuid: string;
   type: "text" | "info";
@@ -103,12 +105,14 @@ export interface MessageInfo {
   };
   actions?: {
     label: string;
-    type: "success" | "info" | "danger" | "warning";
+    type: "success" | "info" | "danger" | "warning" | "primary";
     message: string;
+    value: string;
+    handler: () => void;
   }[];
 }
 
-export const withdrawalAvailableCurrencies = reactive([
+export const withdrawalAvailableCurrencies = reactive<Currency[]>([
   {
     code: "TRY",
     name: "Turkish Lira (₺)",
@@ -187,16 +191,24 @@ export const withdrawalAvailableCurrencies = reactive([
     icon_extension: "svg",
     country_code: "NG",
     allow_p2p: false,
+    payout_fees: [
+      {
+        type: "fixed",
+        min: 100,
+        value: 100,
+        method: "bank_transfer",
+      },
+    ],
   },
-  {
-    code: "GHS",
-    name: "Ghanaian Cedis (₵)",
-    symbol: "₵",
-    loading: false,
-    icon_extension: "svg",
-    country_code: "GH",
-    allow_p2p: false,
-  },
+  // {
+  //   code: "GHS",
+  //   name: "Ghanaian Cedis (₵)",
+  //   symbol: "₵",
+  //   loading: false,
+  //   icon_extension: "svg",
+  //   country_code: "GH",
+  //   allow_p2p: false,
+  // },
   {
     code: "KES",
     name: "Kenyan Shilling (KES)",
@@ -205,6 +217,42 @@ export const withdrawalAvailableCurrencies = reactive([
     icon_extension: "png",
     country_code: "KE",
     allow_p2p: false,
+    payout_fees: [
+      {
+        type: "fixed",
+        min: 200,
+        value: 0.5,
+        method: "bank_transfer",
+      },
+      {
+        type: "percentage",
+        min: 1,
+        value: 2,
+        method: "momo",
+      },
+    ],
+  },
+  {
+    code: "UGX",
+    name: "Ugandan Shilling",
+    symbol: "USh",
+    country_code: "UG",
+    loading: false,
+    allow_p2p: false,
+    payout_fees: [
+      {
+        type: "percentage",
+        min: 5000,
+        value: 0.5,
+        method: "bank_transfer",
+      },
+      {
+        type: "percentage",
+        min: 1,
+        value: 1.5,
+        method: "momo",
+      },
+    ],
   },
   {
     code: "ZAR",
@@ -214,5 +262,151 @@ export const withdrawalAvailableCurrencies = reactive([
     icon_extension: "svg",
     country_code: "ZA",
     allow_p2p: false,
+    payout_fees: [
+      {
+        type: "percentage",
+        min: 20,
+        value: 0.5,
+        method: "bank_transfer",
+      },
+    ],
+  },
+  {
+    code: "RWF",
+    name: "Rwandan Franc",
+    symbol: "RF",
+    country_code: "RW",
+    loading: false,
+    icon_extension: "png",
+    allow_p2p: false,
+    payout_fees: [
+      {
+        type: "percentage",
+        min: 1000,
+        value: 0.5,
+        method: "bank_transfer",
+      },
+    ],
+  },
+  {
+    code: "ZMW",
+    name: "Zambian Kwacha",
+    symbol: "ZK",
+    country_code: "ZM",
+    loading: false,
+    allow_p2p: false,
+    payout_fees: [
+      {
+        type: "percentage",
+        min: 100,
+        value: 0.5,
+        method: "bank_transfer",
+      },
+      {
+        type: "percentage",
+        min: 1,
+        value: 1.5,
+        method: "momo",
+      },
+    ],
+  },
+  {
+    code: "BWP",
+    name: "Botswana Pula",
+    symbol: "P",
+    country_code: "BW",
+    loading: false,
+    icon_extension: "png",
+    allow_p2p: false,
+    payout_fees: [
+      {
+        type: "percentage",
+        min: 10,
+        value: 0.5,
+        method: "bank_transfer",
+      },
+      {
+        type: "percentage",
+        min: 1,
+        value: 2.2,
+        method: "momo",
+      }
+    ],
+  },
+  {
+    code: "XAF",
+    name: "Cameroon CFA Franc",
+    symbol: "FCFA",
+    country_code: "CM",
+    loading: false,
+    icon_extension: "png",
+    allow_p2p: false,
+    payout_fees: [
+      {
+        type: "percentage",
+        min: 1,
+        value: 1.5,
+        method: "momo",
+      },
+    ],
+  },
+  {
+    code: "MWK",
+    name: "Malawian Kwacha",
+    symbol: "MK",
+    country_code: "MW",
+    loading: false,
+    icon_extension: "png",
+    allow_p2p: false,
+    payout_fees: [
+      {
+        type: "percentage",
+        min: 750,
+        value: 0.5,
+        method: "bank_transfer",
+      },
+       {
+        type: "percentage",
+        min: 1,
+        value: 1,
+        method: "momo",
+      },
+    ],
+  },
+  {
+    code: "XOF",
+    name: "Togo CFA Franc",
+    symbol: "CFA",
+    country_code: "TG",
+    loading: false,
+    icon_extension: "png",
+    use_country_code: true,
+    allow_p2p: false,
+    payout_fees: [
+      {
+        type: "percentage",
+        min: 1,
+        value: 2.25,
+        method: "momo",
+      },
+    ],
+  },
+  {
+    code: "XOF",
+    name: "Côte d'Ivoire CFA Franc",
+    symbol: "CFA",
+    country_code: "CI",
+    loading: false,
+    icon_extension: "png",
+    use_country_code: true,
+    allow_p2p: false,
+    payout_fees: [
+      {
+        type: "percentage",
+        min: 1,
+        value: 2.25,
+        method: "momo",
+      },
+    ],
   },
 ]);

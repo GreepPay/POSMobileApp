@@ -50,6 +50,7 @@ export default defineComponent({
 
     // Set routers
     Logic.Common.SetRouter(router);
+    // @ts-expect-error no real type for route
     Logic.Common.SetRoute(route);
 
     // Set UI frontend logic
@@ -132,6 +133,7 @@ export default defineComponent({
 
       // If user is authenticated
       if (currentAuthUser) {
+        Logic.Common.initiateWebSocket();
         Logic.Auth.GetAuthUser();
 
         if (

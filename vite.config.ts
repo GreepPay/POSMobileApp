@@ -6,26 +6,58 @@ import path from "path";
 import { defineConfig } from "vite";
 
 import tailwindcss from "@tailwindcss/vite";
+import { VitePWA } from "vite-plugin-pwa";
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  // base: "/POSMobileApp/",
-  plugins: [vue(), legacy(), tailwindcss()],
+  plugins: [
+    vue(),
+    legacy(),
+    tailwindcss(),
+    VitePWA({
+      registerType: "autoUpdate",
+      includeAssets: ["favicon.ico", "apple-touch-icon.png", "mask-icon.svg"],
+      workbox: {
+        maximumFileSizeToCacheInBytes: 10000000,
+      },
+      manifest: {
+        name: "Greep Merchant",
+        short_name: "Greep Merchant",
+        description: "Your business, beyond borders.",
+        theme_color: "#ffffff",
+        icons: [
+          {
+            src: "pwa-64x64.png",
+            sizes: "64x64",
+            type: "image/png",
+          },
+          {
+            src: "pwa-192x192.png",
+            sizes: "192x192",
+            type: "image/png",
+          },
+          {
+            src: "pwa-512x512.png",
+            sizes: "512x512",
+            type: "image/png",
+          },
+          {
+            src: "maskable-icon-512x512.png",
+            sizes: "512x512",
+            type: "image/png",
+            purpose: "maskable",
+          },
+        ],
+      },
+    }),
+  ],
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
   },
-  optimizeDeps: {
-    include: ["firebase/auth"],
-  },
   test: {
     globals: true,
     environment: "jsdom",
-  },
-  build: {
-    commonjsOptions: {
-      include: [/firebase\/auth/, /node_modules/],
-    },
   },
 });
