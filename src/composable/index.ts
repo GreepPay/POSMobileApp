@@ -2,6 +2,78 @@ import { Currency } from "@greep/ui-components/src/types";
 import { getPlatforms } from "@ionic/vue";
 import { computed, reactive } from "vue";
 
+export const supportedCountries = reactive([
+  {
+    country: "Nigeria",
+    isoCode: "NG",
+    currency: "NGN",
+    idVerificationMethods: [
+      { key: "BVN", value: "Bank Verification Number (BVN)" },
+      { key: "NIN", value: "National Identification Number (NIN)" },
+    ],
+  },
+  {
+    country: "Kenya",
+    isoCode: "KE",
+    currency: "KES",
+    idVerificationMethods: [
+      { key: "NID", value: "National ID" },
+      { key: "KRA_PIN", value: "Kenya KRA PIN" },
+    ],
+  },
+  {
+    country: "Uganda",
+    isoCode: "UG",
+    currency: "UGX",
+    idVerificationMethods: [
+      { key: "NIN", value: "National Identification Number (NIN)" },
+    ],
+  },
+  {
+    country: "Ghana",
+    isoCode: "GH",
+    currency: "GHS",
+    idVerificationMethods: [
+      { key: "voter", value: "Voter’s ID" },
+      { key: "TIN", value: "Taxpayer Identification Number (TIN)" },
+      { key: "ssnit", value: "Social Security Number (SSNIT ID)" },
+      { key: "digital_address", value: "Ghana Digital Address" },
+    ],
+  },
+  {
+    country: "South Africa",
+    isoCode: "ZA",
+    currency: "ZAR",
+    idVerificationMethods: [
+      { key: "sa_id", value: "South African National ID" },
+    ],
+  },
+  {
+    country: "Angola",
+    isoCode: "AO",
+    currency: "AOA",
+    idVerificationMethods: [
+      { key: "national_id", value: "Angola National ID" },
+    ],
+  },
+  {
+    country: "Zambia",
+    isoCode: "ZM",
+    currency: "ZMW",
+    idVerificationMethods: [
+      { key: "NRC", value: "National Registration Card (NRC)" },
+    ],
+  },
+  {
+    country: "Zimbabwe",
+    isoCode: "ZW",
+    currency: "ZWL",
+    idVerificationMethods: [
+      { key: "national_id", value: "Zimbabwe National ID" },
+    ],
+  },
+])
+
 export const availableCurrencies = reactive([
   {
     code: "TRY",

@@ -47,6 +47,14 @@
       <slot />
     </div>
 
+    <slot
+      name="bottom-section"
+      class="fixed !bottom-0 w-full"
+      :style="`
+          ${getBottomPadding}
+        `"
+    />
+
     <div
       class="w-full fixed h-[env(safe-area-inset-bottom)] bottom-0 left-0 bg-white z-[89899989998898] dark:bg-black"
     ></div>
@@ -55,83 +63,85 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from "vue";
-import { useRoute, useRouter } from "vue-router";
-import { AppHeaderText, AppIcon } from "@greep/ui-components";
-import { computed } from "vue";
-import { getPlatforms } from "@ionic/vue";
+  import { defineComponent } from "vue"
+  import { useRoute, useRouter } from "vue-router"
+  import { AppHeaderText, AppIcon } from "@greep/ui-components"
+  import { computed } from "vue"
+  import { getPlatforms } from "@ionic/vue"
+  import { getBottomPadding } from "../composable"
 
-export default defineComponent({
-  components: {
-    AppHeaderText,
-    AppIcon,
-  },
-  props: {
-    title: {
-      type: String,
-      default: "",
+  export default defineComponent({
+    components: {
+      AppHeaderText,
+      AppIcon,
     },
-    useEmitBack: {
-      type: Boolean, // If true, emits "back" instead of using goBack
-      default: false,
+    props: {
+      title: {
+        type: String,
+        default: "",
+      },
+      useEmitBack: {
+        type: Boolean, // If true, emits "back" instead of using goBack
+        default: false,
+      },
+      hideBackBtn: {
+        type: Boolean,
+        default: false,
+      },
+      hasExtraTopContent: {
+        type: Boolean,
+        default: false,
+      },
+      hasBottomButton: {
+        type: Boolean,
+        default: true,
+      },
+      hasExtraRow: {
+        type: Boolean,
+        default: false,
+      },
     },
-    hideBackBtn: {
-      type: Boolean,
-      default: false,
-    },
-    hasExtraTopContent: {
-      type: Boolean,
-      default: false,
-    },
-    hasBottomButton: {
-      type: Boolean,
-      default: true,
-    },
-    hasExtraRow: {
-      type: Boolean,
-      default: false,
-    },
-  },
-  name: "SubPageLayout",
-  emits: ["back"],
-  setup(props, { emit }) {
-    const router = useRouter();
-    const route = useRoute();
+    name: "SubPageLayout",
+    emits: ["back"],
+    setup(props, { emit }) {
+      const router = useRouter()
+      const route = useRoute()
 
-    const goToRoute = (route: string) => {
-      router.push(route);
-    };
-
-    const ignoreBackRoute = route.query.ignoreBackRoute
-      ? route.query.ignoreBackRoute.toString()
-      : null;
-
-    const goBack = () => {
-      const routeMiddlewares: any = route.meta.middlewares;
-      const goBackRoute = routeMiddlewares?.goBackRoute;
-      if (typeof goBackRoute == "function" && !ignoreBackRoute) {
-        goToRoute(goBackRoute());
-      } else if (typeof goBackRoute == "string" && !ignoreBackRoute) {
-        goToRoute(goBackRoute);
-      } else {
-        window.history.length > 1 ? router.go(-1) : router.push("/");
+      const goToRoute = (route: string) => {
+        router.push(route)
       }
-    };
 
-    const currentPlatform = computed(() => {
-      return getPlatforms()[0];
-    });
+      const ignoreBackRoute = route.query.ignoreBackRoute
+        ? route.query.ignoreBackRoute.toString()
+        : null
 
-    const handleBack = () => {
-      if (props.useEmitBack) emit("back");
-      else goBack();
-    };
+      const goBack = () => {
+        const routeMiddlewares: any = route.meta.middlewares
+        const goBackRoute = routeMiddlewares?.goBackRoute
+        if (typeof goBackRoute == "function" && !ignoreBackRoute) {
+          goToRoute(goBackRoute())
+        } else if (typeof goBackRoute == "string" && !ignoreBackRoute) {
+          goToRoute(goBackRoute)
+        } else {
+          window.history.length > 1 ? router.go(-1) : router.push("/")
+        }
+      }
 
-    return {
-      handleBack,
-      goToRoute,
-      currentPlatform,
-    };
-  },
-});
+      const currentPlatform = computed(() => {
+        return getPlatforms()[0]
+      })
+
+      const handleBack = () => {
+        if (props.useEmitBack) emit("back")
+        else goBack()
+      }
+
+      return {
+        handleBack,
+        goToRoute,
+        currentPlatform,
+        getBottomPadding,
+      }
+    },
+  })
 </script>
