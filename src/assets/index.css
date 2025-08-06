@@ -30,6 +30,7 @@
 
   /* Colors */
   --color-green: #10bb76;
+  --color-light-green: #e8f5f0;
   --color-primary: #10bb76;
   --color-black: #0a141e;
   --color-white: #ffffff;
@@ -40,7 +41,9 @@
   --color-light-gray-two: #e0e2e4;
   --color-blue-green: #00a0b4;
   --color-blue: #009de3;
+  --color-light-blue: #e5f5fc;
   --color-red: #fa1919;
+  --color-light-red: #ffe5e5;
   --color-purple: #8e3be0;
   --color-orange: #ffaa1f;
   --color-veryLightGray: #999999;

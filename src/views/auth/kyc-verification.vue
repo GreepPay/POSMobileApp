@@ -213,7 +213,7 @@
         id_country: "NG",
         full_name: `${AuthUser.value?.first_name} ${AuthUser.value?.last_name}`,
         phone_number: "",
-        date_of_birth: "1997-05-16",
+        date_of_birth: "",
         address: "",
         additional_ids: [],
         checks: { dob: false, name: false, phone: false },
