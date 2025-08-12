@@ -207,6 +207,7 @@ export default defineComponent({
         const conversation = await Logic.Messaging.InitiateConversation();
 
         if (conversation) {
+          console.log("Am Here");
           Logic.Common.showLoader({ show: false });
           Logic.Common.GoToRoute(
             "/chat/" + conversation.uuid + "?p2p=true&method=" + selectedMethod.value

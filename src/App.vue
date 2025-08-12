@@ -92,6 +92,12 @@ export default defineComponent({
                 name: "P2P",
               },
               {
+                path: "/events",
+                icon: "events",
+                routeTag: "events",
+                name: "Events",
+              },
+              {
                 path: "/orders",
                 icon: "order",
                 routeTag: "orders",
