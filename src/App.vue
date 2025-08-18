@@ -12,213 +12,213 @@
 </template>
 
 <script lang="ts">
-import { IonApp, IonRouterOutlet } from "@ionic/vue";
-import { defineComponent, onMounted, ref, watch } from "vue";
-import { App as CapacitorApp, URLOpenListenerEvent } from "@capacitor/app";
-import { getPlatforms } from "@ionic/vue";
-import { useRoute, useRouter } from "vue-router";
-import { Logic } from "@greep/logic";
-import {
-  SetFrontendLogic,
-  AppAlert,
-  AppLoader,
-  AppBottomBar,
-} from "@greep/ui-components";
-import { SplashScreen } from "@capacitor/splash-screen";
-import { reactive } from "vue";
-import { Business } from "@greep/logic/src/gql/graphql";
-
-export default defineComponent({
-  name: "App",
-  components: {
-    IonApp,
-    IonRouterOutlet,
+  import { IonApp, IonRouterOutlet } from "@ionic/vue"
+  import { defineComponent, onMounted, ref, watch } from "vue"
+  import { App as CapacitorApp, URLOpenListenerEvent } from "@capacitor/app"
+  import { getPlatforms } from "@ionic/vue"
+  import { useRoute, useRouter } from "vue-router"
+  import { Logic } from "@greep/logic"
+  import {
+    SetFrontendLogic,
     AppAlert,
     AppLoader,
     AppBottomBar,
-  },
-  setup() {
-    const router: any = useRouter();
-    const route = useRoute();
+  } from "@greep/ui-components"
+  import { SplashScreen } from "@capacitor/splash-screen"
+  import { reactive } from "vue"
+  import { Business } from "@greep/logic/src/gql/graphql"
 
-    const alertSetup = ref(Logic.Common.alertSetup);
-    const loaderSetup = ref(Logic.Common.loaderSetup);
-    const showBottomNav = ref<any>();
-    const AuthUser = ref(Logic.Auth.AuthUser);
+  export default defineComponent({
+    name: "App",
+    components: {
+      IonApp,
+      IonRouterOutlet,
+      AppAlert,
+      AppLoader,
+      AppBottomBar,
+    },
+    setup() {
+      const router: any = useRouter()
+      const route = useRoute()
 
-    const selectedTab = ref("");
+      const alertSetup = ref(Logic.Common.alertSetup)
+      const loaderSetup = ref(Logic.Common.loaderSetup)
+      const showBottomNav = ref<any>()
+      const AuthUser = ref(Logic.Auth.AuthUser)
 
-    // Set routers
-    Logic.Common.SetRouter(router);
-    // @ts-expect-error no real type for route
-    Logic.Common.SetRoute(route);
+      const selectedTab = ref("")
 
-    // Set UI frontend logic
-    SetFrontendLogic(Logic);
+      // Set routers
+      Logic.Common.SetRouter(router)
+      // @ts-expect-error no real type for route
+      Logic.Common.SetRoute(route)
 
-    // Set app version
-    localStorage.setItem("app_version", "1.00");
+      // Set UI frontend logic
+      SetFrontendLogic(Logic)
 
-    const bottomBar = reactive([
-      {
-        path: "/",
-        icon: "home",
-        routeTag: "base",
-        name: "Home",
-      },
-    ]);
+      // Set app version
+      localStorage.setItem("app_version", "1.00")
 
-    // Set app url
+      const bottomBar = reactive([
+        {
+          path: "/",
+          icon: "home",
+          routeTag: "base",
+          name: "Home",
+        },
+      ])
 
-    const setBottomBar = () => {
-      bottomBar.length = 0;
-      bottomBar.push({
-        path: "/",
-        icon: "home",
-        routeTag: "base",
-        name: "Home",
-      });
-      // Set bottom nav
-      if (Logic.Auth.AuthUser) {
-        const business: Business = Logic.Auth.GetDefaultBusiness();
+      // Set app url
 
-        if (business?.business_type == "exchanger") {
-          bottomBar.push(
-            ...[
-              {
-                path: "/p2p",
-                icon: "ads",
-                routeTag: "p2p",
-                name: "P2P",
-              },
-              {
-                path: "/orders",
-                icon: "order",
-                routeTag: "orders",
-                name: "Orders",
-              },
-            ]
-          );
-        }
+      const setBottomBar = () => {
+        bottomBar.length = 0
+        bottomBar.push({
+          path: "/",
+          icon: "home",
+          routeTag: "base",
+          name: "Home",
+        })
+        // Set bottom nav
+        if (Logic.Auth.AuthUser) {
+          const business: Business = Logic.Auth.GetDefaultBusiness()
 
-        if (business?.business_type == "event_host") {
-          bottomBar.push(
-            ...[
-              {
-                path: "/events",
-                icon: "events",
-                routeTag: "events",
-                name: "Events",
-              },
-              {
-                path: "/orders",
-                icon: "order",
-                routeTag: "orders",
-                name: "Orders",
-              },
-            ]
-          );
-        }
-      }
-    };
+          if (business?.business_type == "exchanger") {
+            bottomBar.push(
+              ...[
+                {
+                  path: "/p2p",
+                  icon: "ads",
+                  routeTag: "p2p",
+                  name: "P2P",
+                },
+                {
+                  path: "/orders",
+                  icon: "order",
+                  routeTag: "orders",
+                  name: "Orders",
+                },
+              ]
+            )
+          }
 
-    Logic.Common.SetApiUrl(
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore
-      (import.meta as any).env.VITE_API_URL ?? "http://localhost:3000/graphql"
-    );
-
-    const handleMountActions = () => {
-      const currentAuthUser = Logic.Auth.AuthUser;
-
-      // If user is authenticated
-      if (currentAuthUser) {
-        Logic.Common.initiateWebSocket();
-        Logic.Auth.GetAuthUser();
-
-        if (
-          localStorage.getItem("auth_passcode") &&
-          localStorage.getItem("auth_encrypted_data")
-        ) {
-          Logic.Common.GoToRoute("/auth/welcome");
-        } else {
-          Logic.Auth.SignOut();
-        }
-      } else {
-        // Go to start page
-        // Only if the path does not contain /auth
-        if (!window.location.pathname.includes("/auth")) {
-          Logic.Common.GoToRoute("/start");
-        }
-      }
-    };
-
-    watch(AuthUser, () => {
-      setBottomBar();
-    });
-
-    onMounted(async () => {
-      // Logic.Common.GoToRoute("/auth/login");
-      // deep link config
-
-      CapacitorApp.addListener(
-        "appUrlOpen",
-        function (event: URLOpenListenerEvent) {
-          // Example url: https://beerswift.app/tabs/tabs2
-          // slug = /tabs/tabs2
-          const domainType = ".com";
-          const slug = event.url.split(domainType).pop();
-
-          // We only push to the route if there is a slug present
-          if (slug) {
-            if (getPlatforms()[0] == "android") {
-              window.location.href = `https://localhost${slug}`;
-              return;
-            }
-            Logic.Common.GoToRoute(slug);
-            return;
+          if (business?.business_type == "event_host") {
+            bottomBar.push(
+              ...[
+                {
+                  path: "/events",
+                  icon: "events",
+                  routeTag: "events",
+                  name: "Events",
+                },
+                {
+                  path: "/orders",
+                  icon: "order",
+                  routeTag: "orders",
+                  name: "Orders",
+                },
+              ]
+            )
           }
         }
-      );
-
-      handleMountActions();
-
-      // Register watchers
-      Logic.Common.watchProperty("alertSetup", alertSetup);
-      Logic.Common.watchProperty("loaderSetup", loaderSetup);
-      Logic.Common.watchProperty("showBottomNav", showBottomNav);
-      Logic.Auth.watchProperty("AuthUser", AuthUser);
-
-      await SplashScreen.show({
-        showDuration: 3000,
-        autoHide: true,
-      });
-    });
-
-    const tabIsActive = (tabName: string) => {
-      const mainName = tabName;
-
-      if (mainName == "base" && router.currentRoute.value.path == "/") {
-        return true;
-      } else if (
-        mainName != "base" &&
-        router.currentRoute.value.path.includes(mainName)
-      ) {
-        selectedTab.value = mainName;
-        return true;
       }
 
-      return false;
-    };
+      Logic.Common.SetApiUrl(
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
+        (import.meta as any).env.VITE_API_URL ?? "http://localhost:3000/graphql"
+      )
 
-    return {
-      alertSetup,
-      loaderSetup,
-      Logic,
-      tabIsActive,
-      showBottomNav,
-      bottomBar,
-    };
-  },
-});
+      const handleMountActions = () => {
+        const currentAuthUser = Logic.Auth.AuthUser
+
+        // If user is authenticated
+        if (currentAuthUser) {
+          Logic.Common.initiateWebSocket()
+          Logic.Auth.GetAuthUser()
+
+          if (
+            localStorage.getItem("auth_passcode") &&
+            localStorage.getItem("auth_encrypted_data")
+          ) {
+            Logic.Common.GoToRoute("/auth/welcome")
+          } else {
+            Logic.Auth.SignOut()
+          }
+        } else {
+          // Go to start page
+          // Only if the path does not contain /auth
+          if (!window.location.pathname.includes("/auth")) {
+            Logic.Common.GoToRoute("/start")
+          }
+        }
+      }
+
+      watch(AuthUser, () => {
+        setBottomBar()
+      })
+
+      onMounted(async () => {
+        // Logic.Common.GoToRoute("/auth/login");
+        // deep link config
+
+        CapacitorApp.addListener(
+          "appUrlOpen",
+          function (event: URLOpenListenerEvent) {
+            // Example url: https://beerswift.app/tabs/tabs2
+            // slug = /tabs/tabs2
+            const domainType = ".com"
+            const slug = event.url.split(domainType).pop()
+
+            // We only push to the route if there is a slug present
+            if (slug) {
+              if (getPlatforms()[0] == "android") {
+                window.location.href = `https://localhost${slug}`
+                return
+              }
+              Logic.Common.GoToRoute(slug)
+              return
+            }
+          }
+        )
+
+        handleMountActions()
+
+        // Register watchers
+        Logic.Common.watchProperty("alertSetup", alertSetup)
+        Logic.Common.watchProperty("loaderSetup", loaderSetup)
+        Logic.Common.watchProperty("showBottomNav", showBottomNav)
+        Logic.Auth.watchProperty("AuthUser", AuthUser)
+
+        await SplashScreen.show({
+          showDuration: 3000,
+          autoHide: true,
+        })
+      })
+
+      const tabIsActive = (tabName: string) => {
+        const mainName = tabName
+
+        if (mainName == "base" && router.currentRoute.value.path == "/") {
+          return true
+        } else if (
+          mainName != "base" &&
+          router.currentRoute.value.path.includes(mainName)
+        ) {
+          selectedTab.value = mainName
+          return true
+        }
+
+        return false
+      }
+
+      return {
+        alertSetup,
+        loaderSetup,
+        Logic,
+        tabIsActive,
+        showBottomNav,
+        bottomBar,
+      }
+    },
+  })
 </script>

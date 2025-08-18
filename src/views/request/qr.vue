@@ -84,82 +84,82 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from "vue";
-import {
-  AppHeaderText,
-  AppNormalText,
-  AppQrCode,
-  AppButton,
-  AppImageLoader,
-  AppIcon,
-} from "@greep/ui-components";
-import { ref } from "vue";
-import { Logic } from "@greep/logic";
-import { onMounted } from "vue";
-import { onIonViewWillEnter } from "@ionic/vue";
-import { computed } from "vue";
-import { User } from "@greep/logic/src/gql/graphql";
-import { availableCurrencies, getBottomPadding } from "../../composable";
-
-export default defineComponent({
-  name: "RequestQRPage",
-  components: {
+  import { defineComponent } from "vue"
+  import {
     AppHeaderText,
     AppNormalText,
     AppQrCode,
     AppButton,
     AppImageLoader,
     AppIcon,
-  },
-  setup() {
-    const amount = ref("0");
+  } from "@greep/ui-components"
+  import { ref } from "vue"
+  import { Logic } from "@greep/logic"
+  import { onMounted } from "vue"
+  import { onIonViewWillEnter } from "@ionic/vue"
+  import { computed } from "vue"
+  import { User } from "@greep/logic/src/gql/graphql"
+  import { availableCurrencies, getBottomPadding } from "../../composable"
 
-    const AuthUser = ref<User>(Logic.Auth.AuthUser);
+  export default defineComponent({
+    name: "RequestQRPage",
+    components: {
+      AppHeaderText,
+      AppNormalText,
+      AppQrCode,
+      AppButton,
+      AppImageLoader,
+      AppIcon,
+    },
+    setup() {
+      const amount = ref("0")
 
-    const setAmount = () => {
-      //  Get amount from query params
-      const queryParams = Logic.Common.route?.query;
-      if (queryParams) {
-        amount.value = queryParams.amount as string;
+      const AuthUser = ref<User>(Logic.Auth.AuthUser)
+
+      const setAmount = () => {
+        //  Get amount from query params
+        const queryParams = Logic.Common.route?.query
+        if (queryParams) {
+          amount.value = queryParams.amount as string
+        }
       }
-    };
 
-    const qrCodeData = computed(() => {
-      return JSON.stringify({
-        amount: amount.value,
-        currency: AuthUser.value?.businesses[0]?.default_currency || "TRY",
-        uuid: AuthUser.value?.uuid || "",
-      });
-    });
+      const qrCodeData = computed(() => {
+        return JSON.stringify({
+          amount: amount.value,
+          currency: AuthUser.value?.businesses[0]?.default_currency || "TRY",
+          uuid: AuthUser.value?.uuid || "",
+        })
+      })
 
-    const currentCurrency = computed(() => {
-      return availableCurrencies.filter(
-        (item) => item.code == AuthUser.value?.businesses[0]?.default_currency
-      )[0]?.symbol;
-    });
+      const currentCurrency = computed(() => {
+        return availableCurrencies.filter(
+          (item) => item.code == AuthUser.value?.businesses[0]?.default_currency
+        )[0]?.symbol
+      })
 
-    const continueToNext = () => {
-      // Navigate to the next page
-      // Logic.Common.navigate("/request/qr");
-    };
+      const continueToNext = () => {
+        // Navigate to the next page
+        // Logic.Common.navigate("/request/qr");
+      }
 
-    onIonViewWillEnter(() => {
-      setAmount();
-    });
+      onIonViewWillEnter(() => {
+        setAmount()
+      })
 
-    onMounted(() => {
-      setAmount();
-      Logic.Auth.watchProperty("AuthUser", AuthUser);
-    });
+      onMounted(() => {
+        setAmount()
+        Logic.Auth.watchProperty("AuthUser", AuthUser)
+      })
 
-    return {
-      amount,
-      Logic,
-      qrCodeData,
-      continueToNext,
-      currentCurrency,
-      getBottomPadding,
-    };
-  },
-});
+      return {
+        amount,
+        Logic,
+        qrCodeData,
+        continueToNext,
+        currentCurrency,
+        getBottomPadding,
+      }
+    },
+  })
 </script>

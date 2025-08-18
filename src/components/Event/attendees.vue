@@ -56,90 +56,96 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, reactive } from "vue";
-import { AppNormalText, AppImageLoader } from "@greep/ui-components";
-import { Logic } from "@greep/logic";
-import { onMounted } from "vue";
-import { ref } from "vue";
-import { Product } from "@greep/logic/src/gql/graphql";
+  import { defineComponent, reactive } from "vue"
+  import { AppNormalText, AppImageLoader } from "@greep/ui-components"
+  import { Logic } from "@greep/logic"
+  import { onMounted } from "vue"
+  import { ref } from "vue"
+  import { Product } from "@greep/logic/src/gql/graphql"
 
-export default defineComponent({
-  components: {
-    AppNormalText,
-    AppImageLoader,
-  },
-  props: {
-    product: {
-      type: Object as () => Product,
+  export default defineComponent({
+    components: {
+      AppNormalText,
+      AppImageLoader,
     },
-  },
-  name: "EventAttendees",
-  setup() {
-    const FormValidations = Logic.Form;
+    props: {
+      product: {
+        type: Object as () => Product,
+      },
+    },
+    name: "EventAttendees",
+    setup() {
+      const FormValidations = Logic.Form
 
-    const selectedTab = ref("attendees");
+      const selectedTab = ref("attendees")
 
-    const filterTabs = reactive([
-      {
-        value: "Attendees",
-        key: "attendees",
-      },
-      {
-        value: "Checked In",
-        key: "checked_in",
-      },
-    ]);
+      const filterTabs = reactive([
+        {
+          value: "Attendees",
+          key: "attendees",
+        },
+        {
+          value: "Checked In",
+          key: "checked_in",
+        },
+      ])
 
-    const attendees = reactive<
-      {
-        name: string;
-        photo_url: string;
-        ticket_type: string;
-      }[]
-    >([
-      {
-        name: "Arlene McCoy",
-        photo_url: "/images/temps/attendee-1.jpg",
-        ticket_type: "Regular",
-      },
-      {
-        name: "Floyd Miles",
-        photo_url: "/images/temps/attendee-2.jpg",
-        ticket_type: "Regular",
-      },
-      {
-        name: "Ralph Edwards",
-        photo_url: "/images/temps/attendee-3.jpg",
-        ticket_type: "VIP",
-      },
-      {
-        name: "Jerome Bell",
-        photo_url: "/images/temps/attendee-4.jpg",
-        ticket_type: "Regular",
-      },
-      {
-        name: "Eleanor Pena",
-        photo_url: "/images/temps/attendee-5.jpg",
-        ticket_type: "Regular",
-      },
-    ]);
+      const attendees = reactive<
+        {
+          name: string
+          photo_url: string
+          ticket_type: string
+          checked_in: boolean
+        }[]
+      >([
+        {
+          name: "Arlene McCoy",
+          photo_url: "/images/temps/attendee-1.jpg",
+          ticket_type: "Regular",
+          checked_in: true,
+        },
+        {
+          name: "Floyd Miles",
+          photo_url: "/images/temps/attendee-2.jpg",
+          ticket_type: "Regular",
+          checked_in: false,
+        },
+        {
+          name: "Ralph Edwards",
+          photo_url: "/images/temps/attendee-3.jpg",
+          ticket_type: "VIP",
+          checked_in: true,
+        },
+        {
+          name: "Jerome Bell",
+          photo_url: "/images/temps/attendee-4.jpg",
+          ticket_type: "Regular",
+          checked_in: false,
+        },
+        {
+          name: "Eleanor Pena",
+          photo_url: "/images/temps/attendee-5.jpg",
+          ticket_type: "Regular",
+          checked_in: true,
+        },
+      ])
 
-    const continueWithForm = () => {
-      //
-    };
+      const continueWithForm = () => {
+        //
+      }
 
-    onMounted(() => {
-      //
-    });
+      onMounted(() => {
+        //
+      })
 
-    return {
-      FormValidations,
-      Logic,
-      continueWithForm,
-      attendees,
-      selectedTab,
-      filterTabs,
-    };
-  },
-});
+      return {
+        FormValidations,
+        Logic,
+        continueWithForm,
+        attendees,
+        selectedTab,
+        filterTabs,
+      }
+    },
+  })
 </script>
