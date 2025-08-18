@@ -1,84 +1,110 @@
 <template>
   <app-wrapper>
-    <auth-layout>
-      <template #top-action>
-        <app-button
-          class="bg-white !text-primary border-[1px] border-primary !py-1 rounded-[5px]"
-          @click="Logic.Common.GoToRoute('/auth/login')"
-          >Sign In</app-button
-        >
-      </template>
-      <div class="w-full flex flex-col items-center justify-start h-full space-y-6">
-        <!-- Headers -->
-        <div class="w-full flex flex-col items-start justify-start space-y-1">
-          <app-header-text> Forgot Password </app-header-text>
-          <app-normal-text class="!text-gray-500">
-            Enter your email to reset your password
+    <subpage-layout title="Forgot password">
+      <!-- Form -->
+      <app-form-wrapper
+        ref="formComponent"
+        :parent-refs="parentRefs"
+        class="w-full px-4 mt-2"
+      >
+        <app-info-box>
+          <app-normal-text custom-class="!leading-5">
+            Don't worry,
+            <span class="font-semibold"> Enter your account email </span> for
+            password reset instructions
           </app-normal-text>
-        </div>
+        </app-info-box>
 
-        <!-- Form -->
-        <app-form-wrapper
-          ref="formComponent"
-          :parent-refs="parentRefs"
-          class="w-full flex flex-col space-y-3 pt-2"
-        >
-          <app-text-field
-            :has-title="true"
-            type="email"
-            placeholder="Enter your email"
-            ref="emailRef"
-            name="Email"
-            :rules="[FormValidations.RequiredRule]"
+        <app-text-field
+          :has-title="true"
+          v-model="formData.email"
+          type="text"
+          placeholder="Enter email address"
+          ref="emailRef"
+          name="Email"
+          class="mb-4 mt-4"
+          use-floating-label
+          :rules="[FormValidations.RequiredRule, FormValidations.EmailRule]"
+        />
+
+        <!-- Button -->
+        <div class="w-full flex flex-col items-center justify-center pt-3">
+          <app-button
+            variant="secondary"
+            class="w-full py-4"
+            :loading="loadingState"
+            @click.prevent="handleForgotPassword"
           >
-            <template #title> Email </template>
-            <template #inner-prefix>
-              <span class="pr-1">
-                <app-icon name="email" custom-class="h-[13px]" />
-              </span>
-            </template>
-          </app-text-field>
-
-          <!-- Button -->
-          <div class="w-full flex flex-col items-center justify-center pt-5">
-            <app-button @click.prevent="null" class="w-full py-3">
-              Reset Password
-            </app-button>
-          </div>
-        </app-form-wrapper>
-      </div>
-    </auth-layout>
+            Reset Password
+          </app-button>
+        </div>
+      </app-form-wrapper>
+    </subpage-layout>
   </app-wrapper>
 </template>
 
 <script lang="ts">
-import { defineComponent } from "vue";
+import { defineComponent, reactive, ref } from "vue";
 import {
-  AppHeaderText,
-  AppNormalText,
   AppFormWrapper,
+  AppNormalText,
+  AppInfoBox,
   AppTextField,
   AppButton,
-  AppIcon,
 } from "@greep/ui-components";
 import { Logic } from "@greep/logic";
 
 export default defineComponent({
   name: "ForgotPasswordPage",
   components: {
-    AppHeaderText,
-    AppNormalText,
     AppFormWrapper,
     AppTextField,
+    AppNormalText,
+    AppInfoBox,
     AppButton,
-    AppIcon,
   },
   setup() {
     const FormValidations = Logic.Form;
+    const formComponent = ref<any>(null);
+    const loadingState = ref(false);
+    const formData = reactive({
+      email: "",
+    });
+
+    const handleForgotPassword = async () => {
+      const state = formComponent.value?.validate();
+
+      if (state) {
+        loadingState.value = true;
+
+        try {
+          // First send OTP to email
+          localStorage.setItem("auth_email", formData.email);
+          await Logic.Auth.sendResetPasswordOTP({
+            email: String(formData.email),
+          });
+
+          // Navigate to OTP verification
+          Logic.Common.GoToRoute("/auth/password-reset");
+        } catch (error) {
+          Logic.Common.showAlert({
+            show: true,
+            type: "error",
+            message: "Failed to send reset code. Please try again.",
+          });
+        } finally {
+          loadingState.value = false;
+        }
+      }
+    };
 
     return {
       FormValidations,
       Logic,
+      formData,
+      formComponent,
+      loadingState,
+      handleForgotPassword,
     };
   },
   data() {
