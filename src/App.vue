@@ -12,7 +12,7 @@
 </template>
 
 <script lang="ts">
-import { IonApp, IonRouterOutlet } from "@ionic/vue";
+import { IonApp, IonRouterOutlet, isPlatform } from "@ionic/vue";
 import { defineComponent, onMounted, ref, watch } from "vue";
 import { App as CapacitorApp, URLOpenListenerEvent } from "@capacitor/app";
 import { getPlatforms } from "@ionic/vue";
@@ -77,7 +77,8 @@ export default defineComponent({
         icon: "home",
         routeTag: "base",
         name: "Home",
-      });
+      },
+    );
       // Set bottom nav
       if (Logic.Auth.AuthUser) {
         const business: Business = Logic.Auth.GetDefaultBusiness();
@@ -136,20 +137,32 @@ export default defineComponent({
         Logic.Common.initiateWebSocket();
         Logic.Auth.GetAuthUser();
 
+        const pathContainsIsForceReload =
+          window.location.search.includes("isForceReload");
+
+          console.log(window.location.search)
+
         if (
           localStorage.getItem("auth_passcode") &&
-          localStorage.getItem("auth_encrypted_data")
+          localStorage.getItem("auth_encrypted_data") && !pathContainsIsForceReload
         ) {
           Logic.Common.GoToRoute("/auth/welcome");
-        } else {
-          Logic.Auth.SignOut();
-        }
+        }  
       } else {
+        localStorage.clear();
         // Go to start page
         // Only if the path does not contain /auth
         if (!window.location.pathname.includes("/auth")) {
-          Logic.Common.GoToRoute("/start");
-        }
+            const isPWA = isPlatform('pwa');
+            console.log("IsPWA", isPWA);
+            if(!isPWA) {
+               Logic.Common.GoToRoute("/start/pwa");
+               return;
+            }
+            Logic.Common.GoToRoute("/start")
+          } else {
+            return Logic.Common.GoToRoute("/auth/login")
+          }
       }
     };
 

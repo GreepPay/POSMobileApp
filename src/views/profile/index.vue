@@ -66,7 +66,7 @@
 
       <!-- Bottom button -->
       <div
-        class="w-full fixed bg-white dark:bg-black bottom-0 left-0 pt-4 px-4"
+        class="w-full fixed bg-white dark:bg-black bottom-0 left-0 pt-4 px-4 space-y-2"
         :style="`
           ${getBottomPadding}
         `"
@@ -74,14 +74,80 @@
         <div class="w-full flex flex-col">
           <app-button
             variant="secondary"
-            :class="`!py-4 !border-red !text-red !border-[1.5px] hover:!bg-red/20 `"
-            outlined
+            :class="`!py-4 border-1 border-secondary !w-full`"
+             
             @click="Logic.Auth.SignOut()"
             >Log Out</app-button
           >
         </div>
+
+        <div class="w-full flex items-center justify-center">
+            <app-button
+              variant="danger"
+              :customClass="`!py-4 !w-full`"
+              outlined
+              @click="showDeleteAccountModal = true"
+              >Delete Account</app-button
+            >
+          </div>
       </div>
     </subpage-layout>
+
+     <!-- Delete account modal -->
+    <app-modal
+      v-if="showDeleteAccountModal"
+      can-close
+      :close="
+        () => {
+          showDeleteAccountModal = false;
+        }
+      "
+      :innerClass="'!px-0 !pt-0'"
+    >
+      <div class="w-full flex flex-col pb-2 !overflow-y-auto !max-h-[400px]">
+        <div class="w-full flex flex-col pb-3 bg-white sticky top-0 left-0">
+          <app-header-text class="text-left !text-lg">
+            Delete Account
+          </app-header-text>
+        </div>
+
+        <div
+          class="w-full flex flex-col items-center justify-between pt-1 h-full"
+        >
+          <app-normal-text
+            custom-class="!text-gray-600 !text-sm !text-center px-4 py-4"
+          >
+            Are you sure you want to delete your account? This action cannot be
+            undone.
+          </app-normal-text>
+
+          <div
+            class="w-full flex flex-col items-center justify-center  space-y-1 !text-xs pt-3"
+          >
+            <div class="w-full flex items-center justify-center">
+              <app-button
+                variant="secondary"
+                :customClass="`!py-4 !w-full`"
+                @click="showDeleteAccountModal = false"
+                >No</app-button
+              >
+            </div>
+            <div class="w-full flex items-center justify-center">
+              <app-button
+                variant="danger"
+                :customClass="`!py-4 !w-full`"
+                outlined
+                @click="Logic.Auth.DeleteUser()"
+                >Yes</app-button
+              >
+            </div>
+          </div>
+
+          <!-- Spacer -->
+          <div class="h-[20px]"></div>
+        </div>
+      </div>
+    </app-modal>
   </app-wrapper>
 </template>
 
@@ -92,6 +158,8 @@ import {
   AppImageLoader,
   AppNormalText,
   AppIcon,
+  AppModal,
+  AppHeaderText
 } from "@greep/ui-components";
 import { Logic } from "@greep/logic";
 import AmountCard from "../../components/Common/AmountCard.vue";
@@ -108,9 +176,12 @@ export default defineComponent({
     AppImageLoader,
     AppNormalText,
     AppIcon,
+    AppModal,
+    AppHeaderText
   },
   setup() {
     const AuthUser = ref<User>(Logic.Auth.AuthUser); 
+    const showDeleteAccountModal = ref(false);
     const profileItems = reactive([
       {
         title: "Personal Info",
@@ -153,6 +224,7 @@ export default defineComponent({
       profileItems,
       AuthUser,
       getBottomPadding,
+      showDeleteAccountModal
     };
   },
 });

@@ -283,6 +283,7 @@ export default defineComponent({
         currencySymbol: string;
         subAmount: string;
         transaction_group: string;
+        real_date: string;
       }[]
     >([]);
 
@@ -400,7 +401,7 @@ export default defineComponent({
 
       // Sort transactions desc by date
       recentTransactions.sort(
-        (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+        (a, b) => new Date(b.real_date).getTime() - new Date(a.real_date).getTime()
       );
     };
 
