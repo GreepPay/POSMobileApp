@@ -72,12 +72,20 @@
 
       const setBottomBar = () => {
         bottomBar.length = 0
-        bottomBar.push({
-          path: "/",
-          icon: "home",
-          routeTag: "base",
-          name: "Home",
-        })
+        bottomBar.push(
+          {
+            path: "/",
+            icon: "home",
+            routeTag: "base",
+            name: "Home",
+          },
+          {
+            path: "/events",
+            icon: "events",
+            routeTag: "events",
+            name: "Events",
+          }
+        )
         // Set bottom nav
         if (Logic.Auth.AuthUser) {
           const business: Business = Logic.Auth.GetDefaultBusiness()
@@ -125,9 +133,7 @@
       Logic.Common.SetApiUrl(
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore
-        // (import.meta as any).env.VITE_API_URL ?? "http://localhost:3000/graphql"
-        (import.meta as any).env.VITE_API_URL ??
-          "https://api-pos-dev.greep.io/graphql"
+        (import.meta as any).env.VITE_API_URL ?? "http://localhost:3000/graphql"
       )
 
       const handleMountActions = () => {
