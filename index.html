@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <title>Ionic App</title>
+    <title>Greep Merchant</title>
 
     <base href="/" />
 
@@ -14,26 +14,24 @@
     <meta name="format-detection" content="telephone=no" />
     <meta name="msapplication-tap-highlight" content="no" />
 
-    <link rel="shortcut icon" type="image/png" href="/favicon.png" />
+    <link rel="icon" href="/favicon.ico" />
 
     <!-- add to homescreen for ios -->
     <meta name="mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-title" content="Ionic App" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+    <meta name="apple-mobile-web-app-title" content="Greep Pay" />
+    <link
+      rel="apple-touch-icon"
+      href="/apple-touch-icon-180x180.png"
+      sizes="180x180"
+    />
+    <meta name="apple-mobile-web-app-status-bar-style" content="white" />
+    <link rel="mask-icon" href="/pwa-512x512.png" color="#036b42" />
+    <meta name="theme-color" content="#036b42" />
 
     <style>
       @font-face {
         font-family: "Poppins";
-        src: url("/fonts/Poppins-ExtraLight.ttf") format("truetype");
-        font-weight: 200;
-        font-style: normal;
-      }
-
-      @font-face {
-        font-family: "Poppins";
-        src: url("/fonts/Poppins-Light.ttf") format("truetype");
-        font-weight: 300;
-        font-style: normal;
+        src: url("/fonts/Poppins-Regular.ttf");
       }
 
       @font-face {
@@ -45,8 +43,62 @@
 
       @font-face {
         font-family: "Poppins";
-        src: url("/fonts/Poppins-Medium.ttf") format("truetype");
-        font-weight: 500;
+        src: url("/fonts/Poppins-SemiBold.ttf") format("truetype");
+        font-weight: bold;
+        font-style: normal;
+      }
+
+      @font-face {
+        font-family: "Poppins";
+        src: url("/fonts/Poppins-SemiBold.ttf") format("truetype");
+        font-weight: bolder;
+        font-style: normal;
+      }
+
+      @font-face {
+        font-family: "Poppins";
+        src: url("/fonts/Poppins-Regular.ttf") format("truetype");
+        font-weight: lighter;
+        font-style: normal;
+      }
+
+      @font-face {
+        font-family: "Poppins";
+        src: url("/fonts/Poppins-Regular.ttf") format("truetype");
+        font-weight: 600;
+        font-style: normal;
+      }
+
+      @font-face {
+        font-family: "Poppins";
+        src: url("/fonts/Poppins-Regular.ttf");
+      }
+
+      @font-face {
+        font-family: "Poppins";
+        src: url("/fonts/Poppins-Regular.ttf") format("truetype");
+        font-weight: normal;
+        font-style: normal;
+      }
+
+      @font-face {
+        font-family: "Poppins";
+        src: url("/fonts/Poppins-SemiBold.ttf") format("truetype");
+        font-weight: bold;
+        font-style: normal;
+      }
+
+      @font-face {
+        font-family: "Poppins";
+        src: url("/fonts/Poppins-SemiBold.ttf") format("truetype");
+        font-weight: bolder;
+        font-style: normal;
+      }
+
+      @font-face {
+        font-family: "Poppins";
+        src: url("/fonts/Poppins-Regular.ttf") format("truetype");
+        font-weight: lighter;
         font-style: normal;
       }
 
@@ -54,20 +106,6 @@
         font-family: "Poppins";
         src: url("/fonts/Poppins-SemiBold.ttf") format("truetype");
         font-weight: 600;
-        font-style: normal;
-      }
-
-      @font-face {
-        font-family: "Poppins";
-        src: url("/fonts/Poppins-Bold.ttf") format("truetype");
-        font-weight: bold;
-        font-style: normal;
-      }
-
-      @font-face {
-        font-family: "Poppins";
-        src: url("/fonts/Poppins-ExtraBold.ttf") format("truetype");
-        font-weight: 800;
         font-style: normal;
       }
 
@@ -81,7 +119,7 @@
 
   <body>
     <div id="app"></div>
-    <script
+     <script
       src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAcsWVsx6-i94-6sZ8E1N9zBdALfyJbWTg&libraries=places"
       async
     ></script>

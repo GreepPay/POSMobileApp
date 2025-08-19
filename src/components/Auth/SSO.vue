@@ -1,22 +1,31 @@
 <template>
-  <div class="w-full flex flex-col items-start justify-start space-y-2">
-    <div
-      class="w-full flex flex-row items-center justify-center space-x-2 border-[1.5px] border-[#E0E2E4] rounded-[999px] py-4"
+  <div class="flex flex-col gap-4 w-full">
+    <app-button
+      class="!w-full !py-3.5 font-semibold"
+      variant="secondary"
+      :outlined="true"
+      @click="authenticateGoogle"
     >
-      <app-icon name="google" extension="png" custom-class="!h-[23px]" />
-      <app-normal-text class="!font-[500] pt-[1px]">
-        Continue with Google
-      </app-normal-text>
-    </div>
+      <div class="flex items-center justify-center space-x-2">
+        <app-icon name="google" />
+        <app-normal-text class="!font-[500] pt-[2px]">
+          Continue with Google
+        </app-normal-text>
+      </div>
+    </app-button>
 
-    <div
-      class="w-full flex flex-row items-center justify-center space-x-2 border-[1.5px] border-[#E0E2E4] rounded-[999px] py-4"
+    <!-- <app-button
+      class="!w-full !py-3.5 font-semibold"
+      variant="secondary"
+      :outlined="true"
     >
-      <app-icon name="apple" extension="png" custom-class="!h-[23px]" />
-      <app-normal-text class="!font-[500] pt-[2px]">
-        Continue with Apple
-      </app-normal-text>
-    </div>
+      <div class="flex items-center justify-center space-x-2">
+        <app-icon name="apple" />
+        <app-normal-text class="!font-[500] pt-[2px]">
+          Continue with Apple
+        </app-normal-text>
+      </div>
+    </app-button> -->
 
     <div class="flex flex-row items-center justify-between w-full pt-2">
       <div class="!border-[1.5px] border-[#F0F3F6] w-full"></div>
@@ -27,23 +36,31 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from "vue";
-import { AppNormalText, AppIcon } from "@greep/ui-components";
+import { defineComponent, computed, reactive, onMounted } from "vue";
+import { AppButton, AppIcon, AppNormalText } from "@greep/ui-components";
 import { Logic } from "@greep/logic";
-import { getPlatforms } from "@ionic/vue";
+import { getPlatforms, isPlatform } from "@ionic/vue";
 import {
   SignInWithApple,
   SignInWithAppleResponse,
   SignInWithAppleOptions,
 } from "@capacitor-community/apple-sign-in";
 import { FirebaseAuthentication } from "@capacitor-firebase/authentication";
-import { computed } from "vue";
-import { reactive } from "vue";
+import {
+  GoogleAuthProvider,
+  getAuth,
+  signInWithPopup,
+} from "firebase/auth";
+import { initializeApp } from "firebase/app";
+import { handleAuthResponse } from "../../composable/auth";
+
 
 export default defineComponent({
+  name: "AuthSSO",
   components: {
-    AppNormalText,
+    AppButton,
     AppIcon,
+    AppNormalText,
   },
   props: {
     fromAction: {
@@ -55,7 +72,6 @@ export default defineComponent({
       default: false,
     },
   },
-  name: "AuthSSO",
   setup(props) {
     const formData = reactive({
       email: "",
@@ -64,7 +80,7 @@ export default defineComponent({
     });
 
     const options: SignInWithAppleOptions = {
-      clientId: "io.greep.pos.vendor",
+      clientId: "io.greep.everything.vendor",
       redirectURI: "https://greep.io",
       scopes: "email name",
       state: Logic.Common.makeid(10),
@@ -73,51 +89,31 @@ export default defineComponent({
 
     const authenticateUser = (userId: string) => {
       if (props.fromAction == "signUp") {
-        Logic.Auth.SignUpForm = {
+        // @ts-expect-error Extending Logic.Auth.SignUpPayload
+        Logic.Auth.SignUpPayload = {
           email: formData.email,
           first_name: formData.first_name,
           last_name: formData.last_name,
-          is_sso: true,
           sso_id: userId,
         };
 
-        Logic.Auth.SignUp(true, () => {
-          //
-        })?.then((data) => {
-          if (data?.SignUp) {
-            localStorage.setItem(`social_${userId}`, formData.email);
-            if (!data?.SignUp.has_password) {
-              Logic.Common.GoToRoute("/auth/signup/set-password", true);
-            } else {
-              if (!Logic.Auth.AuthUser?.phone) {
-                Logic.Common.GoToRoute("/auth/signup/phone-number", true);
-                return;
-              }
-              if (!Logic.Auth.AuthUser?.phone_verified_at) {
-                Logic.Common.GoToRoute("/auth/signup/verify-phone", true);
-              } else {
-                Logic.Common.GoToRoute("/", true);
-              }
-            }
-          }
-        });
+        localStorage.setItem(`social_${userId}`, formData.email);
+        Logic.Common.GoToRoute("/auth/set-password");
       } else {
         Logic.Auth.SignInForm = {
           email:
             formData.email || localStorage.getItem(`social_${userId}`) || "",
           sso_id: userId,
         };
-
         Logic.Auth.SignIn(true)?.then(async (data) => {
-          if (data?.SignIn) {
-            Logic.Auth.GetAuthUser();
-            Logic.Common.hideLoader();
-            if (!data?.SignIn.user.has_password) {
-              Logic.Common.GoToRoute("/auth/signup/set-password", true);
-              return;
-            }
-
-            // authMoveForward(data?.SignIn.user);
+          if (data) {
+           
+           await Logic.Auth.GetAuthUser();
+           handleAuthResponse(Logic.Auth.SignInForm || {
+              email: formData.email,
+              sso_id: userId,
+            });
+          
           }
         });
       }
@@ -129,15 +125,44 @@ export default defineComponent({
 
     const authenticateGoogle = async () => {
       try {
-        const result = await FirebaseAuthentication.signInWithGoogle();
+        const isMobileWeb = isPlatform("mobileweb");
 
-        const fullName = result.user?.displayName?.split(" ") || [];
+        if (!isMobileWeb) {
+          const result = await FirebaseAuthentication.signInWithGoogle();
 
-        formData.email = result.user?.email || "";
-        formData.first_name = fullName?.[0] || "";
-        formData.last_name = fullName?.length > 1 ? fullName[1] : "";
+          const fullName = result.user?.displayName?.split(" ") || [];
 
-        authenticateUser(result.user?.uid || "");
+          formData.email = result.user?.email || "";
+          formData.first_name = fullName?.[0] || "";
+          formData.last_name = fullName?.length > 1 ? fullName[1] : "";
+
+          authenticateUser(result.user?.uid || "");
+        } else {
+          const provider = new GoogleAuthProvider();
+          provider.addScope("profile");
+          provider.addScope("email");
+          const auth = getAuth();
+          signInWithPopup(auth, provider)
+            .then((result) => {
+              if (result) {
+                const fullName = result.user?.displayName?.split(" ") || [];
+
+                formData.email = result.user?.email || "";
+                formData.first_name = fullName?.[0] || "";
+                formData.last_name = fullName?.length > 1 ? fullName[1] : "";
+
+                authenticateUser(result.user?.uid || "");
+              }
+            })
+            .catch((error) => {
+              const errorMessage = error.message;
+              Logic.Common.showAlert({
+                show: true,
+                message: errorMessage,
+                type: "error",
+              });
+            });
+        }
       } catch (error) {
         console.log(error);
       }
@@ -162,6 +187,17 @@ export default defineComponent({
           console.log(error);
         });
     };
+
+    onMounted(() => {
+      const isMobileWeb = isPlatform("mobileweb");
+      if (isMobileWeb) {
+        const firebaseConfig = {
+          apiKey: "AIzaSyDikEK_sPaMCfOQ2fkj0LXeOL_z41F062Q",
+          authDomain: "greep-merchant.firebaseapp.com",
+        };
+        initializeApp(firebaseConfig);
+      }
+    });
 
     return {
       canUseApp,

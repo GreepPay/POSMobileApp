@@ -196,7 +196,7 @@ export default defineComponent({
 
           // Check if passcode has been set
           if (localStorage.getItem("auth_passcode")) {
-            Logic.Common.GoToRoute("/");
+            Logic.Common.GoToRoute("/", true);
             return;
           } else {
             // Save auth email and pass
