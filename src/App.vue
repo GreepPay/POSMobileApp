@@ -133,7 +133,9 @@
       Logic.Common.SetApiUrl(
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore
-        (import.meta as any).env.VITE_API_URL ?? "http://localhost:3000/graphql"
+        // (import.meta as any).env.VITE_API_URL ?? "http://localhost:3000/graphql"
+        (import.meta as any).env.VITE_API_URL ??
+          "https://api-pos-dev.greep.io/graphql"
       )
 
       const handleMountActions = () => {

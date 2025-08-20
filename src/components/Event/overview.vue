@@ -32,70 +32,90 @@
           </div>
         </template>
       </div>
+
+      {{ details }}
     </div>
   </div>
 </template>
 
 <script lang="ts">
-import { defineComponent, reactive } from "vue";
-import { AppNormalText } from "@greep/ui-components";
-import { Logic } from "@greep/logic";
-import { onMounted } from "vue";
-import { Product } from "@greep/logic/src/gql/graphql";
+  import { defineComponent, reactive, computed } from "vue"
+  import { AppNormalText } from "@greep/ui-components"
+  import { Logic } from "@greep/logic"
+  import { onMounted } from "vue"
+  import { Product } from "@greep/logic/src/gql/graphql"
 
-export default defineComponent({
-  components: {
-    AppNormalText,
-  },
-  props: {
-    product: {
-      type: Object as () => Product,
+  export default defineComponent({
+    components: {
+      AppNormalText,
     },
-  },
-  name: "EventOverview",
-  setup() {
-    const FormValidations = Logic.Form;
-
-    const eventOverview = reactive<
-      {
-        title: string;
-        content: string;
-        percentage_progress?: number;
-      }[]
-    >([
-      {
-        title: "Revenue",
-        content: "₺ 48,500",
+    props: {
+      product: {
+        type: Object as () => Product,
       },
-      {
-        title: "Tickets Sold",
-        content: "96",
-      },
-      {
-        title: "Tickets Left",
-        content: "44",
-      },
-      {
-        title: "Attendees Checked In",
-        content: "50/96",
-        percentage_progress: 60,
-      },
-    ]);
+    },
+    name: "EventOverview",
+    setup() {
+      const FormValidations = Logic.Form
 
-    const continueWithForm = () => {
-      //
-    };
+      const eventOverview = reactive<
+        {
+          title: string
+          content: string
+          percentage_progress?: number
+        }[]
+      >([
+        {
+          title: "Revenue",
+          content: "₺ 48,500",
+        },
+        {
+          title: "Tickets Sold",
+          content: "96",
+        },
+        {
+          title: "Tickets Left",
+          content: "44",
+        },
+        {
+          title: "Attendees Checked In",
+          content: "50/96",
+          percentage_progress: 60,
+        },
+      ])
 
-    onMounted(() => {
-      //
-    });
+      const details = computed(() => [
+        { title: "Revenue", content: "₺ 48,500" },
+        {
+          title: "Tickets Sold",
+          content: "96",
+        },
+        {
+          title: "Tickets Left",
+          content: "44",
+        },
+        {
+          title: "Attendees Checked In",
+          content: "50/96",
+          percentage_progress: 60,
+        },
+      ])
 
-    return {
-      FormValidations,
-      Logic,
-      continueWithForm,
-      eventOverview,
-    };
-  },
-});
+      const continueWithForm = () => {
+        //
+      }
+
+      onMounted(() => {
+        //
+      })
+
+      return {
+        FormValidations,
+        Logic,
+        continueWithForm,
+        eventOverview,
+        details,
+      }
+    },
+  })
 </script>
