@@ -7,12 +7,17 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:209656620172:android:070337ebc35b017b0487a9",
+        "mobilesdk_app_id": "1:209656620172:android:10c5e9dfa63e8e740487a9",
         "android_client_info": {
-          "package_name": "io.greep.pos.vendor"
+          "package_name": "io.greep.client.pay"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "209656620172-2p7b35r1h46t7oa2b4k6mj8bq8t8dqho.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyCrF23NozJh3dnL4OWuVVRDWwZ7OnTAOrY"
@@ -20,7 +25,63 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "209656620172-2p7b35r1h46t7oa2b4k6mj8bq8t8dqho.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "209656620172-3pa7cuj0heqm8vatuvkrpaf8iluku0rv.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "io.greep.client.pay"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:209656620172:android:070337ebc35b017b0487a9",
+        "android_client_info": {
+          "package_name": "io.greep.pos.vendor"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "209656620172-sp32nqh454ds724ejhnkldoflajisjaq.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "io.greep.pos.vendor",
+            "certificate_hash": "95a64ab8ba52ebcb79ade4a6a60980d768a0fa3b"
+          }
+        },
+        {
+          "client_id": "209656620172-2p7b35r1h46t7oa2b4k6mj8bq8t8dqho.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCrF23NozJh3dnL4OWuVVRDWwZ7OnTAOrY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "209656620172-2p7b35r1h46t7oa2b4k6mj8bq8t8dqho.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "209656620172-3pa7cuj0heqm8vatuvkrpaf8iluku0rv.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "io.greep.client.pay"
+              }
+            }
+          ]
         }
       }
     }

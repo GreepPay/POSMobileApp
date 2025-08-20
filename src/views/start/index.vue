@@ -1,7 +1,8 @@
 <template>
   <app-wrapper>
     <div
-      :class="`w-full flex flex-col lg:text-sm mdlg:text-[12px] text-xs h-screen  overflow-y-hidden !font-inter bg-white`"
+      :class="`w-full flex flex-col lg:text-sm mdlg:text-[12px] text-xs  overflow-y-hidden !font-inter bg-white`"
+       :style="`height: ${mobileFullHeight ? mobileFullHeight.height : ''};`"
     >
       <!-- Slide indicator -->
       <div
@@ -31,7 +32,8 @@
       >
         <!-- Slide 1 -->
         <swiper-slide
-          class="!flex !flex-col items-start relative justify-center bg-white h-screen"
+          class="!flex !flex-col items-start relative justify-center bg-white"
+          :style="`height: ${mobileFullHeight ? mobileFullHeight.height : ''};`"
         >
           <div
             class="w-full flex flex-col items-center h-full relative space-y-2 justify-between"
@@ -78,7 +80,8 @@
 
         <!-- Slide 2 -->
         <swiper-slide
-          class="!flex !flex-col items-start relative justify-center bg-white h-screen"
+          class="!flex !flex-col items-start relative justify-center bg-white  "
+           :style="`height: ${mobileFullHeight ? mobileFullHeight.height : ''};`"
         >
           <div
             class="w-full flex flex-col items-center h-full relative space-y-2 justify-between"
@@ -125,7 +128,8 @@
 
         <!-- Slide 3 -->
         <swiper-slide
-          class="!flex !flex-col items-start relative justify-center bg-white h-screen"
+          class="!flex !flex-col items-start relative justify-center bg-white "
+           :style="`height: ${mobileFullHeight ? mobileFullHeight.height : ''};`"
         >
           <div
             class="w-full flex flex-col items-center h-full relative space-y-2 justify-between"
@@ -172,7 +176,8 @@
 
         <!-- Slide 4 -->
         <swiper-slide
-          class="!flex !flex-col items-start relative justify-center bg-white z-50 h-screen"
+          class="!flex !flex-col items-start relative justify-center bg-white z-50"
+           :style="`height: ${mobileFullHeight ? mobileFullHeight.height : ''};`"
         >
           <div
             class="w-full flex flex-col items-center h-full relative space-y-2 justify-between"
@@ -295,6 +300,9 @@ export default defineComponent({
       };
     });
 
+       
+      //
+     
     const innerHeight = ref(window.innerHeight);
 
     const updateHeight = () => {

@@ -12,7 +12,8 @@
     "lint": "eslint .",
     "resources": "capacitor-resources -p android,ios",
     "build:gh-pages": "vite build --mode gh-pages",
-    "deploy": "npm run build:gh-pages && gh-pages -d dist"
+    "deploy": "npm run build:gh-pages && gh-pages -d dist",
+    "generate-pwa-assets": "pwa-assets-generator"
   },
   "dependencies": {
     "@capacitor-community/apple-sign-in": "^7.0.1",
@@ -44,6 +45,7 @@
     "@capacitor/cli": "7.0.1",
     "@greep/logic": "file:../POSFrontendLogic",
     "@greep/ui-components": "file:../MobileUIComponents",
+    "@vite-pwa/assets-generator": "^1.0.0",
     "@vitejs/plugin-legacy": "^5.0.0",
     "@vitejs/plugin-vue": "^4.0.0",
     "@vue/eslint-config-typescript": "^12.0.0",
@@ -57,6 +59,7 @@
     "typescript": "~5.6.2",
     "vite": "~5.2.0",
     "vite-plugin-gh-pages": "^1.0.1",
+    "vite-plugin-pwa": "^1.0.1",
     "vitest": "^0.34.6",
     "vue-tsc": "^2.1.10"
   },

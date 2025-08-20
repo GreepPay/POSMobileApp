@@ -45,8 +45,7 @@
                   {{ currencySymbol }}
                   {{
                     Logic.Common.convertToMoney(
-                      AuthUser.wallet?.total_balance *
-                        (CurrentGlobalExchangeRate?.mid || 0),
+                     currentWalletBalance,
                       true,
                       "",
                       false
@@ -271,6 +270,8 @@ export default defineComponent({
     );
     const AuthUser = ref<User>(Logic.Auth.AuthUser);
 
+    const currentWalletBalance = ref(0)
+
     const recentTransactions = reactive<
       {
         id: string | number;
@@ -282,6 +283,7 @@ export default defineComponent({
         currencySymbol: string;
         subAmount: string;
         transaction_group: string;
+        real_date: string;
       }[]
     >([]);
 
@@ -352,7 +354,7 @@ export default defineComponent({
       },
       {
         icon: "quick-actions/graph",
-        route_path: "/insights",
+        route_path: "#",
         name: "Insights",
         soon: true,
       },
@@ -362,11 +364,18 @@ export default defineComponent({
       defaultCurrency.value =
         Logic.Auth.AuthUser?.businesses[0]?.default_currency || "USD";
       selectedCurrency.value = defaultCurrency.value;
+
+      setCurrentWalletBalance()
     };
 
     const currentPlatform = computed(() => {
       return getPlatforms()[0];
     });
+
+    const setCurrentWalletBalance = () => {
+       currentWalletBalance.value = Logic.Auth.GetDefaultBusiness()?.wallet?.total_balance * 
+        (CurrentGlobalExchangeRate.value?.mid || 0);
+    };
 
     const setTransactionData = () => {
       recentTransactions.length = 0;
@@ -392,14 +401,16 @@ export default defineComponent({
 
       // Sort transactions desc by date
       recentTransactions.sort(
-        (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+        (a, b) => new Date(b.real_date).getTime() - new Date(a.real_date).getTime()
       );
     };
 
     onIonViewDidEnter(() => {
       setPageDefaults();
       setTransactionData();
-      Logic.Auth.GetAuthUser();
+      setTimeout(() => {
+        Logic.Auth.GetAuthUser();
+      }, 5000);
     });
 
     watch(
@@ -411,8 +422,13 @@ export default defineComponent({
       ],
       () => {
         setTransactionData();
+       
       }
     );
+
+    watch(AuthUser, () => {
+      setCurrentWalletBalance()
+    });
 
     onMounted(() => {
       // Register reactive data
@@ -444,6 +460,7 @@ export default defineComponent({
       homeTab,
       activeTab,
       tools,
+      currentWalletBalance
     };
   },
 });

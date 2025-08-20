@@ -35,6 +35,7 @@ const getTransaction = (
     currencySymbol: currencySymbol || "",
     subAmount: `USDC ${Logic.Common.convertToMoney(data.amount, true, "")}`,
     transaction_group: "normal",
+    real_date: data.updated_at
   };
 };
 
@@ -60,6 +61,7 @@ const getPointTransaction = (
     currencySymbol: currencySymbol || "",
     subAmount: `GRP Coin`,
     transaction_group: "point",
+    real_date: data.updated_at
   };
 };
 

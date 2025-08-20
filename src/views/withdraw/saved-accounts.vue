@@ -148,7 +148,7 @@ export default defineComponent({
       let focusCountry = "";
 
       if (currencyCountryData) {
-        focusCountry = currencyCountryData.country_code;
+        focusCountry = currencyCountryData.country_code || "";
       }
 
       if (accountType.value == "bank_account") {

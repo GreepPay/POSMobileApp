@@ -91,21 +91,21 @@ export default defineComponent({
         icon: "basic",
         soon: false,
       },
-      {
-        title: "Exchanger",
-        key: "exchanger",
-        description:
-          "Sell currency like USDC, in exchange for local cash or bank transfer.",
-        icon: "exchanger",
-        soon: false,
-      },
-      {
+       {
         title: "Event Host",
         key: "event_host",
         description:
           "Create and promote events, sell tickets, scan entries, and track your earnings.",
         icon: "events",
         soon: false,
+      },
+      {
+        title: "Exchanger",
+        key: "exchanger",
+        description:
+          "Sell currency like USDC, in exchange for local cash or bank transfer.",
+        icon: "exchanger",
+        soon: true,
       },
       {
         title: "Vendor",

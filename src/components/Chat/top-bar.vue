@@ -8,16 +8,25 @@
         <div class="w-[24px] mr-2" @click="Logic.Common.goBack()">
           <app-icon name="arrow-left" custom-class="!h-[24px]" />
         </div>
-        <div class="w-[50px] mr-3">
+        <div class="w-[50px] mr-2">
           <app-avatar :src="topBarInfo.photo_url" :size="48" />
         </div>
-        <div class="flex flex-row">
+        <div class="flex flex-col">
           <app-normal-text
             class="!text-sm px-2"
             is-html
             :html-content="topBarInfo.title"
           >
           </app-normal-text>
+
+          <div class="flex flex-row items-center">
+            <app-normal-text
+              v-if="topBarInfo.partitipants"
+              class="!text-xs px-2 !text-gray-500 !line-clamp-1"
+            >
+              {{ topBarInfo.partitipants.join(", ") }}
+            </app-normal-text>
+          </div>
         </div>
       </div>
 
@@ -54,10 +63,11 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from "vue";
+import { defineComponent, onMounted } from "vue";
 import { AppAvatar, AppNormalText, AppIcon } from "@greep/ui-components";
 import { Logic } from "@greep/logic";
 import { reactive } from "vue";
+import { Conversation } from "@greep/logic/src/gql/graphql";
 
 export default defineComponent({
   components: {
@@ -65,12 +75,18 @@ export default defineComponent({
     AppNormalText,
     AppIcon,
   },
-  props: {},
+  props: {
+    conversation: {
+      type: Object as () => Conversation,
+      required: true,
+    },
+  },
   name: "ChatTopBar",
-  setup() {
+  setup(props) {
     const topBarInfo = reactive<{
       title: string;
       photo_url: string;
+      partitipants?: string[];
       alerts: {
         type: "info" | "success" | "danger";
         content: string;
@@ -85,6 +101,31 @@ export default defineComponent({
             "Avoid scam! Only scammers will ask to interact outside GreepPay.",
         },
       ],
+    });
+
+    const setContent = () => {
+       if (props.conversation) {
+         topBarInfo.title = props.conversation.name
+         topBarInfo.photo_url = "/images/chat-logo.png",
+          topBarInfo.alerts = [];
+
+          const participants = props.conversation.participants;
+          if (participants && participants.length > 0) {
+            topBarInfo.partitipants = participants.map(
+              (participant) => { 
+                 if(participant.user) {
+                   return participant.user.first_name + " " + participant.user.last_name;
+                 } else {
+                   return "Greep AI";
+                 }
+              }
+            );
+       }
+    }
+  }
+
+    onMounted(() => {
+      setContent();
     });
 
     return {
