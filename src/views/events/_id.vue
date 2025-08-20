@@ -59,6 +59,7 @@
               variant="primary"
               outlined
               :class="`!py-4 !font-[500] !border-[1.5px]`"
+              @click="Logic.Common.GoToRoute(`/events/create?uuid=${SingleProduct?.uuid}`)"
             >
               <div class="flex flex-row items-center">
                 <app-icon name="edit-green" custom-class="!h-[22px] mr-2" />
