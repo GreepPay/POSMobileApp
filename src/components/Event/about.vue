@@ -310,15 +310,9 @@
         description: string
       }>({
         images: [
-          {
-            url: "/images/temps/event-1.png",
-          },
-          {
-            url: "/images/temps/event-2.png",
-          },
-          {
-            url: "/images/temps/event-3.png",
-          },
+          { url: "/images/temps/event-1.png" },
+          { url: "/images/temps/event-2.png" },
+          { url: "/images/temps/event-3.png" },
         ],
         name: "Make It! Pottery Class",
         event_date: "Sunday, 27 July 2025",

@@ -45,8 +45,6 @@
     },
     name: "EventOverview",
     setup(props) {
-      const FormValidations = Logic.Form
-
       const revenue = computed(() => props.product?.eventOveview?.revenue || 0)
       const ticketSold = computed(
         () => props.product?.eventOveview?.tickets_sold || 0
@@ -60,18 +58,26 @@
       )
 
       const eventOverview = computed(() => [
-        { title: "Revenue", content: revenue.value },
-        { title: "Tickets Sold", content: revenue.value },
-        { title: "Tickets Left", content: ticketSold.value },
+        {
+          title: "Revenue",
+          content: Logic.Common.convertToMoney(revenue.value, false, ""),
+        },
+        {
+          title: "Tickets Sold",
+          content: Logic.Common.convertToMoney(ticketSold.value, false, ""),
+        },
+        {
+          title: "Tickets Left",
+          content: Logic.Common.convertToMoney(ticketAvail.value, false, ""),
+        },
         {
           title: "Attendees Checked In",
-          content: checksIn.value,
+          content: Logic.Common.convertToMoney(checksIn.value, false, ""),
           percentage_progress: attendeeCheckedIn.value,
         },
       ])
 
       return {
-        FormValidations,
         Logic,
         eventOverview,
       }

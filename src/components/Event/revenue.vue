@@ -92,47 +92,60 @@
     </div>
 
     <div class="w-full flex flex-col px-4 mt-2">
-      <div
-        v-for="(item, index) in orders"
-        :key="index"
-        class="w-full flex flex-row items-center justify-between pt-4 pb-4 !border-b-[1.5px] !border-[#F0F3F6]"
-      >
-        <div class="flex flex-row items-center">
-          <div class="w-[48px] mr-3">
-            <div class="w-[48px]">
-              <app-icon :name="`ticket-in`" custom-class="!h-[48px]" />
+      <template v-if="!eventTickets.length">
+        <app-empty-state
+          title="No Revenue available"
+          description="No Revenue available"
+        />
+      </template>
+
+      <template v-else>
+        <div
+          v-for="(eventTicket, index) in eventTickets"
+          :key="index"
+          class="w-full flex flex-row items-center justify-between pt-4 pb-4 !border-b-[1.5px] !border-[#F0F3F6]"
+        >
+          <div class="flex flex-row items-center">
+            <div class="w-[48px] mr-3">
+              <div class="w-[48px]">
+                <app-icon :name="`ticket-in`" custom-class="!h-[48px]" />
+              </div>
+            </div>
+
+            <div class="w-full flex flex-col">
+              <app-normal-text
+                class="!text-left !text-black !font-[500] !text-sm mb-[3px]"
+              >
+                {{
+                  `${eventTicket?.user?.first_name} ${eventTicket?.user?.last_name}`
+                }}
+              </app-normal-text>
+
+              <div class="w-full flex flex-row items-center">
+                <app-normal-text class="!text-left !text-[#616161]">
+                  {{ eventTicket.order_type }}
+                </app-normal-text>
+
+                <div
+                  class="h-[4px] w-[4px] rounded-full mx-[6px]"
+                  :style="`background-color: #616161 !important;`"
+                ></div>
+                <app-normal-text class="!text-left !text-[#616161]">
+                  {{ eventTicket.createdAt }}
+                </app-normal-text>
+              </div>
             </div>
           </div>
 
-          <div class="w-full flex flex-col">
-            <app-normal-text
-              class="!text-left !text-black !font-[500] !text-sm mb-[3px]"
-            >
-              {{ item.name }}
+          <div class="flex flex-col justify-start">
+            <app-normal-text class="!text-right !font-[500] !text-sm">
+              {{
+                `${eventTicket?.sale?.currency} ${eventTicket?.sale?.totalAmount}`
+              }}
             </app-normal-text>
-
-            <div class="w-full flex flex-row items-center">
-              <app-normal-text class="!text-left !text-[#616161]">
-                {{ item.order_type }}
-              </app-normal-text>
-
-              <div
-                class="h-[4px] w-[4px] rounded-full mx-[6px]"
-                :style="`background-color: #616161 !important;`"
-              ></div>
-              <app-normal-text class="!text-left !text-[#616161]">
-                {{ item.date }}
-              </app-normal-text>
-            </div>
           </div>
         </div>
-
-        <div class="flex flex-col justify-start">
-          <app-normal-text class="!text-right !font-[500] !text-sm">
-            {{ item.price }}
-          </app-normal-text>
-        </div>
-      </div>
+      </template>
     </div>
   </div>
 </template>
@@ -145,6 +158,7 @@
     AppSelect,
     AppIcon,
     AppLoading,
+    AppEmptyState,
   } from "@greep/ui-components"
   import { Logic } from "@greep/logic"
   import { onMounted } from "vue"
@@ -158,10 +172,11 @@
       AppSelect,
       AppIcon,
       AppLoading,
+      AppEmptyState,
     },
     props: {
-      product: {
-        type: Object as () => Ticket,
+      eventTickets: {
+        type: Array as () => Ticket[],
       },
     },
     name: "EventRevenue",

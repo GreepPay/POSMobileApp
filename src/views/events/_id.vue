@@ -38,11 +38,11 @@
         </template>
 
         <template v-if="selectedTab == 'attendees'">
-          <attendees-event :ticket="ManyEventTickets.data" />
+          <attendees-event :eventTickets="ManyEventTickets.data" />
         </template>
 
         <template v-if="selectedTab == 'revenue'">
-          <revenue-event :ticket="ManyEventTickets.data" />
+          <revenue-event :eventTickets="ManyEventTickets.data" />
         </template>
       </div>
 

@@ -5,7 +5,7 @@
     <!-- Content -->
     <div class="w-full flex flex-col h-full">
       <!-- Filter -->
-      <div class="w-full flex flex-row items-center px-4">
+      <!-- <div class="w-full flex flex-row items-center px-4">
         <div
           v-for="(item, index) in filterTabs"
           :key="index"
@@ -26,26 +26,39 @@
             {{ item.value }}
           </app-normal-text>
         </div>
-      </div>
+      </div> -->
 
       <!-- Attendees -->
       <div class="w-full flex flex-col px-4 !pb-[140px] mt-6">
-        <template v-for="(item, index) in attendees" :key="index">
-          <div class="w-full flex flex-row items-center mb-4">
+        <template v-if="!eventTickets.length">
+          <app-empty-state
+            title="No Attendees available"
+            description="No Attendees available"
+          />
+        </template>
+
+        <template v-else>
+          <div
+            v-for="(eventTicket, index) in eventTickets"
+            :key="index"
+            class="w-full flex flex-row items-center mb-4"
+          >
             <div class="w-[48px] mr-3">
-              <app-image-loader
-                :photo-url="item.photo_url"
+              <app-avatar
+                :src="eventTicket?.user?.profile?.profile_picture"
                 class="!w-[48px] !h-[48px] rounded-full"
               />
             </div>
 
             <div class="w-full flex flex-col">
               <app-normal-text class="!text-sm !font-[500] mb-[3px]">
-                {{ item.name }}
+                {{
+                  `${eventTicket?.user?.first_name} ${eventTicket?.user?.last_name}`
+                }}
               </app-normal-text>
 
               <app-normal-text class="!text-[#616161] !text-left">
-                {{ item.ticket_type }}
+                {{ eventTicket.ticketType }}
               </app-normal-text>
             </div>
           </div>
@@ -57,7 +70,7 @@
 
 <script lang="ts">
   import { defineComponent, reactive } from "vue"
-  import { AppNormalText, AppImageLoader } from "@greep/ui-components"
+  import { AppNormalText, AppAvatar, AppEmptyState } from "@greep/ui-components"
   import { Logic } from "@greep/logic"
   import { onMounted } from "vue"
   import { ref } from "vue"
@@ -66,11 +79,12 @@
   export default defineComponent({
     components: {
       AppNormalText,
-      AppImageLoader,
+      AppAvatar,
+      AppEmptyState,
     },
     props: {
-      ticket: {
-        type: Object as () => Ticket,
+      eventTickets: {
+        type: Array as () => Ticket[],
       },
     },
     name: "EventAttendees",
@@ -80,14 +94,8 @@
       const selectedTab = ref("attendees")
 
       const filterTabs = reactive([
-        {
-          value: "Attendees",
-          key: "attendees",
-        },
-        {
-          value: "Checked In",
-          key: "checked_in",
-        },
+        { value: "Attendees", key: "attendees" },
+        { value: "Checked In", key: "checked_in" },
       ])
 
       const attendees = reactive<
