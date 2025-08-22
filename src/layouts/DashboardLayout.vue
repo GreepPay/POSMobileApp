@@ -52,7 +52,7 @@ import { getPlatforms } from "@ionic/vue";
 import { ref, defineComponent, onMounted, computed } from "vue";
 import { useRouter } from "vue-router";
 
-export default defineComponent({
+export default defineComponent({ 
   components: {
     AppHeaderText,
     AppIcon,

@@ -286,6 +286,7 @@ export default defineComponent({
 
                 pageSettings.pages[1].action_btn.loading = true;
 
+ 
                 try {
                   const eventProduct = isEdit.value
                     ? await Logic.Commerce.UpdateProduct()

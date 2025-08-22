@@ -6,7 +6,7 @@
     >
       <!-- Main Content -->
       <div
-        class="flex flex-col items-center  mt-6"
+        class="flex flex-col items-center mt-6"
         style="padding-top: calc(env(safe-area-inset-top))"
       >
         <img src="/images/install.svg" alt="Install Icon" class="!h-[100px]" />
@@ -37,7 +37,12 @@
         class="w-full flex flex-col space-y-3 mt-6"
         style="padding-bottom: calc(env(safe-area-inset-bottom))"
       >
-        <app-button outlined variant="primary" class="!py-4 !w-full !text-xs" @click="Logic.Common.GoToRoute('/start')">
+        <app-button
+          outlined
+          variant="primary"
+          class="!py-4 !w-full !text-xs"
+          @click="Logic.Common.GoToRoute('/start')"
+        >
           Skip and continue on web
         </app-button>
       </div>
@@ -46,34 +51,34 @@
 </template>
 
 <script lang="ts">
-import { computed, defineComponent, ref } from "vue";
-import { AppNormalText, AppHeaderText, AppButton } from "@greep/ui-components";
-import AppWrapper from "@/components/AppWrapper.vue";
-import { Logic } from "@greep/logic";
-import { safeAreaInsetBottom, safeAreaInsetTop } from "../../composable";
+  import { computed, defineComponent, ref } from "vue"
+  import { AppNormalText, AppHeaderText, AppButton } from "@greep/ui-components"
+  import AppWrapper from "@/components/AppWrapper.vue"
+  import { Logic } from "@greep/logic"
+  import { safeAreaInsetBottom, safeAreaInsetTop } from "../../composable"
 
-export default defineComponent({
-  components: {
-    AppWrapper,
-    AppNormalText,
-    AppHeaderText,
-    AppButton,
-  },
-  name: "InstallPWA",
-  layout: "Onboarding",
-  middlewares: {},
-  setup() {
-    const innerHeight = ref(window.innerHeight);
+  export default defineComponent({
+    components: {
+      AppWrapper,
+      AppNormalText,
+      AppHeaderText,
+      AppButton,
+    },
+    name: "InstallPWA",
+    layout: "Onboarding",
+    middlewares: {},
+    setup() {
+      const innerHeight = ref(window.innerHeight)
 
-    const mobileFullHeight = computed(() => {
-      return { height: `${innerHeight.value}px` };
-    });
-    return {
-      Logic,
-      safeAreaInsetTop,
-      safeAreaInsetBottom,
-      mobileFullHeight,
-    };
-  },
-});
+      const mobileFullHeight = computed(() => {
+        return { height: `${innerHeight.value}px` }
+      })
+      return {
+        Logic,
+        safeAreaInsetTop,
+        safeAreaInsetBottom,
+        mobileFullHeight,
+      }
+    },
+  })
 </script>

@@ -240,7 +240,7 @@
                 class="absolute w-full h-full top-0 left-0 flex items-center justify-center"
               >
                 <app-normal-text
-                  class="!text-white !text-xl !font-semibold rotate-90"
+                  class="!text-white !text-xl !font-semibold !rotate-90"
                 >
                   {{ item.ticket_name }}
                 </app-normal-text>
@@ -254,185 +254,179 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, reactive, ref } from "vue";
-import {
-  AppImageLoader,
-  AppSwiper,
-  AppNormalText,
-  AppIcon,
-} from "@greep/ui-components";
-import { Logic } from "@greep/logic";
-import { onMounted } from "vue";
-import { watch } from "vue";
-import { SwiperSlide } from "swiper/vue";
-import { Product, ProductVariantInput } from "@greep/logic/src/gql/graphql";
-import { withdrawalAvailableCurrencies } from "../../composable";
-
-export default defineComponent({
-  components: {
-    AppSwiper,
+  import { defineComponent, reactive, ref } from "vue"
+  import {
     AppImageLoader,
-    SwiperSlide,
+    AppSwiper,
     AppNormalText,
     AppIcon,
-  },
-  props: {
-    product: {
-      type: Object as () => Product,
+  } from "@greep/ui-components"
+  import { Logic } from "@greep/logic"
+  import { onMounted } from "vue"
+  import { watch } from "vue"
+  import { SwiperSlide } from "swiper/vue"
+  import { Product, ProductVariantInput } from "@greep/logic/src/gql/graphql"
+  import { withdrawalAvailableCurrencies } from "../../composable"
+
+  export default defineComponent({
+    components: {
+      AppSwiper,
+      AppImageLoader,
+      SwiperSlide,
+      AppNormalText,
+      AppIcon,
     },
-  },
-  name: "EventAboutSummary",
-  setup(props) {
-    const FormValidations = Logic.Form;
+    props: {
+      product: {
+        type: Object as () => Product,
+      },
+    },
+    name: "EventAboutSummary",
+    setup(props) {
+      const FormValidations = Logic.Form
 
-    const currentSlidePosition = ref(0);
-    const slidePosition = ref(0);
+      const currentSlidePosition = ref(0)
+      const slidePosition = ref(0)
 
-    const openInNewTab = (url: string) => {
-      window.open(url, "_blank");
-    };
-
-    const eventData = reactive<{
-      images: { url: string }[];
-      name: string;
-      event_date: string;
-      event_time: string;
-      location: string;
-      place: string;
-      tickets: {
-        ticket_name: string;
-        name: string;
-        price: string;
-        color: string;
-        time: string;
-        date: string;
-      }[];
-      description: string;
-    }>({
-      images: [
-        {
-          url: "/images/temps/event-1.png",
-        },
-        {
-          url: "/images/temps/event-2.png",
-        },
-        {
-          url: "/images/temps/event-3.png",
-        },
-      ],
-      name: "Make It! Pottery Class",
-      event_date: "Sunday, 27 July 2025",
-      event_time: "10AM - 4PM",
-      location: "12 Titsianou Aristotelous, Limassol, Cyprus.",
-      place: "Limassol, Cyprus",
-      description:
-        "Unleash your creativity and learn the art of pottery in this hands-on workshop. Guided by expert instructors, you'll craft your own masterpiece and take it home to keep. Suitable for beginners and enthusiasts alike. All materials provided!",
-      tickets: [
-        {
-          ticket_name: "Regular",
-          name: "Make It! Pottery Class",
-          color: "#009DE3",
-          date: "Sunday, July 27",
-          time: "10AM - 4PM",
-          price: "₺450",
-        },
-        {
-          ticket_name: "VIP",
-          name: "Make It! Pottery Class",
-          color: "#00A0B4",
-          date: "Sunday, July 27",
-          time: "10AM - 4PM",
-          price: "₺600",
-        },
-        {
-          ticket_name: "VIP +",
-          name: "Make It! Pottery Class",
-          color: "#8E3BE0",
-          date: "Sunday, July 27",
-          time: "10AM - 4PM",
-          price: "₺900",
-        },
-      ],
-    });
-
-    const setDefaults = () => {
-      if (props.product) {
-        const product = props.product;
-
-        const productImages: {
-          url: string;
-          alt: string;
-        }[] = JSON.parse(product.images);
-
-        eventData.images = productImages.map((image) => {
-          return {
-            url: image.url,
-          };
-        });
-        eventData.name = product.name;
-        eventData.event_date = Logic.Common.fomartDate(
-          product.eventEndDate || "",
-          "dddd, DD MMMM YYYY"
-        );
-        eventData.event_time = Logic.Common.fomartDate(
-          product.eventEndDate || "",
-          "hh:mm A"
-        );
-        eventData.location = product.venueName || "";
-        eventData.place = product.venueName || "";
-        eventData.description = product.description || "";
-
-        const productVariants: ProductVariantInput[] = JSON.parse(
-          product.variants
-        );
-        eventData.tickets = productVariants.map((variant) => {
-          const currentCurrency = withdrawalAvailableCurrencies.find(
-            (item) => item.code === product.currency
-          );
-
-          return {
-            ticket_name: variant.sku,
-            name: product.name,
-            color: variant.attributes[0].value,
-            date: Logic.Common.fomartDate(
-              product.eventEndDate || "",
-              "dddd, DD MMMM YYYY"
-            ),
-            time: Logic.Common.fomartDate(
-              product.eventEndDate || "",
-              "hh:mm A"
-            ),
-            price: `${currentCurrency?.symbol}${Logic.Common.convertToMoney(
-              variant.priceAdjustment,
-              false,
-              ""
-            )}`,
-          };
-        });
+      const openInNewTab = (url: string) => {
+        window.open(url, "_blank")
       }
-    };
 
-    const continueWithForm = () => {
-      //
-    };
+      const eventData = reactive<{
+        images: { url: string }[]
+        name: string
+        event_date: string
+        event_time: string
+        location: string
+        place: string
+        tickets: {
+          ticket_name: string
+          name: string
+          price: string
+          color: string
+          time: string
+          date: string
+        }[]
+        description: string
+      }>({
+        images: [
+          { url: "/images/temps/event-1.png" },
+          { url: "/images/temps/event-2.png" },
+          { url: "/images/temps/event-3.png" },
+        ],
+        name: "Make It! Pottery Class",
+        event_date: "Sunday, 27 July 2025",
+        event_time: "10AM - 4PM",
+        location: "12 Titsianou Aristotelous, Limassol, Cyprus.",
+        place: "Limassol, Cyprus",
+        description:
+          "Unleash your creativity and learn the art of pottery in this hands-on workshop. Guided by expert instructors, you'll craft your own masterpiece and take it home to keep. Suitable for beginners and enthusiasts alike. All materials provided!",
+        tickets: [
+          {
+            ticket_name: "Regular",
+            name: "Make It! Pottery Class",
+            color: "#009DE3",
+            date: "Sunday, July 27",
+            time: "10AM - 4PM",
+            price: "₺450",
+          },
+          {
+            ticket_name: "VIP",
+            name: "Make It! Pottery Class",
+            color: "#00A0B4",
+            date: "Sunday, July 27",
+            time: "10AM - 4PM",
+            price: "₺600",
+          },
+          {
+            ticket_name: "VIP +",
+            name: "Make It! Pottery Class",
+            color: "#8E3BE0",
+            date: "Sunday, July 27",
+            time: "10AM - 4PM",
+            price: "₺900",
+          },
+        ],
+      })
 
-    watch(slidePosition, () => {
-      currentSlidePosition.value = slidePosition.value;
-    });
+      const setDefaults = () => {
+        if (props.product) {
+          const product = props.product
 
-    onMounted(() => {
-      setDefaults();
-    });
+          const productImages: {
+            url: string
+            alt: string
+          }[] = JSON.parse(product.images)
 
-    return {
-      FormValidations,
-      Logic,
-      continueWithForm,
-      eventData,
-      currentSlidePosition,
-      slidePosition,
-      openInNewTab,
-    };
-  },
-});
+          eventData.images = productImages.map((image) => {
+            return {
+              url: image.url,
+            }
+          })
+          eventData.name = product.name
+          eventData.event_date = Logic.Common.fomartDate(
+            product.eventEndDate || "",
+            "dddd, DD MMMM YYYY"
+          )
+          eventData.event_time = Logic.Common.fomartDate(
+            product.eventEndDate || "",
+            "hh:mm A"
+          )
+          eventData.location = product.venueName || ""
+          eventData.place = product.venueName || ""
+          eventData.description = product.description || ""
+
+          const productVariants: ProductVariantInput[] = JSON.parse(
+            product.variants
+          )
+          eventData.tickets = productVariants.map((variant) => {
+            const currentCurrency = withdrawalAvailableCurrencies.find(
+              (item) => item.code === product.currency
+            )
+
+            return {
+              ticket_name: variant.sku,
+              name: product.name,
+              color: variant.attributes[0].value,
+              date: Logic.Common.fomartDate(
+                product.eventEndDate || "",
+                "dddd, DD MMMM YYYY"
+              ),
+              time: Logic.Common.fomartDate(
+                product.eventEndDate || "",
+                "hh:mm A"
+              ),
+              price: `${currentCurrency?.symbol}${Logic.Common.convertToMoney(
+                variant.priceAdjustment,
+                false,
+                ""
+              )}`,
+            }
+          })
+        }
+      }
+
+      const continueWithForm = () => {
+        //
+      }
+
+      watch(slidePosition, () => {
+        currentSlidePosition.value = slidePosition.value
+      })
+
+      onMounted(() => {
+        setDefaults()
+      })
+
+      return {
+        FormValidations,
+        Logic,
+        continueWithForm,
+        eventData,
+        currentSlidePosition,
+        slidePosition,
+        openInNewTab,
+      }
+    },
+  })
 </script>
