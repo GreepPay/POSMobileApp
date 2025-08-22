@@ -61,7 +61,7 @@
   import { Logic } from "@greep/logic"
   import { onMounted } from "vue"
   import { ref } from "vue"
-  import { Product } from "@greep/logic/src/gql/graphql"
+  import { Ticket } from "@greep/logic/src/gql/graphql"
 
   export default defineComponent({
     components: {
@@ -69,8 +69,8 @@
       AppImageLoader,
     },
     props: {
-      product: {
-        type: Object as () => Product,
+      ticket: {
+        type: Object as () => Ticket,
       },
     },
     name: "EventAttendees",

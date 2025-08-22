@@ -52,13 +52,13 @@
             is-wrapper
             @OnOptionSelected="
               (option) => {
-                currentOptionName = option.value;
+                currentOptionName = option.value
                 if (option.extraInfo) {
-                  filterFrom = option.extraInfo[0];
-                  filterTo = option.extraInfo[1];
+                  filterFrom = option.extraInfo[0]
+                  filterTo = option.extraInfo[1]
                 } else {
-                  filterFrom = '';
-                  filterTo = '';
+                  filterFrom = ''
+                  filterTo = ''
                 }
               }
             "
@@ -138,153 +138,156 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, reactive, ref } from "vue";
-import {
-  AppNormalText,
-  AppTextField,
-  AppSelect,
-  AppIcon,
-  AppLoading,
-} from "@greep/ui-components";
-import { Logic } from "@greep/logic";
-import { onMounted } from "vue";
-import { SelectOption } from "@greep/ui-components/src/types";
-import { Product } from "@greep/logic/src/gql/graphql";
-
-export default defineComponent({
-  components: {
+  import { defineComponent, reactive, ref } from "vue"
+  import {
     AppNormalText,
     AppTextField,
     AppSelect,
     AppIcon,
     AppLoading,
-  },
-  props: {
-    product: {
-      type: Object as () => Product,
+  } from "@greep/ui-components"
+  import { Logic } from "@greep/logic"
+  import { onMounted } from "vue"
+  import { SelectOption } from "@greep/ui-components/src/types"
+  import { Ticket } from "@greep/logic/src/gql/graphql"
+
+  export default defineComponent({
+    components: {
+      AppNormalText,
+      AppTextField,
+      AppSelect,
+      AppIcon,
+      AppLoading,
     },
-  },
-  name: "EventRevenue",
-  setup() {
-    const FormValidations = Logic.Form;
-
-    const filterIsLoading = ref(false);
-    const filterSetup = reactive({
-      from: "",
-      to: "",
-      period: "",
-    });
-
-    const currencySymbol = ref("$");
-
-    const filterFrom = ref(filterSetup.from);
-    const filterTo = ref(filterSetup.to);
-
-    const currentOptionName = ref("All Time");
-
-    const monthFilterOption = reactive<SelectOption[]>([]);
-
-    const orders = reactive<
-      {
-        name: string;
-        date: string;
-        order_type: string;
-        price: string;
-      }[]
-    >([
-      {
-        name: "Arlene McCoy",
-        date: "Today",
-        price: "₺450.00",
-        order_type: "Ticker",
+    props: {
+      product: {
+        type: Object as () => Ticket,
       },
-      {
-        name: "Floyd Miles",
-        date: "Today",
-        price: "₺450.00",
-        order_type: "Ticker",
-      },
-      {
-        name: "Ralph Edwards",
-        date: "Today",
-        price: "₺450.00",
-        order_type: "Ticker",
-      },
-      {
-        name: "Jerome Bell",
-        date: "Today",
-        price: "₺450.00",
-        order_type: "Ticker",
-      },
-      {
-        name: "Eleanor Pena",
-        date: "Today",
-        price: "₺450.00",
-        order_type: "Ticker",
-      },
-    ]);
+    },
+    name: "EventRevenue",
+    setup() {
+      const FormValidations = Logic.Form
 
-    const setDefaultMonthOptions = () => {
-      monthFilterOption.length = 0;
-      monthFilterOption.push({
-        value: "All Time",
-        key: "all_time",
-      });
+      const filterIsLoading = ref(false)
+      const filterSetup = reactive({
+        from: "",
+        to: "",
+        period: "",
+      })
 
-      const currentDate = new Date();
+      const currencySymbol = ref("$")
 
-      for (let i = 0; i < 10; i++) {
-        const month = currentDate.getMonth();
-        const year = currentDate.getFullYear();
-        const monthName = currentDate.toLocaleString("default", {
-          month: "long",
-        });
-        const firstDayOfMonth = new Date(year, month, 1);
-        const lastDayOfMonth = new Date(year, month + 1, 0);
+      const filterFrom = ref(filterSetup.from)
+      const filterTo = ref(filterSetup.to)
 
-        const formattedFirstDay = firstDayOfMonth.toLocaleDateString("en-US", {
-          year: "numeric",
-          month: "2-digit",
-          day: "2-digit",
-        });
+      const currentOptionName = ref("All Time")
 
-        const formattedLastDay = lastDayOfMonth.toLocaleDateString("en-US", {
-          year: "numeric",
-          month: "2-digit",
-          day: "2-digit",
-        });
+      const monthFilterOption = reactive<SelectOption[]>([])
 
+      const orders = reactive<
+        {
+          name: string
+          date: string
+          order_type: string
+          price: string
+        }[]
+      >([
+        {
+          name: "Arlene McCoy",
+          date: "Today",
+          price: "₺450.00",
+          order_type: "Ticker",
+        },
+        {
+          name: "Floyd Miles",
+          date: "Today",
+          price: "₺450.00",
+          order_type: "Ticker",
+        },
+        {
+          name: "Ralph Edwards",
+          date: "Today",
+          price: "₺450.00",
+          order_type: "Ticker",
+        },
+        {
+          name: "Jerome Bell",
+          date: "Today",
+          price: "₺450.00",
+          order_type: "Ticker",
+        },
+        {
+          name: "Eleanor Pena",
+          date: "Today",
+          price: "₺450.00",
+          order_type: "Ticker",
+        },
+      ])
+
+      const setDefaultMonthOptions = () => {
+        monthFilterOption.length = 0
         monthFilterOption.push({
-          value: `${monthName}, ${year}`,
-          key: `${monthName.toLowerCase()}_${year}`,
-          extraInfo: [formattedFirstDay, formattedLastDay],
-        });
+          value: "All Time",
+          key: "all_time",
+        })
 
-        currentDate.setMonth(month - 1);
+        const currentDate = new Date()
+
+        for (let i = 0; i < 10; i++) {
+          const month = currentDate.getMonth()
+          const year = currentDate.getFullYear()
+          const monthName = currentDate.toLocaleString("default", {
+            month: "long",
+          })
+          const firstDayOfMonth = new Date(year, month, 1)
+          const lastDayOfMonth = new Date(year, month + 1, 0)
+
+          const formattedFirstDay = firstDayOfMonth.toLocaleDateString(
+            "en-US",
+            {
+              year: "numeric",
+              month: "2-digit",
+              day: "2-digit",
+            }
+          )
+
+          const formattedLastDay = lastDayOfMonth.toLocaleDateString("en-US", {
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit",
+          })
+
+          monthFilterOption.push({
+            value: `${monthName}, ${year}`,
+            key: `${monthName.toLowerCase()}_${year}`,
+            extraInfo: [formattedFirstDay, formattedLastDay],
+          })
+
+          currentDate.setMonth(month - 1)
+        }
       }
-    };
 
-    const continueWithForm = () => {
-      //
-    };
+      const continueWithForm = () => {
+        //
+      }
 
-    onMounted(() => {
-      setDefaultMonthOptions();
-    });
+      onMounted(() => {
+        setDefaultMonthOptions()
+      })
 
-    return {
-      FormValidations,
-      Logic,
-      continueWithForm,
-      orders,
-      filterFrom,
-      filterTo,
-      filterSetup,
-      currentOptionName,
-      monthFilterOption,
-      filterIsLoading,
-      currencySymbol,
-    };
-  },
-});
+      return {
+        FormValidations,
+        Logic,
+        continueWithForm,
+        orders,
+        filterFrom,
+        filterTo,
+        filterSetup,
+        currentOptionName,
+        monthFilterOption,
+        filterIsLoading,
+        currencySymbol,
+      }
+    },
+  })
 </script>

@@ -38,11 +38,11 @@
         </template>
 
         <template v-if="selectedTab == 'attendees'">
-          <attendees-event :product="SingleProduct" />
+          <attendees-event :ticket="ManyEventTickets.data" />
         </template>
 
         <template v-if="selectedTab == 'revenue'">
-          <revenue-event :product="SingleProduct" />
+          <revenue-event :ticket="ManyEventTickets.data" />
         </template>
       </div>
 
@@ -59,7 +59,11 @@
               variant="primary"
               outlined
               :class="`!py-4 !font-[500] !border-[1.5px]`"
-              @click="Logic.Common.GoToRoute(`/events/create?uuid=${SingleProduct?.uuid}`)"
+              @click="
+                Logic.Common.GoToRoute(
+                  `/events/create?uuid=${SingleProduct?.uuid}`
+                )
+              "
             >
               <div class="flex flex-row items-center">
                 <app-icon name="edit-green" custom-class="!h-[22px] mr-2" />
@@ -89,80 +93,89 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from "vue";
-import { AppNormalText, AppButton, AppIcon } from "@greep/ui-components";
-import { Logic } from "@greep/logic";
-import { reactive } from "vue";
-import AboutEvent from "../../components/Event/about.vue";
-import OverviewEvent from "../../components/Event/overview.vue";
-import AttendeesEvent from "../../components/Event/attendees.vue";
-import RevenueEvent from "../../components/Event/revenue.vue";
-import { ref } from "vue";
-import { getBottomPadding } from "../../composable";
-import { onMounted } from "vue";
+  import { defineComponent } from "vue"
+  import { AppNormalText, AppButton, AppIcon } from "@greep/ui-components"
+  import { Logic } from "@greep/logic"
+  import { reactive } from "vue"
+  import AboutEvent from "../../components/Event/about.vue"
+  import OverviewEvent from "../../components/Event/overview.vue"
+  import AttendeesEvent from "../../components/Event/attendees.vue"
+  import RevenueEvent from "../../components/Event/revenue.vue"
+  import { ref } from "vue"
+  import { getBottomPadding } from "../../composable"
+  import { onMounted } from "vue"
 
-export default defineComponent({
-  name: "EventDetailsPage",
-  components: {
-    AppNormalText,
-    AboutEvent,
-    AppButton,
-    AppIcon,
-    OverviewEvent,
-    AttendeesEvent,
-    RevenueEvent,
-  },
-  middlewares: {
-    fetchRules: [
-      {
-        domain: "Commerce",
-        property: "SingleProduct",
-        method: "GetProduct",
-        params: [],
-        requireAuth: true,
-        ignoreProperty: true,
-        useRouteId: true,
-      },
-    ],
-  },
-  setup() {
-    const selectedTab = ref("about");
+  export default defineComponent({
+    name: "EventDetailsPage",
+    components: {
+      AppNormalText,
+      AboutEvent,
+      AppButton,
+      AppIcon,
+      OverviewEvent,
+      AttendeesEvent,
+      RevenueEvent,
+    },
+    middlewares: {
+      fetchRules: [
+        {
+          domain: "Commerce",
+          property: "SingleProduct",
+          method: "GetProduct",
+          params: [],
+          requireAuth: true,
+          ignoreProperty: true,
+          useRouteId: true,
+        },
+        {
+          domain: "Commerce",
+          property: "ManyEventTickets",
+          method: "GetEventTickets",
+          params: [13, 1, 10],
+          requireAuth: true,
+          ignoreProperty: true,
+          useRouteId: false,
+        },
+      ],
+    },
+    setup() {
+      const selectedTab = ref("about")
+      const showEditButton = ref(true)
+      const SingleProduct = ref(Logic.Commerce.SingleProduct)
+      const ManyEventTickets = ref(Logic.Commerce.ManyEventTickets)
+      const tabOptions = reactive([
+        {
+          value: "About",
+          key: "about",
+        },
+        {
+          value: "Overview",
+          key: "overview",
+        },
+        {
+          value: "Attendees",
+          key: "attendees",
+        },
+        {
+          value: "Revenue",
+          key: "revenue",
+        },
+      ])
 
-    const showEditButton = ref(true);
+      onMounted(() => {
+        Logic.Commerce.watchProperty("SingleProduct", SingleProduct)
+        Logic.Commerce.watchProperty("ManyEventTickets", ManyEventTickets)
+      })
 
-    const SingleProduct = ref(Logic.Commerce.SingleProduct);
-
-    const tabOptions = reactive([
-      {
-        value: "About",
-        key: "about",
-      },
-      {
-        value: "Overview",
-        key: "overview",
-      },
-      {
-        value: "Attendees",
-        key: "attendees",
-      },
-      {
-        value: "Revenue",
-        key: "revenue",
-      },
-    ]);
-
-    onMounted(() => {
-      Logic.Commerce.watchProperty("SingleProduct", SingleProduct);
-    });
-
-    return {
-      Logic,
-      tabOptions,
-      selectedTab,
-      getBottomPadding,
-      showEditButton,
-      SingleProduct,
-    };
-  },
-});
+      return {
+        Logic,
+        tabOptions,
+        selectedTab,
+        getBottomPadding,
+        showEditButton,
+        SingleProduct,
+        ManyEventTickets,
+      }
+    },
+  })
 </script>
