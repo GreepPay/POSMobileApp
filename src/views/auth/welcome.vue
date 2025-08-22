@@ -67,124 +67,124 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, watch, reactive, onUnmounted } from "vue";
-import {
-  AppImageLoader,
-  AppHeaderText,
-  AppNormalText,
-  AppKeyboard,
-} from "@greep/ui-components";
-import { Logic } from "@greep/logic";
-import { User } from "@greep/logic/src/gql/graphql";
-import { ref } from "vue";
-import { onMounted } from "vue";
-import { computed } from "vue";
-
-export default defineComponent({
-  name: "WelcomePage",
-  components: {
+  import { defineComponent, watch, reactive, onUnmounted } from "vue"
+  import {
     AppImageLoader,
     AppHeaderText,
     AppNormalText,
     AppKeyboard,
-  },
-  setup() {
-    const FormValidations = Logic.Form;
+  } from "@greep/ui-components"
+  import { Logic } from "@greep/logic"
+  import { User } from "@greep/logic/src/gql/graphql"
+  import { ref } from "vue"
+  import { onMounted } from "vue"
+  import { computed } from "vue"
 
-    const AuthUser = ref<User>(Logic.Auth.AuthUser);
+  export default defineComponent({
+    name: "WelcomePage",
+    components: {
+      AppImageLoader,
+      AppHeaderText,
+      AppNormalText,
+      AppKeyboard,
+    },
+    setup() {
+      const FormValidations = Logic.Form
 
-    const formData = reactive({
-      passcode: "12345",
-    });
+      const AuthUser = ref<User>(Logic.Auth.AuthUser)
 
-    watch(formData, async () => {
-      if (formData.passcode.length === 6) {
-        await isFilled();
-      }
-    });
+      const formData = reactive({
+        passcode: "",
+      })
 
-    const isFilled = async () => {
-      let authPasscode = localStorage.getItem("auth_passcode");
+      watch(formData, async () => {
+        if (formData.passcode.length === 6) {
+          await isFilled()
+        }
+      })
 
-      if (!authPasscode) {
-        authPasscode = Logic.Auth.AuthUser?.transaction_pin;
-      }
+      const isFilled = async () => {
+        let authPasscode = localStorage.getItem("auth_passcode")
 
-      if (formData.passcode != authPasscode) {
-        Logic.Common.showAlert({
+        if (!authPasscode) {
+          authPasscode = Logic.Auth.AuthUser?.transaction_pin
+        }
+
+        if (formData.passcode != authPasscode) {
+          Logic.Common.showAlert({
+            show: true,
+            type: "error",
+            message: "Invalid passcode. Please try again.",
+          })
+          formData.passcode = ""
+          return
+        }
+
+        const encryptedAuthData = localStorage.getItem("auth_encrypted_data")
+        try {
+          const authData: any = Logic.Common.decryptData(
+            encryptedAuthData || "",
+            authPasscode
+          )
+
+          Logic.Auth.SignInForm = {
+            email: authData.email,
+            password: authData.password,
+          }
+        } catch (error) {
+          Logic.Common.showAlert({
+            show: true,
+            type: "error",
+            message: "Invalid passcode. Please try again.",
+          })
+          formData.passcode = ""
+          return
+        }
+
+        Logic.Common.showLoader({
           show: true,
-          type: "error",
-          message: "Invalid passcode. Please try again.",
-        });
-        formData.passcode = "";
-        return;
+          loading: true,
+        })
+
+        await Logic.Auth.SignIn(true)
+
+        Logic.Common.hideLoader()
+
+        Logic.Common.GoToRoute("/")
       }
 
-      const encryptedAuthData = localStorage.getItem("auth_encrypted_data");
-      try {
-        const authData: any = Logic.Common.decryptData(
-          encryptedAuthData || "",
-          authPasscode
-        );
+      const innerHeight = ref(window.innerHeight)
 
-        Logic.Auth.SignInForm = {
-          email: authData.email,
-          password: authData.password,
-        };
-      } catch (error) {
-        Logic.Common.showAlert({
-          show: true,
-          type: "error",
-          message: "Invalid passcode. Please try again.",
-        });
-        formData.passcode = "";
-        return;
+      const updateHeight = () => {
+        innerHeight.value = window.innerHeight
       }
 
-      Logic.Common.showLoader({
-        show: true,
-        loading: true,
-      });
+      onMounted(() => {
+        updateHeight()
+        window.addEventListener("resize", updateHeight)
+      })
 
-      await Logic.Auth.SignIn(true);
+      onUnmounted(() => {
+        window.removeEventListener("resize", updateHeight)
+      })
 
-      Logic.Common.hideLoader();
+      const mobileFullHeight = computed(() => {
+        return {
+          height: `${innerHeight.value}px`,
+        }
+      })
 
-      Logic.Common.GoToRoute("/");
-    };
+      onMounted(() => {
+        Logic.Auth.watchProperty("AuthUser", AuthUser)
+      })
 
-    const innerHeight = ref(window.innerHeight);
-
-    const updateHeight = () => {
-      innerHeight.value = window.innerHeight;
-    };
-
-    onMounted(() => {
-      updateHeight();
-      window.addEventListener("resize", updateHeight);
-    });
-
-    onUnmounted(() => {
-      window.removeEventListener("resize", updateHeight);
-    });
-
-    const mobileFullHeight = computed(() => {
       return {
-        height: `${innerHeight.value}px`,
-      };
-    });
-
-    onMounted(() => {
-      Logic.Auth.watchProperty("AuthUser", AuthUser);
-    });
-
-    return {
-      FormValidations,
-      Logic,
-      formData,
-      AuthUser,
-      mobileFullHeight,
-    };
-  },
-});
+        FormValidations,
+        Logic,
+        formData,
+        AuthUser,
+        mobileFullHeight,
+      }
+    },
+  })
 </script>

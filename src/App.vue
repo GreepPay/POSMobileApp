@@ -72,20 +72,12 @@
 
       const setBottomBar = () => {
         bottomBar.length = 0
-        bottomBar.push(
-          {
-            path: "/",
-            icon: "home",
-            routeTag: "base",
-            name: "Home",
-          },
-          {
-            path: "/events",
-            icon: "events",
-            routeTag: "events",
-            name: "Events",
-          }
-        )
+        bottomBar.push({
+          path: "/",
+          icon: "home",
+          routeTag: "base",
+          name: "Home",
+        })
         // Set bottom nav
         if (Logic.Auth.AuthUser) {
           const business: Business = Logic.Auth.GetDefaultBusiness()
