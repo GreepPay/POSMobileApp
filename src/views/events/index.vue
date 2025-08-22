@@ -108,9 +108,10 @@ export default defineComponent({
     >([]);
 
     const setProducts = () => {
-      events.length = 0;
-
-      ManyEventProducts.value?.data?.forEach((product) => {
+      events.length = 0; 
+      ManyEventProducts.value?.data?.forEach((product,  ) => { 
+        const productImages = JSON.parse(product.images);
+        if (productImages.length) {
         const currentCurrency = withdrawalAvailableCurrencies.find(
           (item) => item.code === product.currency
         );
@@ -148,8 +149,9 @@ export default defineComponent({
             Logic.Common.fomartDate(product.eventEndDate || "", "hA"),
           ],
           uuid: product.uuid,
-        });
-      });
+        }); 
+        }
+      });  
     };
 
     onIonViewWillEnter(() => {

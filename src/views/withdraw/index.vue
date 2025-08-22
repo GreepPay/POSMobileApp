@@ -61,7 +61,7 @@
               "
             >
               <app-normal-text class="!text-red-500">
-                Maximum withdrawal amount is
+                  Maximum Amount you can withdraw is
                 <span class="!font-semibold pl-1"
                   >{{ currentCurrency }}
                   {{

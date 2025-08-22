@@ -232,7 +232,7 @@ export default defineComponent({
         domain: "Wallet",
         property: "ManyPointTransactions",
         method: "GetPointTransactions",
-        params: [1, 5],
+        params: [1, 10],
         requireAuth: true,
         ignoreProperty: false,
         silentUpdate: true,
@@ -251,8 +251,7 @@ export default defineComponent({
   setup() {
     const defaultCurrency = ref(
       Logic.Auth.AuthUser?.businesses[0]?.default_currency
-    );
-
+    ); 
     const selectedCurrency = ref(
       Logic.Auth.AuthUser?.businesses[0]?.default_currency
     );

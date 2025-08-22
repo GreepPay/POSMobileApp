@@ -1,6 +1,6 @@
-import { Currency } from "@greep/ui-components/src/types";
-import { getPlatforms } from "@ionic/vue";
-import { computed, reactive } from "vue";
+import { Currency } from "@greep/ui-components/src/types"
+import { getPlatforms } from "@ionic/vue"
+import { computed, reactive } from "vue"
 
 export const availableCurrencies = reactive([
   {
@@ -51,11 +51,11 @@ export const availableCurrencies = reactive([
     symbol: "€",
     loading: false,
   },
-]);
+])
 
 export const safeAreaInsetTop = computed(() => {
   // Replace this with your actual platform detection logic
-  const isAndroid = getPlatforms()[0] === "android";
+  const isAndroid = getPlatforms()[0] === "android"
 
   const topInset = Number(
     String(
@@ -63,14 +63,15 @@ export const safeAreaInsetTop = computed(() => {
         "--safe-area-inset-top"
       )
     ).replace("px", "")
-  );
+  )
 
-  return isAndroid && topInset === 0 ? 20 : topInset;
-});
+  return isAndroid && topInset === 0 ? 20 : topInset
+})
 
 export const safeAreaInsetBottom = computed(() => {
   // Replace this with your actual platform detection logic
-  const isAndroid = getPlatforms()[0] === "android" || getPlatforms()[0] === "pwa";
+  const isAndroid =
+    getPlatforms()[0] === "android" || getPlatforms()[0] === "pwa"
 
   const bottomInset = Number(
     String(
@@ -78,38 +79,38 @@ export const safeAreaInsetBottom = computed(() => {
         "--safe-area-inset-bottom"
       )
     ).replace("px", "")
-  );
+  )
 
-  return isAndroid && bottomInset === 0 ? 20 : bottomInset;
-});
+  return isAndroid && bottomInset === 0 ? 20 : bottomInset
+})
 
 export const getBottomPadding = computed(() => {
   // Replace this with your actual platform detection logic
-  const isAndroid = getPlatforms()[0] === "android";
+  const isAndroid = getPlatforms()[0] === "android"
 
   return isAndroid
     ? "padding-bottom: calc(env(safe-area-inset-bottom) + 20px) !important;"
-    : "padding-bottom: calc(env(safe-area-inset-bottom) + 16px) !important;";
-});
+    : "padding-bottom: calc(env(safe-area-inset-bottom) + 16px) !important;"
+})
 
 export interface MessageInfo {
-  id: string;
-  text_content: string;
-  user_uuid: string;
-  type: "text" | "info";
-  info_icon?: string;
-  user_name?: string;
+  id: string
+  text_content: string
+  user_uuid: string
+  type: "text" | "info"
+  info_icon?: string
+  user_name?: string
   media?: {
-    type: "image";
-    url: string;
-  };
+    type: "image"
+    url: string
+  }
   actions?: {
-    label: string;
-    type: "success" | "info" | "danger" | "warning" | "primary";
-    message: string;
-    value: string;
-    handler: () => void;
-  }[];
+    label: string
+    type: "success" | "info" | "danger" | "warning" | "primary"
+    message: string
+    value: string
+    handler: () => void
+  }[]
 }
 
 export const withdrawalAvailableCurrencies = reactive<Currency[]>([
@@ -330,7 +331,7 @@ export const withdrawalAvailableCurrencies = reactive<Currency[]>([
         min: 1,
         value: 2.2,
         method: "momo",
-      }
+      },
     ],
   },
   {
@@ -365,7 +366,7 @@ export const withdrawalAvailableCurrencies = reactive<Currency[]>([
         value: 0.5,
         method: "bank_transfer",
       },
-       {
+      {
         type: "percentage",
         min: 1,
         value: 1,
@@ -409,4 +410,4 @@ export const withdrawalAvailableCurrencies = reactive<Currency[]>([
       },
     ],
   },
-]);
+])

@@ -173,223 +173,223 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, reactive, onMounted, ref } from "vue";
-import {
-  AppNormalText,
-  AppFormWrapper,
-  AppTextField,
-  AppIcon,
-  AppFileAttachment,
-  AppImageLoader,
-  AppCheckbox,
-  AppSelect,
-} from "@greep/ui-components";
-import { Logic } from "@greep/logic";
-import { Product } from "@greep/logic/src/gql/graphql";
-import { computed } from "vue";
-import { SelectOption } from "@greep/ui-components/src/types";
-
-export default defineComponent({
-  components: {
+  import { defineComponent, reactive, onMounted, ref } from "vue"
+  import {
+    AppNormalText,
     AppFormWrapper,
     AppTextField,
     AppIcon,
     AppFileAttachment,
     AppImageLoader,
     AppCheckbox,
-    AppNormalText,
     AppSelect,
-  },
-  props: {
-    product: {
-      type: Object as () => Product,
+  } from "@greep/ui-components"
+  import { Logic } from "@greep/logic"
+  import { Product } from "@greep/logic/src/gql/graphql"
+  import { computed } from "vue"
+  import { SelectOption } from "@greep/ui-components/src/types"
+
+  export default defineComponent({
+    components: {
+      AppFormWrapper,
+      AppTextField,
+      AppIcon,
+      AppFileAttachment,
+      AppImageLoader,
+      AppCheckbox,
+      AppNormalText,
+      AppSelect,
     },
-  },
-  name: "ProductSetupProductInfo",
-  setup(props) {
-    const FormValidations = Logic.Form;
-
-    const hideContent = ref(false);
-    const areaSearchIsLoading = ref(false);
-    const areaOptions = reactive<SelectOption[]>([]);
-
-    const autocompleteSuggestion =
-      // @ts-expect-error window.google.maps.places.AutocompleteService
-      ref<window.google.maps.places.AutocompleteSuggestion>();
-
-    const sessionToken =
-      // @ts-expect-error window.google.maps.places.AutocompleteService
-      ref<window.google.maps.places.AutocompleteSessionToken>();
-
-    const formData = reactive<{
-      name: string;
-      descriptions: string;
-      photos: {
-        url: string;
-        rawValue: string;
-      }[];
-      date: string;
-      time: string;
-      is_online: boolean;
-      online_link: string;
-      address_info: {
-        name: string;
-        details: string;
-      };
-    }>({
-      name: "",
-      descriptions: "",
-      photos: [],
-      date: "",
-      time: "",
-      is_online: false,
-      address_info: {
-        name: "",
-        details: "",
+    props: {
+      product: {
+        type: Object as () => Product,
       },
-      online_link: "",
-    });
+    },
+    name: "ProductSetupProductInfo",
+    setup(props) {
+      const FormValidations = Logic.Form
 
-    const formComponent = ref<any>(null);
+      const hideContent = ref(false)
+      const areaSearchIsLoading = ref(false)
+      const areaOptions = reactive<SelectOption[]>([])
 
-    const formIsValid = computed(() => {
-      return (
-        formData.name !== "" &&
-        formData.descriptions !== "" &&
-        formData.date !== "" &&
-        formData.time !== "" &&
-        formData.photos.length > 0 &&
-        (formData.is_online
-          ? formData.online_link !== ""
-          : formData.address_info.name !== "" &&
-            formData.address_info.details !== "")
-      );
-    });
+      const autocompleteSuggestion =
+        // @ts-expect-error window.google.maps.places.AutocompleteService
+        ref<window.google.maps.places.AutocompleteSuggestion>()
 
-    const continueWithForm = () => {
-      const state = formComponent.value?.validate();
-      if (state && formIsValid.value) {
-        return formData;
-      } else {
-        return;
-      }
-    };
+      const sessionToken =
+        // @ts-expect-error window.google.maps.places.AutocompleteService
+        ref<window.google.maps.places.AutocompleteSessionToken>()
 
-    const setDefaultValues = () => {
-      if (props.product) {
-        hideContent.value = true;
-
-        const images: { url: string }[] = JSON.parse(props.product.images);
-        const eventLocation =
-          JSON.parse(props.product.eventLocation || "{}") || {};
-
-        const addressInfo = JSON.parse(eventLocation.address) || {
+      const formData = reactive<{
+        name: string
+        descriptions: string
+        photos: {
+          url: string
+          rawValue: string
+        }[]
+        date: string
+        time: string
+        is_online: boolean
+        online_link: string
+        address_info: {
+          name: string
+          details: string
+        }
+      }>({
+        name: "",
+        descriptions: "",
+        photos: [],
+        date: "",
+        time: "",
+        is_online: false,
+        address_info: {
           name: "",
           details: "",
-        };
+        },
+        online_link: "",
+      })
 
-        areaOptions.length = 0;
+      const formComponent = ref<any>(null)
 
-        areaOptions.push({
-          key: addressInfo.name,
-          value: addressInfo.name,
-        });
+      const formIsValid = computed(() => {
+        return (
+          formData.name !== "" &&
+          formData.descriptions !== "" &&
+          formData.date !== "" &&
+          formData.time !== "" &&
+          formData.photos.length > 0 &&
+          (formData.is_online
+            ? formData.online_link !== ""
+            : formData.address_info.name !== "" &&
+              formData.address_info.details !== "")
+        )
+      })
 
-        formData.name = props.product.name;
-        formData.descriptions = props.product.description;
-        formData.date = props.product.eventEndDate
-          ? Logic.Common.fomartDate(props.product.eventEndDate, "YYYY-MM-DD")
-          : "";
-        formData.time = props.product.eventEndDate
-          ? Logic.Common.fomartDate(props.product.eventEndDate, "HH:mm")
-          : "";
-        formData.photos = images.map((image) => {
-          return {
-            url: image.url,
-            rawValue: "",
-          };
-        });
-        formData.is_online = props.product.eventOnlineUrl ? true : false;
-        formData.online_link = props.product.eventOnlineUrl || "";
-        formData.address_info = addressInfo;
-
-        setTimeout(() => {
-          hideContent.value = false;
-        }, 100);
-      }
-    };
-
-    const handleAreaSearch = async (searchValue: string) => {
-      Logic.Common.debounce(async () => {
-        try {
-          areaOptions.length = 0;
-          if (!autocompleteSuggestion.value || !searchValue) return;
-
-          areaSearchIsLoading.value = true;
-
-          const predictions =
-            await autocompleteSuggestion.value.fetchAutocompleteSuggestions({
-              input: searchValue,
-              sessionToken: sessionToken.value,
-            });
-
-          if (predictions.suggestions) {
-            areaSearchIsLoading.value = false;
-
-            predictions.suggestions.forEach((prediction: any) => {
-              const currentPrediction = prediction.placePrediction;
-              areaOptions.push({
-                key: currentPrediction.text.text,
-                value: currentPrediction.text.text,
-              });
-            });
-          }
-        } catch (error) {
-          console.log(error);
+      const continueWithForm = () => {
+        const state = formComponent.value?.validate()
+        if (state && formIsValid.value) {
+          return formData
+        } else {
+          return
         }
-      }, 500);
-    };
+      }
 
-    async function initPlacesService() {
-      // Load the Maps + Places libraries
+      const setDefaultValues = () => {
+        if (props.product) {
+          hideContent.value = true
 
-      const { AutocompleteSuggestion, AutocompleteSessionToken } =
-        // @ts-expect-error window.google.maps.places.AutocompleteService
-        await google.maps.importLibrary("places");
+          const images: { url: string }[] = JSON.parse(props.product.images)
+          const eventLocation =
+            JSON.parse(props.product.eventLocation || "{}") || {}
 
-      // Initialize service and session token
+          const addressInfo = JSON.parse(eventLocation.address) || {
+            name: "",
+            details: "",
+          }
 
-      autocompleteSuggestion.value = AutocompleteSuggestion;
+          areaOptions.length = 0
 
-      sessionToken.value = new AutocompleteSessionToken();
-    }
+          areaOptions.push({
+            key: addressInfo.name,
+            value: addressInfo.name,
+          })
 
-    onMounted(() => {
-      setDefaultValues();
-      initPlacesService();
-    });
+          formData.name = props.product.name
+          formData.descriptions = props.product.description
+          formData.date = props.product.eventEndDate
+            ? Logic.Common.fomartDate(props.product.eventEndDate, "YYYY-MM-DD")
+            : ""
+          formData.time = props.product.eventEndDate
+            ? Logic.Common.fomartDate(props.product.eventEndDate, "HH:mm")
+            : ""
+          formData.photos = images.map((image) => {
+            return {
+              url: image.url,
+              rawValue: "",
+            }
+          })
+          formData.is_online = props.product.eventOnlineUrl ? true : false
+          formData.online_link = props.product.eventOnlineUrl || ""
+          formData.address_info = addressInfo
 
-    return {
-      FormValidations,
-      Logic,
-      formData,
-      formComponent,
-      continueWithForm,
-      hideContent,
-      formIsValid,
-      areaSearchIsLoading,
-      areaOptions,
-      handleAreaSearch,
-    };
-  },
-  data() {
-    return {
-      parentRefs: [],
-    };
-  },
-  mounted() {
-    const parentRefs: any = this.$refs;
-    this.parentRefs = parentRefs;
-  },
-});
+          setTimeout(() => {
+            hideContent.value = false
+          }, 100)
+        }
+      }
+
+      const handleAreaSearch = async (searchValue: string) => {
+        Logic.Common.debounce(async () => {
+          try {
+            areaOptions.length = 0
+            if (!autocompleteSuggestion.value || !searchValue) return
+
+            areaSearchIsLoading.value = true
+
+            const predictions =
+              await autocompleteSuggestion.value.fetchAutocompleteSuggestions({
+                input: searchValue,
+                sessionToken: sessionToken.value,
+              })
+
+            if (predictions.suggestions) {
+              areaSearchIsLoading.value = false
+
+              predictions.suggestions.forEach((prediction: any) => {
+                const currentPrediction = prediction.placePrediction
+                areaOptions.push({
+                  key: currentPrediction.text.text,
+                  value: currentPrediction.text.text,
+                })
+              })
+            }
+          } catch (error) {
+            console.log(error)
+          }
+        }, 500)
+      }
+
+      async function initPlacesService() {
+        // Load the Maps + Places libraries
+
+        const { AutocompleteSuggestion, AutocompleteSessionToken } =
+          // @ts-expect-error window.google.maps.places.AutocompleteService
+          await google.maps.importLibrary("places")
+
+        // Initialize service and session token
+
+        autocompleteSuggestion.value = AutocompleteSuggestion
+
+        sessionToken.value = new AutocompleteSessionToken()
+      }
+
+      onMounted(() => {
+        setDefaultValues()
+        initPlacesService()
+      })
+
+      return {
+        FormValidations,
+        Logic,
+        formData,
+        formComponent,
+        continueWithForm,
+        hideContent,
+        formIsValid,
+        areaSearchIsLoading,
+        areaOptions,
+        handleAreaSearch,
+      }
+    },
+    data() {
+      return {
+        parentRefs: [],
+      }
+    },
+    mounted() {
+      const parentRefs: any = this.$refs
+      this.parentRefs = parentRefs
+    },
+  })
 </script>

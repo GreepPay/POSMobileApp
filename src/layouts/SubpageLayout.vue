@@ -1,6 +1,6 @@
 <template>
   <div
-    class="w-full flex flex-col lg:text-sm mdlg:text-[12px] relative h-full text-xs overflow-y-hidden font-poppins"
+    class="w-full flex flex-col lg:text-sm mdlg:text-[12px] relative h-full text-xs overflow-y-hidden font-poppins pb-10"
     :style="`
       padding-top: calc(env(safe-area-inset-top) + ${
         currentPlatform == 'android' ? '8' : '0'
@@ -9,7 +9,7 @@
     `"
   >
     <div
-      class="w-full flex flex-col relative h-full min-h-screen overflow-y-auto"
+      class="w-full flex flex-col relative h-full min-h-screen overflow-y-auto  "
     >
       <!-- Top section -->
       <div class="w-full flex flex-col pt-4 bg-white sticky top-0 z-50">
@@ -50,7 +50,7 @@
     <div
       class="w-full fixed h-[env(safe-area-inset-bottom)] bottom-0 left-0 bg-white z-[89899989998898] dark:bg-black"
     ></div>
-    <div class="py-5 w-full"></div>
+    <div class="py-10 w-full"></div>
   </div>
 </template>
 
