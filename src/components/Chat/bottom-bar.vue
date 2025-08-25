@@ -15,12 +15,12 @@
             <span class="text-blue-600">📸</span>
             <span class="text-blue-800 text-sm font-medium">Upload proof of cash delivery</span>
           </div>
-          <button 
+          <app-button
+            variant="primary"
+            :class="`px-5 !py-2 !border-[1.5px] !bg-transparent !border-purple-500 !text-purple-500`"
             @click="openProofUpload"
-            class="px-3 py-1 bg-blue-500 text-white rounded-lg text-xs hover:bg-blue-600 transition-colors"
+            >Upload</app-button
           >
-            Upload Proof
-          </button>
         </div>
       </div>
     </div>
@@ -75,7 +75,7 @@
 
 <script lang="ts">
 import { computed, defineComponent, onMounted, toRef, watch, nextTick } from "vue";
-import { AppIcon } from "@greep/ui-components";
+import { AppIcon, AppButton } from "@greep/ui-components";
 import { Logic } from "@greep/logic";
 import { ref } from "vue";
 import { getBottomPadding } from "../../composable";
@@ -94,6 +94,7 @@ type InputMode =
 export default defineComponent({
   components: {
     AppIcon,
+    AppButton,
   },
   props: {
     conversation: {
@@ -117,6 +118,10 @@ export default defineComponent({
       default: false,
     },
     orderConfirmed: {
+      type: Boolean,
+      default: false,
+    },
+    proofUploaded: {
       type: Boolean,
       default: false,
     },
@@ -182,7 +187,8 @@ export default defineComponent({
     // ✅ NEW: Check if proof upload should be shown
     const showProofUpload = computed(() => {
       const stage = props.conversation?.stage || "";
-      return stage === "send_payment" || stage.includes("payment");
+      // Hide proof upload if stage is not payment-related or if proof has been uploaded
+      return (stage === "send_payment" || stage.includes("payment")) && !props.proofUploaded;
     });
 
     // ✅ NEW: Open proof upload

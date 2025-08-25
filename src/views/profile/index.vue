@@ -125,6 +125,12 @@ export default defineComponent({
         route: "/profile/business-info",
       },
       {
+        title: "Store Locations",
+        logo: "event/location",
+        logo_size: "!h-[22px]",
+        route: "/profile/store-locations",
+      },
+      {
         title: "Default Currency",
         logo: "default-currency",
         logo_size: "!h-[22px]",
