@@ -1,289 +1,172 @@
 <template>
-  <div class="modal-overlay" @click="handleOverlayClick">
-    <div class="modal-content" @click.stop>
-      <div class="modal-header">
-        <h3>📸 Upload Proof</h3>
-        <button class="close-button" @click="$emit('cancel')">×</button>
-      </div>
-      
-      <div class="modal-body">
-        <p class="modal-description">
-          Please provide proof of cash delivery to complete your order
-        </p>
-        
-        <div class="proof-options">
-          <div class="proof-option" @click="selectOption('photo')">
-            <div class="option-icon">📸</div>
-            <div class="option-content">
-              <h4>Photo Proof</h4>
-              <p>Take a photo of the cash received</p>
-            </div>
-            <div class="option-arrow">→</div>
+  <div v-if="show" class="fixed inset-0 bg-white bg-opacity-60 z-50 flex items-end" @click="handleCancel">
+    <div class="w-full bg-white rounded-t-3xl max-h-[90vh] overflow-y-auto shadow-2xl border-t border-gray-200"
+      @click.stop>
+      <div class="p-4 pb-8">
+        <!-- Handle bar -->
+        <div class="w-12 h-1 bg-gray-300 rounded-full mx-auto mb-4"></div>
+
+        <!-- Header -->
+        <div class="flex items-center justify-between mb-6">
+          <button @click="handleCancel"
+            class="text-gray-400 hover:text-gray-600 p-2 rounded-full hover:bg-gray-100 transition-colors">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        <!-- Proof Upload Content -->
+        <div class="proof-upload-section">
+          <div class="proof-upload-header">
+            <h4>📸 Upload Proof of Payment</h4>
+            <p>Please upload a screenshot or photo of your payment confirmation</p>
           </div>
           
-          <div class="proof-option" @click="selectOption('document')">
-            <div class="option-icon">📄</div>
-            <div class="option-content">
-              <h4>Document Proof</h4>
-              <p>Upload receipt or document</p>
-            </div>
-            <div class="option-arrow">→</div>
-          </div>
-          
-          <div class="proof-option" @click="selectOption('text')">
-            <div class="option-icon">✍️</div>
-            <div class="option-content">
-              <h4>Text Description</h4>
-              <p>Describe the delivery confirmation</p>
-            </div>
-            <div class="option-arrow">→</div>
+          <div class="proof-upload-content">
+            <app-file-attachment
+              v-model="selectedFile"
+              :placeholder="selectedFile ? selectedFile.name : 'Select proof of payment file'"
+              accept="image/*,.pdf"
+              :is-multiple="false"
+              @update:model-value="handleFileSelect"
+            />
+            
+            <button
+              v-if="selectedFile"
+              @click="handleUpload"
+              class="upload-proof-btn"
+              :disabled="isUploading"
+            >
+              {{ isUploading ? '⏳ Uploading...' : '🚀 Upload Proof' }}
+            </button>
           </div>
         </div>
-        
-        <div class="proof-tips">
-          <h4>💡 Proof Tips:</h4>
-          <ul>
-            <li>Ensure proof is clear and readable</li>
-            <li>Include relevant details (amount, date, location)</li>
-            <li>Keep proof for your records</li>
-            <li>Contact support if you have issues</li>
-          </ul>
-        </div>
-      </div>
-      
-      <div class="modal-footer">
-        <button class="btn-secondary" @click="$emit('cancel')">
-          Cancel
-        </button>
       </div>
     </div>
   </div>
 </template>
 
-<script setup lang="ts">
-import { ref } from 'vue';
+<script lang="ts">
+import { defineComponent, ref } from 'vue';
+import { AppFileAttachment } from '@greep/ui-components';
+import { Logic } from '@greep/logic';
 
-interface Emits {
-  (e: 'upload', type: 'photo' | 'document' | 'text'): void;
-  (e: 'cancel'): void;
-}
+export default defineComponent({
+  name: 'ProofUploadModal',
+  components: {
+    AppFileAttachment,
+  },
+  props: {
+    show: {
+      type: Boolean,
+      default: false,
+    },
+  },
+  emits: ['cancel', 'upload-success', 'upload-error'],
+  setup(props, { emit }) {
+    const selectedFile = ref<File | null>(null);
+    const isUploading = ref(false);
 
-const emit = defineEmits<Emits>();
+    const handleFileSelect = (file: File) => {
+      selectedFile.value = file;
+    };
 
-const selectOption = (type: 'photo' | 'document' | 'text') => {
-  emit('upload', type);
-};
+    const handleCancel = () => {
+      selectedFile.value = null;
+      emit('cancel');
+    };
 
-const handleOverlayClick = () => {
-  emit('cancel');
-};
+    const handleUpload = async () => {
+      if (!selectedFile.value) return;
+
+      try {
+        isUploading.value = true;
+        const fileUrl = await Logic.Wallet.UploadFile(selectedFile.value);
+        
+        if (fileUrl) {
+          emit('upload-success', {
+            fileUrl,
+            fileName: selectedFile.value.name,
+            fileType: selectedFile.value.type,
+          });
+          
+          // Clear the file input
+          selectedFile.value = null;
+        } else {
+          throw new Error('Failed to get file URL from upload');
+        }
+      } catch (error) {
+        console.error('Failed to upload proof:', error);
+        emit('upload-error', error);
+      } finally {
+        isUploading.value = false;
+      }
+    };
+
+    return {
+      selectedFile,
+      isUploading,
+      handleFileSelect,
+      handleCancel,
+      handleUpload,
+    };
+  },
+});
 </script>
 
 <style scoped>
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  padding: 1rem;
+.proof-upload-section {
+  background: transparent;
+  border-radius: 16px;
+  padding: 20px;
+  margin: 20px 0;
+  color: #333;
+  border: 2px dashed #e5e7eb;
 }
 
-.modal-content {
-  background: white;
-  border-radius: 0.5rem;
-  max-width: 500px;
-  width: 100%;
-  max-height: 90vh;
-  overflow-y: auto;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+.proof-upload-header h4 {
+  margin: 0 0 8px 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #1f2937;
 }
 
-.modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1.5rem 1.5rem 1rem;
-  border-bottom: 1px solid #e9ecef;
+.proof-upload-header p {
+  margin: 0 0 20px 0;
+  opacity: 0.8;
+  font-size: 14px;
+  color: #6b7280;
 }
 
-.modal-header h3 {
-  margin: 0;
-  color: #495057;
-  font-size: 1.25rem;
-}
-
-.close-button {
-  background: none;
-  border: none;
-  font-size: 1.5rem;
-  color: #6c757d;
-  cursor: pointer;
-  padding: 0;
-  width: 2rem;
-  height: 2rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  transition: all 0.2s ease;
-}
-
-.close-button:hover {
-  background: #f8f9fa;
-  color: #495057;
-}
-
-.modal-body {
-  padding: 1.5rem;
-}
-
-.modal-description {
-  margin: 0 0 1.5rem 0;
-  color: #6c757d;
-  line-height: 1.5;
-}
-
-.proof-options {
+.proof-upload-content {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
+  gap: 16px;
 }
 
-.proof-option {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  padding: 1rem;
-  border: 2px solid #e9ecef;
-  border-radius: 0.5rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.proof-option:hover {
-  border-color: #007bff;
-  background: #f8f9fa;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-}
-
-.proof-option:active {
-  transform: translateY(0);
-}
-
-.option-icon {
-  font-size: 2rem;
-  width: 3rem;
-  height: 3rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #f8f9fa;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-
-.option-content {
-  flex: 1;
-}
-
-.option-content h4 {
-  margin: 0 0 0.25rem 0;
-  color: #495057;
-  font-size: 1rem;
-}
-
-.option-content p {
-  margin: 0;
-  color: #6c757d;
-  font-size: 0.9rem;
-}
-
-.option-arrow {
-  font-size: 1.5rem;
-  color: #6c757d;
-  font-weight: bold;
-}
-
-.proof-tips {
-  padding: 1rem;
-  background: #f8f9fa;
-  border-radius: 0.375rem;
-  border-left: 4px solid #28a745;
-}
-
-.proof-tips h4 {
-  margin: 0 0 0.5rem 0;
-  color: #495057;
-  font-size: 0.9rem;
-}
-
-.proof-tips ul {
-  margin: 0;
-  padding-left: 1.25rem;
-  color: #6c757d;
-  font-size: 0.85rem;
-  line-height: 1.4;
-}
-
-.proof-tips li {
-  margin-bottom: 0.25rem;
-}
-
-.modal-footer {
-  display: flex;
-  justify-content: flex-end;
-  padding: 1rem 1.5rem 1.5rem;
-  border-top: 1px solid #e9ecef;
-}
-
-.btn-secondary {
-  padding: 0.75rem 1.5rem;
+.upload-proof-btn {
+  background: #4CAF50;
   border: none;
-  border-radius: 0.375rem;
-  font-size: 0.9rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  background: #6c757d;
   color: white;
+  padding: 14px 24px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 16px;
+  transition: all 0.3s ease;
+  align-self: flex-start;
 }
 
-.btn-secondary:hover {
-  background: #545b62;
+.upload-proof-btn:hover:not(:disabled) {
+  background: #45a049;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
 }
 
-/* Mobile optimizations */
-@media (max-width: 768px) {
-  .modal-overlay {
-    padding: 0.5rem;
-  }
-  
-  .modal-content {
-    max-height: 95vh;
-  }
-  
-  .modal-header,
-  .modal-body,
-  .modal-footer {
-    padding: 1rem;
-  }
-  
-  .proof-option {
-    padding: 0.75rem;
-  }
-  
-  .option-icon {
-    font-size: 1.5rem;
-    width: 2.5rem;
-    height: 2.5rem;
-  }
+.upload-proof-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
 }
 </style>

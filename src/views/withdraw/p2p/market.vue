@@ -62,7 +62,9 @@ export default defineComponent({
     ],
   },
   setup() {
-    const selectedMethod = ref<string>("cash");
+    // Auto-select method from query parameter
+    const methodFromRoute = Logic.Common.route?.query?.method?.toString() || "cash";
+    const selectedMethod = ref<string>(methodFromRoute);
     const selectedFilterMethod = ref("all");
     const ManyRecommendedExchangeAds = ref(
       Logic.Wallet.ManyRecommendedExchangeAds
@@ -207,7 +209,6 @@ export default defineComponent({
         const conversation = await Logic.Messaging.InitiateConversation();
 
         if (conversation) {
-          console.log("Am Here");
           Logic.Common.showLoader({ show: false });
           Logic.Common.GoToRoute(
             "/chat/" + conversation.uuid + "?p2p=true&method=" + selectedMethod.value

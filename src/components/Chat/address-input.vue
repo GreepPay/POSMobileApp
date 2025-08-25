@@ -2,7 +2,6 @@
   <div class="w-full flex flex-col space-y-4">
     <!-- Address search input -->
     <div class="space-y-2">
-      <!-- <label class="text-sm font-medium text-gray-700">Delivery Address</label> -->
       <app-select
         placeholder="Search for your address..."
         :hasTitle="false"
@@ -17,11 +16,20 @@
         searchMessage="Type to search for addresses"
         :searchIsLoading="addressSearchIsLoading"
       />
+      <!-- Use current location -->
+      <button
+        type="button"
+        @click="useCurrentLocation"
+        class="text-xs text-blue-600 hover:underline mt-1"
+        :disabled="isLocating"
+      >
+        <span v-if="isLocating">📍 Detecting your location...</span>
+        <span v-else>📍 Use my current location</span>
+      </button>
     </div>
 
     <!-- Additional details input -->
     <div class="space-y-2">
-      <!-- <label class="text-sm font-medium text-gray-700">Address Details (Optional)</label> -->
       <app-text-field
         :has-title="false"
         type="text"
@@ -43,21 +51,6 @@
       <div v-if="addressDetails" class="text-sm text-blue-600 mt-1">{{ addressDetails }}</div>
     </div>
 
-    <!-- Quick address suggestions -->
-    <div v-if="!selectedAddress" class="space-y-2">
-      <div class="text-xs text-gray-500 font-medium">Quick suggestions:</div>
-      <div class="flex flex-wrap gap-2">
-        <button
-          v-for="suggestion in quickSuggestions"
-          :key="suggestion"
-          @click="selectQuickAddress(suggestion)"
-          class="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-xs hover:bg-gray-200 transition-colors"
-        >
-          {{ suggestion }}
-        </button>
-      </div>
-    </div>
-
     <!-- Action buttons -->
     <div class="flex space-x-3 pt-2">
       <button
@@ -68,14 +61,6 @@
         <span v-if="isProcessing">Confirming...</span>
         <span v-else>✓ Continue</span>
       </button>
-      
-      <!-- <button
-        @click="cancelAddress"
-        :disabled="isProcessing"
-        class="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors disabled:opacity-50"
-      >
-        Cancel
-      </button> -->
     </div>
   </div>
 </template>
@@ -114,38 +99,21 @@ export default defineComponent({
 
     const autocompleteSuggestion = ref<any>();
     const sessionToken = ref<any>();
+    const geocoder = ref<any>();
+    const isLocating = ref(false);
 
-    // Quick address suggestions for common areas
-    const quickSuggestions = ref([
-      "Lagos Island, Lagos State, Nigeria",
-      "Ikeja, Lagos State, Nigeria", 
-      "Victoria Island, Lagos State, Nigeria",
-      "Lekki, Lagos State, Nigeria",
-      "Surulere, Lagos State, Nigeria"
-    ]);
-
-    const addressDetailsLength = computed(() => {
-      return addressDetails.value.length;
-    });
-
-    const selectQuickAddress = (address: string) => {
-      selectedAddress.value = address;
-      console.log("Quick address selected:", address);
-    };
+    const addressDetailsLength = computed(() => addressDetails.value.length);
 
     const handleAddressSearch = (searchValue: string) => {
       if (!searchValue || searchValue.length < 2) return;
-      
-      // Clear previous options
+
       addressOptions.splice(0, addressOptions.length);
-      
+
       Logic.Common.debounce(async () => {
         try {
           if (!autocompleteSuggestion.value || !searchValue) return;
 
           addressSearchIsLoading.value = true;
-          console.log("Searching for addresses:", searchValue);
-
           const predictions = await autocompleteSuggestion.value.fetchAutocompleteSuggestions({
             input: searchValue,
             sessionToken: sessionToken.value,
@@ -159,8 +127,6 @@ export default defineComponent({
                 value: currentPrediction.text.text,
               });
             });
-            
-            console.log("Found address suggestions:", addressOptions.length);
           }
         } catch (error) {
           console.error("Error searching addresses:", error);
@@ -168,6 +134,63 @@ export default defineComponent({
           addressSearchIsLoading.value = false;
         }
       }, 500);
+    };
+
+    const useCurrentLocation = () => {
+      if (!navigator.geolocation) {
+        Logic.Common.showAlert({
+          show: true,
+          message: "Geolocation is not supported by your browser.",
+          type: "error",
+        });
+        return;
+      }
+
+      isLocating.value = true;
+
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          try {
+            const { latitude, longitude } = position.coords;
+
+            if (!geocoder.value) {
+              Logic.Common.showAlert({
+                show: true,
+                message: "Google Maps Geocoder not initialized.",
+                type: "error",
+              });
+              return;
+            }
+
+            geocoder.value.geocode(
+              { location: { lat: latitude, lng: longitude } },
+              (results: any, status: any) => {
+                if (status === "OK" && results[0]) {
+                  selectedAddress.value = results[0].formatted_address;
+                } else {
+                  Logic.Common.showAlert({
+                    show: true,
+                    message: "Unable to fetch address for current location.",
+                    type: "error",
+                  });
+                }
+              }
+            );
+          } catch (error) {
+            console.error("Error fetching current location:", error);
+          } finally {
+            isLocating.value = false;
+          }
+        },
+        (error) => {
+          isLocating.value = false;
+          Logic.Common.showAlert({
+            show: true,
+            message: "Unable to retrieve your location.",
+            type: "error",
+          });
+        }
+      );
     };
 
     const confirmAddress = () => {
@@ -180,17 +203,12 @@ export default defineComponent({
         return;
       }
 
-      const fullAddress = addressDetails.value 
+      const fullAddress = addressDetails.value
         ? `${selectedAddress.value}, ${addressDetails.value}`
         : selectedAddress.value;
 
-      console.log("Confirming address:", fullAddress);
-      
-      // Call the parent function
       try {
         props.onAddressConfirm(fullAddress);
-        
-        // Reset inputs
         selectedAddress.value = "";
         addressDetails.value = "";
         addressOptions.splice(0, addressOptions.length);
@@ -200,14 +218,9 @@ export default defineComponent({
     };
 
     const cancelAddress = () => {
-      console.log("Address input cancelled");
-      
-      // Reset inputs
       selectedAddress.value = "";
       addressDetails.value = "";
       addressOptions.splice(0, addressOptions.length);
-      
-      // Call parent cancel function
       try {
         props.onCancel();
       } catch (error) {
@@ -215,25 +228,15 @@ export default defineComponent({
       }
     };
 
-    // Alias cancelAddress as confirmAddress for the button
-    const handleButtonClick = () => {
-      if (selectedAddress.value) {
-        confirmAddress();
-      } else {
-        // If no address selected, treat as cancel
-        cancelAddress();
-      }
-    };
-
     const initPlacesService = async () => {
       try {
         // @ts-expect-error Google Maps API
-        const { AutocompleteSuggestion, AutocompleteSessionToken } = await google.maps.importLibrary("places");
+        const { AutocompleteSuggestion, AutocompleteSessionToken, Geocoder } =
+          await google.maps.importLibrary("places");
 
         autocompleteSuggestion.value = AutocompleteSuggestion;
         sessionToken.value = new AutocompleteSessionToken();
-        
-        console.log("Google Places service initialized");
+        geocoder.value = new google.maps.Geocoder();
       } catch (error) {
         console.error("Error initializing Google Places service:", error);
       }
@@ -249,12 +252,11 @@ export default defineComponent({
       addressDetailsLength,
       addressSearchIsLoading,
       addressOptions,
-      quickSuggestions,
+      isLocating,
       handleAddressSearch,
-      selectQuickAddress,
       confirmAddress,
       cancelAddress,
-      handleButtonClick,
+      useCurrentLocation,
     };
   },
 });

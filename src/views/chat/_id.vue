@@ -6,7 +6,7 @@
 
       <!-- Top bar -->
       <chat-top-bar :conversation="SingleConversation" />
-      
+
       <!-- Chat content -->
       <div class="w-full flex flex-col px-4 pt-4 pb-4">
         <template v-for="(message, index) in displayMessages" :key="`msg-${message.id}-${index}`">
@@ -18,17 +18,12 @@
           <div class="animate-pulse text-gray-500">AI is typing...</div>
         </div>
 
-        <!-- ✅ NEW: Countdown timer display -->
-        <div v-if="isCountdownActive" class="flex items-center justify-center py-4">
-          <div class="bg-orange-50 border border-orange-200 rounded-lg px-4 py-2">
-            <div class="flex items-center space-x-2">
-              <span class="text-orange-600">⏰</span>
-              <span class="text-orange-800 font-semibold">Waiting for business: {{ formatCountdown }}</span>
-            </div>
-          </div>
+        <!-- Countdown timer display -->
+        <div v-if="shouldShowCountdown" class="flex items-center justify-center py-4">
+          <app-countdown-timer :duration="countdownSeconds" :customText="countdownText"
+            customClass="!bg-orange-50 !border !border-orange-200 !text-orange-800" @expired="handleCountdownExpired" />
         </div>
 
-        <!-- ✅ NEW: Success message and action buttons when conversation is completed -->
         <div v-if="isConversationCompleted" class="w-full flex flex-col items-center py-4">
           <div class="bg-green-50 border border-green-200 rounded-lg p-4 mb-4 max-w-md">
             <div class="flex items-center justify-center mb-2">
@@ -49,16 +44,21 @@
           </div>
         </div>
 
-        <!-- Address Input Component for cash_delivery step -->
-        <!-- Now shows as bottom modal instead of inline -->
+        <payment-confirmation :show="showPaymentConfirmation" :payment-confirmed="paymentConfirmed"
+          :is-business-user="isBusinessUser" :countdown-seconds="countdownSeconds" :is-processing="isProcessing"
+          @confirm-payment="confirmPayment" @expired="handlePaymentConfirmationExpired" />
 
         <div class="w-full h-[130px]" id="bottom-anchor"></div>
       </div>
 
       <!-- Bottom bar -->
       <chat-bottom-bar :conversation="SingleConversation" :send-message="sendMessage" :last-a-i-message="lastAIMessage"
-        :disabled="isProcessing || isConversationCompleted || (!isCurrentStageInteractive && !orderConfirmed)"
-        :show-address-mode="showAddressInput" :order-confirmed="orderConfirmed"
+        :disabled="isProcessing ||
+          isConversationCompleted ||
+          (!isCurrentStageInteractive && !orderConfirmed) ||
+          showPaymentConfirmation ||
+          paymentConfirmed
+          " :show-address-mode="showAddressInput" :order-confirmed="orderConfirmed" :proof-uploaded="proofUploaded"
         @click-address-input="showAddressModal = true" @upload-proof="showProofModal = true" />
 
       <!-- Address Modal/Bottom Sheet -->
@@ -91,67 +91,21 @@
         </div>
       </div>
 
-      <!-- ✅ NEW: Proof Upload Modal/Bottom Sheet -->
-      <div v-if="showProofModal" class="fixed inset-0 bg-white bg-opacity-60 z-50 flex items-end"
-        @click="handleProofCancel">
-        <div class="w-full bg-white rounded-t-3xl max-h-[90vh] overflow-y-auto shadow-2xl border-t border-gray-200"
-          @click.stop>
-          <div class="p-4 pb-8">
-            <!-- Handle bar -->
-            <div class="w-12 h-1 bg-gray-300 rounded-full mx-auto mb-4"></div>
+      <!-- Bank Transfer Modal -->
+      <BankTransferModal v-if="showBankTransferModal" :savedBankAccounts="savedBankAccounts"
+        @bank-details-submitted="handleBankDetailsSubmitted" @saved-account-selected="handleSavedAccountSelected"
+        @cancel="handleBankTransferCancel" />
 
-            <!-- Header -->
-            <div class="flex items-center justify-between mb-6">
-              <div class="flex items-center space-x-2">
-                <span class="text-xl">📸</span>
-                <span class="text-lg font-semibold text-gray-800">Upload proof of cash delivery</span>
-              </div>
-              <button @click="handleProofCancel"
-                class="text-gray-400 hover:text-gray-600 p-2 rounded-full hover:bg-gray-100 transition-colors">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
+      <!-- Cash Pickup Modal -->
+      <PickupLocationModal v-if="showCashPickupModal" :show="showCashPickupModal"
+        :store-locations="businessStoreLocations" @location-selected="handlePickupLocationSelected"
+        @cancel="handlePickupLocationCancel" />
 
-            <!-- Proof Upload Component -->
-            <div class="space-y-4">
-              <div class="text-center">
-                <div class="w-24 h-24 mx-auto bg-gray-100 rounded-lg flex items-center justify-center mb-4">
-                  <span class="text-3xl">📸</span>
-                </div>
-                <p class="text-gray-600 text-sm">
-                  Upload a photo or document showing proof that the buyer has received the cash
-                </p>
-              </div>
+      <!-- Proof Upload Modal -->
+      <proof-upload-modal :show="showProofModal" @cancel="handleProofCancel" @upload-success="handleProofUploadSuccess"
+        @upload-error="handleProofUploadError" />
 
-              <!-- Upload options -->
-              <div class="space-y-3">
-                <button @click="handleProofUploadModal('photo')"
-                  class="w-full p-4 border-2 border-dashed border-blue-300 rounded-lg hover:border-blue-400 transition-colors text-center">
-                  <span class="text-blue-600 text-lg">📷</span>
-                  <p class="text-blue-800 font-medium mt-2">Take Photo</p>
-                  <p class="text-blue-600 text-sm">Take a photo of the cash delivery</p>
-                </button>
-
-                <button @click="handleProofUploadModal('document')"
-                  class="w-full p-4 border-2 border-dashed border-green-300 rounded-lg hover:border-green-400 transition-colors text-center">
-                  <span class="text-green-600 text-lg">📄</span>
-                  <p class="text-green-800 font-medium mt-2">Upload Document</p>
-                  <p class="text-green-600 text-sm">Upload a receipt or document</p>
-                </button>
-
-                <button @click="handleProofUploadModal('text')"
-                  class="w-full p-4 border-2 border-dashed border-purple-300 rounded-lg hover:border-purple-400 transition-colors text-center">
-                  <span class="text-purple-600 text-lg">✍️</span>
-                  <p class="text-purple-800 font-medium mt-2">Text Description</p>
-                  <p class="text-purple-600 text-sm">Describe the proof in text</p>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+      <!-- Removed duplicate success banner -->
     </div>
   </app-wrapper>
 </template>
@@ -163,9 +117,20 @@ import ChatTopBar from "../../components/Chat/top-bar.vue";
 import ChatBottomBar from "../../components/Chat/bottom-bar.vue";
 import ChatMessage from "../../components/Chat/message.vue";
 import ChatAddressInput from "../../components/Chat/address-input.vue";
+import BankTransferModal from "../../components/Chat/BankTransferModal.vue";
+import ProofUploadModal from "../../components/Chat/ProofUploadModal.vue";
+import PaymentConfirmation from "../../components/Chat/PaymentConfirmation.vue";
+import PickupLocationModal from "../../components/Chat/PickupLocationModal.vue";
 import { MessageInfo, withdrawalAvailableCurrencies } from "../../composable";
+import { useCountdown } from "../../composable/useCountdown";
+import { useWebSocket } from "../../composable/useWebSocket";
+import { useMessageFiltering } from "../../composable/useMessageFiltering";
+import { shouldSkipMessage, logDeduplicationDecision } from "../../utils/messageDeduplication";
+import { createDisplayMessage, createSellerWelcomeMessage, createBusinessSummaryMessage } from "../../utils/messageCreation";
+
 import { onIonViewWillEnter, onIonViewWillLeave } from "@ionic/vue";
 import { Message } from "@greep/logic/src/gql/graphql";
+import { AppFileAttachment, AppCountdownTimer } from "@greep/ui-components";
 
 export default defineComponent({
   name: "ChatConversationPage",
@@ -174,6 +139,12 @@ export default defineComponent({
     ChatBottomBar,
     ChatMessage,
     ChatAddressInput,
+    BankTransferModal,
+    AppFileAttachment,
+    AppCountdownTimer,
+    ProofUploadModal,
+    PaymentConfirmation,
+    PickupLocationModal
   },
   middlewares: {
     fetchRules: [
@@ -194,18 +165,31 @@ export default defineComponent({
     const AuthUser = ref(Logic.Auth.AuthUser);
     const CurrentGlobalExchangeRate = ref(Logic.Wallet.CurrentGlobalExchangeRate);
     const isProcessing = ref(false);
-    const echoChannel = ref(null);
     const showAddressInput = ref(false);
+
+    // Use WebSocket composable
+    const {
+      echoChannel,
+      isConnected: wsConnected,
+      setupWebSocketListeners,
+      cleanup: cleanupWebSocket,
+      isBusinessUser: wsIsBusinessUser,
+      getUserDisplayName,
+    } = useWebSocket();
     const showAddressModal = ref(false);
+    const showBankTransferModal = ref(false);
+    const showCashPickupModal = ref(false);
     const showProofModal = ref(false);
+    const savedBankAccounts = ref<any[]>([]);
 
     // ✅ NEW: flip this once order summary is confirmed
     const orderConfirmed = ref(false);
 
     // ✅ NEW: Add flag to prevent double order creation
     const orderCreationInProgress = ref(false);
-    const countdownTimer = ref<number | null>(null);
-    const countdownSeconds = ref(600); // 10 minutes
+
+    // Use countdown composable (will be initialized after computed properties)
+    let countdown: ReturnType<typeof useCountdown>;
 
     // Reactive messages array
     const messages = reactive<MessageInfo[]>([]);
@@ -219,53 +203,45 @@ export default defineComponent({
       paddingTop: `calc(env(safe-area-inset-top) + 0px)`,
     }));
 
-    // ✅ NEW: Countdown timer function
-    const startCountdownTimer = () => {
-      countdownSeconds.value = 600; // Reset to 10 minutes
-      countdownTimer.value = window.setInterval(() => {
-        countdownSeconds.value--;
-        if (countdownSeconds.value <= 0) {
-          if (countdownTimer.value) {
-            clearInterval(countdownTimer.value);
-            countdownTimer.value = null;
-          }
-          // Add timeout message
-          const timeoutMessage = {
-            id: `timeout_${Date.now()}`,
-            type: "text" as const,
-            text_content: "⏰ Time's up! The business didn't respond within 10 minutes. Your order has been cancelled.",
-            user_uuid: "greep_ai",
-            user_name: "GreepPay AI",
-            info_icon: "",
-            actions: [],
-            orderSummary: null,
-            isOrderSummary: false
-          };
-          messages.push(timeoutMessage);
-          scrollToBottom();
-        }
-      }, 1000);
-    };
 
-    // ✅ NEW: Stop countdown timer
-    const stopCountdownTimer = () => {
-      if (countdownTimer.value) {
-        clearInterval(countdownTimer.value);
-        countdownTimer.value = null;
+
+    // Handle countdown expiration based on type
+    const handleCountdownExpired = () => {
+      const type = countdownType.value;
+
+      if (type === 'waiting_business') {
+        const timeoutMessage = {
+          id: `timeout_${Date.now()}`,
+          type: "text" as const,
+          text_content: "⏰ Time's up! The business didn't respond within 10 minutes. Your order has been cancelled.",
+          user_uuid: "greep_ai",
+          user_name: "GreepPay AI",
+          info_icon: "",
+          actions: [],
+          orderSummary: null,
+          isOrderSummary: false
+        };
+        messages.push(timeoutMessage);
+        scrollToBottom();
       }
     };
 
-    // ✅ NEW: Format countdown display
-    const formatCountdown = computed(() => {
-      const minutes = Math.floor(countdownSeconds.value / 60);
-      const seconds = countdownSeconds.value % 60;
-      return `${minutes}:${seconds.toString().padStart(2, '0')}`;
-    });
-
-    // ✅ NEW: Check if countdown is active
-    const isCountdownActive = computed(() => {
-      return countdownTimer.value !== null && countdownSeconds.value > 0;
-    });
+    // Handle payment confirmation countdown expiration
+    const handlePaymentConfirmationExpired = () => {
+      const timeoutMessage = {
+        id: `payment_timeout_${Date.now()}`,
+        type: "text" as const,
+        text_content: "⏰ Payment confirmation expired. Please contact support if you need assistance.",
+        user_uuid: "greep_ai",
+        user_name: "GreepPay AI",
+        info_icon: "",
+        actions: [],
+        orderSummary: null,
+        isOrderSummary: false
+      };
+      messages.push(timeoutMessage);
+      scrollToBottom();
+    };
 
     // ✅ IMPROVED currentConversationState with better stage detection
     const currentConversationState = computed(() => {
@@ -277,10 +253,12 @@ export default defineComponent({
         .filter(msg => !msg.sender || msg.sender?.uuid === "greep_ai")
         .pop();
 
-      // Check backend stage first
+      // Check backend stage first and normalize it  
       let backendStage = "withdrawal_amount";
       if (stage) {
-        backendStage = stage.toString().replace(/_[01]$/, "");
+        // ✅ FIXED: Remove any numeric suffixes that cause duplication (_0, _1, _2, etc.)
+        backendStage = stage.toString().replace(/_\d+$/, "");
+
       }
 
       let detectedStage = "withdrawal_amount";
@@ -308,6 +286,8 @@ export default defineComponent({
           detectedStage = "cash_delivery";
         } else if (content.includes("choose how do you want to collect")) {
           detectedStage = "withdrawal_method";
+        } else if (content.includes("which account do you want") && content.includes("transferred to")) {
+          detectedStage = "bank_transfer";
         } else if (content.includes("rate is") && content.includes("for 1 usdc")) {
           detectedStage = "exchange_rate";
         } else if (content.includes("currency must be a string")) {
@@ -336,21 +316,14 @@ export default defineComponent({
 
         if (isAddressContent) {
           detectedStage = "cash_delivery";
-          console.log("🔧 CRITICAL FIX: Detected address input in withdrawal_method stage, switching to cash_delivery");
+
         }
       }
 
       // Use the more specific stage
       const actualStage = detectedStage !== "withdrawal_amount" ? detectedStage : backendStage;
 
-      console.log("🔍 Stage detection:", {
-        stage,
-        detectedStage,
-        backendStage,
-        actualStage,
-        lastAIContent: lastAIMessage?.content?.substring(0, 50) + "...",
-        lastUserContent: lastUserMessage?.content?.substring(0, 50) + "..."
-      });
+
 
       // Check if we need address input mode
       const needsAddressInput = (actualStage === "cash_delivery" ||
@@ -358,8 +331,25 @@ export default defineComponent({
         // ✅ NEW: Only show address input for conversation owner/buyer, not business users
         isBusinessUser.value === false;
 
+      // Check if we need bank transfer modal
+      const needsBankTransferModal = (actualStage === "bank_transfer" ||
+        (lastAIMessage?.content?.toLowerCase().includes("which account do you want") &&
+          lastAIMessage?.content?.toLowerCase().includes("transferred to"))) &&
+        isBusinessUser.value === false;
+
+      // Check if we need cash pickup modal
+      const needsCashPickupModal = (actualStage === "cash_pickup" ||
+        // ✅ NEW: Show modal when user just selected cash_pickup in withdrawal_method stage
+        (backendStage === "withdrawal_method" && lastUserMessage?.content === "cash_pickup") ||
+        // ✅ NEW: Show modal when AI asks for pickup location selection
+        (lastAIMessage?.content?.toLowerCase().includes("pickup location") &&
+          lastAIMessage?.content?.toLowerCase().includes("select"))) &&
+        isBusinessUser.value === false;
+
       updateAddressInputVisibility(needsAddressInput || false);
-      console.log("🔍 Address input needed:", needsAddressInput, "for stage:", actualStage, "isBusinessUser:", isBusinessUser.value);
+      updateBankTransferModalVisibility(needsBankTransferModal || false);
+      updateCashPickupModalVisibility(needsCashPickupModal || false);
+
 
       return { state: "reaction", stage: actualStage, needsAddressInput };
     });
@@ -374,17 +364,7 @@ export default defineComponent({
       // This ensures proper conversation flow
       const sortedMessages = uniqueMessages;
 
-      console.log("🔧 DisplayMessages computed triggered:", {
-        totalMessages: messages.length,
-        uniqueMessages: uniqueMessages.length,
-        sortedMessages: sortedMessages.length,
-        businessJoinedMessages: sortedMessages.filter(m => m.id.toString().includes('business_joined')).length,
-        lastMessage: sortedMessages[sortedMessages.length - 1] ? {
-          id: sortedMessages[sortedMessages.length - 1].id,
-          content: sortedMessages[sortedMessages.length - 1].text_content,
-          user: sortedMessages[sortedMessages.length - 1].user_name
-        } : null
-      });
+
 
       return sortedMessages;
     });
@@ -441,16 +421,7 @@ export default defineComponent({
       // Business user is a participant who is not the owner
       const isBusiness = isParticipant && !isOwner;
 
-      console.log("🔧 Business user detection:", {
-        currentUserId,
-        ownerId: SingleConversation.value.owner_id,
-        userUuid: AuthUser.value.uuid,
-        isParticipant,
-        isOwner,
-        isBusiness,
-        participants: participants.map(p => ({ id: p.id, user_id: p.user_id, uuid: p.user?.uuid })),
-        sortedParticipants: participants.length > 0 ? [...participants].sort((a, b) => a.id - b.id).map(p => ({ id: p.id, user_id: p.user_id })) : []
-      });
+
 
       return isBusiness;
     });
@@ -465,12 +436,7 @@ export default defineComponent({
       // If we're in a completed stage, disable interaction
       const isCompletedStage = completedStages.includes(stage);
 
-      console.log("🔧 Stage interactivity check:", {
-        stage,
-        isCompletedStage,
-        isBusiness: isBusinessUser.value,
-        isInteractive: !isCompletedStage || isBusinessUser.value
-      });
+
 
       // ✅ FIXED: Enable chat for all stages except final completed stage, OR if user is business
       return !isCompletedStage || isBusinessUser.value;
@@ -493,34 +459,54 @@ export default defineComponent({
 
       const isAddress = hasAddressIndicators || (hasCommas && isLongText && notCurrencyRelated);
 
-      console.log("🔍 Address detection:", {
-        content: content.substring(0, 50) + "...",
-        hasAddressIndicators,
-        hasCommas,
-        isLongText,
-        notCurrencyRelated,
-        isAddress
-      });
-
       return isAddress;
     };
 
-    // ✅ COMPLETELY FIXED buildStructuredResponse function
     const buildStructuredResponse = (content: string, extraValue: string) => {
       const exchangeAd = SingleConversation.value?.exchangeAd;
       const currentStage = currentConversationState.value.stage;
       let structuredResponse: any = {};
 
-      console.log("🔧 Building structured response:", {
-        currentStage,
-        content,
-        extraValue,
-        showAddressInput: showAddressInput.value,
-        exchangeAd: exchangeAd,
-        exchangeAdRate: exchangeAd?.rate,
-        exchangeAdFromCurrency: exchangeAd?.from_currency,
-        exchangeAdToCurrency: exchangeAd?.to_currency
-      });
+
+
+      // ✅ SPECIAL DEBUG: Check if this looks like a bank account UUID
+      if (content && content.length > 30 && content.includes('-')) {
+
+      }
+
+      // Helper function to get amount from conversation context
+      const getAmountFromConversation = () => {
+        // First priority: Look for the most recent user input amount
+        const recentMessages = messages.slice(-10); // Check last 10 messages
+        for (let i = recentMessages.length - 1; i >= 0; i--) {
+          const message = recentMessages[i];
+          const content = message.text_content || '';
+
+          // Skip system messages and wallet balance messages
+          if (content.includes('You have') || content.includes('USDC in your wallet') ||
+            content.includes('How much') || content.includes('rate is') ||
+            content.includes('You will get') || content.includes('Choose how') ||
+            content.includes('accept') || content.includes('cash_delivery')) {
+            continue;
+          }
+
+          const amount = parseFloat(content.replace(/[^\d.]/g, ''));
+          if (!isNaN(amount) && amount > 0 && amount < 10000) { // Reasonable range
+
+            return amount;
+          }
+        }
+
+        // Second priority: Try to get amount from exchange ad min_amount
+        if (exchangeAd?.min_amount) {
+
+          return exchangeAd.min_amount;
+        }
+
+        // Last resort: Default fallback amount
+
+        return 25; // Default to 25 USDC
+      };
 
       // Check if content is a number (withdrawal amount) AND we're actually in withdrawal stage
       const amount = parseFloat(content.replace(/,/g, ""));
@@ -544,16 +530,7 @@ export default defineComponent({
           sell_rate: exchangeRate.toFixed(2),
         };
 
-        console.log("🔧 EXCHANGE RATE CALCULATION:", {
-          userAmount: amount,
-          exchangeRate: exchangeRate,
-          calculatedSellAmount: sellAmount,
-          currencySymbol: "₺", // Hardcoded to TRY
-          businessName: exchangeAd?.business?.business_name,
-          exchangeAd: exchangeAd,
-          fromCurrency: "TRY", // Hardcoded to TRY
-          toCurrency: "USDC"
-        });
+
       }
       // ✅ CRITICAL FIX: Address handling - send correct key
       else if (
@@ -568,8 +545,7 @@ export default defineComponent({
           selected_option: content.trim()  // Backend expects this exact key
         };
 
-        console.log("✅ Address structured response (FIXED):", structuredResponse, typeof content.trim());
-        console.log("🔧 CRITICAL FIX: Sending address in stage:", currentStage);
+
 
         // Disable address input after sending
         setTimeout(() => {
@@ -577,9 +553,30 @@ export default defineComponent({
           showAddressModal.value = false;
         }, 100);
       }
+      // ✅ NEW: Bank transfer handling - send bank account UUID (simplified like address)
+      else if (
+        (currentStage === "bank_transfer" || showBankTransferModal.value ||
+          // ✅ NEW: Handle bank account input even when backend stage is bank_transfer_1
+          (currentStage.includes("bank_transfer"))) &&
+        !extraValue &&
+        content.trim().length > 5
+      ) {
+        // Send bank account UUID as selected_option (same as address flow)
+        structuredResponse = {
+          selected_option: content.trim()  // Backend expects this exact key
+        };
+
+
+
+        // Disable bank transfer modal after sending
+        setTimeout(() => {
+          updateBankTransferModalVisibility(false);
+          showBankTransferModal.value = false;
+        }, 100);
+      }
       // ✅ NEW: Handle order summary confirmation (FIXED)
       else if (currentStage === "order_summary" && (content.toLowerCase().includes("confirm") || content === "success")) {
-        console.log("🔧 Order summary confirmation detected, sending 'success'");
+
 
         // Get the delivery address from conversation history
         const deliveryAddress = getDeliveryAddressFromHistory();
@@ -592,99 +589,97 @@ export default defineComponent({
         structuredResponse = {
           selected_option: "success",  // Backend expects "success", not "confirm"
           delivery_address: finalDeliveryAddress, // Include the delivery address
+          amount: getAmountFromConversation(), // Add amount from conversation context
         };
 
-        console.log("🔧 P2P ORDER CREATION: Sending structured response:", structuredResponse);
-        console.log("🔧 P2P ORDER CREATION: Current stage:", currentStage);
-        console.log("🔧 P2P ORDER CREATION: SingleConversation:", SingleConversation.value);
-        console.log("🔧 P2P ORDER CREATION: Delivery address:", finalDeliveryAddress);
-        console.log("🔧 P2P ORDER CREATION: Original delivery address:", deliveryAddress);
+
       }
-      // ✅ NEW: Handle order summary step automatically when user provides address
-      else if (currentStage === "order_summary" && !extraValue && content.trim().length > 0) {
-        console.log("🔧 Order summary step detected, automatically confirming order");
+        // ✅ NEW: Handle order summary step automatically when user provides address
+        else if (currentStage === "order_summary" && !extraValue && content.trim().length > 0) {
+          // Get the delivery address from conversation history
+          const deliveryAddress = getDeliveryAddressFromHistory();
 
-        // Get the delivery address from conversation history
-        const deliveryAddress = getDeliveryAddressFromHistory();
+          // For testing - if no address found, use a default address
+          const finalDeliveryAddress = (!deliveryAddress || deliveryAddress === "Address not provided")
+            ? "123 Test Street, Lagos, Nigeria"
+            : deliveryAddress;
 
-        // For testing - if no address found, use a default address
-        const finalDeliveryAddress = (!deliveryAddress || deliveryAddress === "Address not provided")
-          ? "123 Test Street, Lagos, Nigeria"
-          : deliveryAddress;
-
-        structuredResponse = {
-          selected_option: "success",  // Backend expects "success", not "confirm"
-          delivery_address: finalDeliveryAddress, // Include the delivery address
-        };
-
-        console.log("🔧 P2P ORDER CREATION: Auto-confirming order summary:", structuredResponse);
-        console.log("🔧 P2P ORDER CREATION: Current stage:", currentStage);
-        console.log("🔧 P2P ORDER CREATION: Delivery address:", finalDeliveryAddress);
-      }
-      // ✅ NEW: Handle payment confirmation
-      else if (currentStage === "send_payment" && content.toLowerCase().includes("payment confirmed")) {
-        structuredResponse = {
-          selected_option: "confirm_payment",
-        };
-
-        // Add final confirmation message
-        setTimeout(() => {
-          const finalConfirmationMessage = {
-            id: `final_confirm_${Date.now()}`,
-            type: "text" as const,
-            text_content: "Are you sure that you have collected your cash?",
-            user_uuid: "greep_ai",
-            user_name: "GreepPay AI",
-            info_icon: "",
-            actions: [
-              {
-                label: "Yes, release USDC",
-                message: "Yes, release USDC",
-                type: "success" as const,
-                value: "yes",
-                handler: () => sendMessage("Yes, release USDC", "yes")
-              },
-              {
-                label: "No, I haven't",
-                message: "No, I haven't",
-                type: "info" as const,
-                value: "no",
-                handler: () => sendMessage("No, I haven't", "no")
-              }
-            ],
-            orderSummary: null,
-            isOrderSummary: false
+          structuredResponse = {
+            selected_option: "success",  // Backend expects "success", not "confirm"
+            delivery_address: finalDeliveryAddress, // Include the delivery address
+            amount: getAmountFromConversation(), // Add amount from conversation context
           };
-
-          messages.push(finalConfirmationMessage);
-          scrollToBottom();
-        }, 1000);
-      }
+          // Removed debug console.log
+        }
+      // ✅ NEW: Handle payment confirmation (for any stage)
+        else if (content.toLowerCase().includes("payment confirmed")) {
+          structuredResponse = {
+            selected_option: "confirm_payment",
+          };
+          // Removed debug console.log
+          // ✅ FIXED: Don't add local confirmation message - it comes from backend to prevent duplication
+        }
       // ✅ NEW: Handle final payment confirmation
-      else if (currentStage === "finalize_payment" && content.toLowerCase().includes("yes")) {
-        structuredResponse = {
-          selected_option: "yes",
-        };
-
-        // Add success messages
-        setTimeout(() => {
-          const usdcSentMessage = {
-            id: `usdc_sent_${Date.now()}`,
-            type: "text" as const,
-            text_content: "USDC sent!",
-            user_uuid: "greep_ai",
-            user_name: "GreepPay AI",
-            info_icon: "",
-            actions: [],
-            orderSummary: null,
-            isOrderSummary: false
+        else if (currentStage === "finalize_payment" && content.toLowerCase().includes("yes")) {
+          structuredResponse = {
+            selected_option: "yes",
           };
 
-          messages.push(usdcSentMessage);
-          scrollToBottom();
+          // ✅ SIMPLIFIED: Call ReleaseP2pFunds mutation and show success immediately
+          (async () => {
+            try {
+              // Get order details from conversation
+              const conversationMetadata = SingleConversation.value?.metadata ?
+                JSON.parse(SingleConversation.value.metadata) : {};
 
-          // Add success message with action buttons
-          setTimeout(() => {
+              // Try to extract order UUID from conversation messages
+              let orderUuid = conversationMetadata?.order_uuid;
+
+              // If not in metadata, search through messages for the order UUID
+              if (!orderUuid && SingleConversation.value?.messages) {
+                for (const message of SingleConversation.value.messages) {
+                  const content = message.content || "";
+                  // Look for "Order ID: [uuid]" pattern in messages
+                  const orderIdMatch = content.match(/Order ID:\s*([a-f0-9-]{36})/i);
+                  if (orderIdMatch) {
+                    orderUuid = orderIdMatch[1];
+                    // Removed debug console.log
+                    break;
+                  }
+                }
+              }
+
+              // Final fallback - use conversation UUID (but log warning)
+              if (!orderUuid) {
+                orderUuid = SingleConversation.value?.uuid;
+                console.warn("⚠️ Using conversation UUID as fallback for order UUID:", orderUuid);
+              }
+
+              const amount = conversationMetadata?.amount;
+
+              if (orderUuid) {
+                // Removed debug console.log
+
+                await Logic.Wallet.ReleaseP2pFunds(
+                  orderUuid,
+                  amount,
+                  JSON.stringify({
+                    stage: "finalize_payment",
+                    action: "release_usdc",
+                    timestamp: Date.now()
+                  })
+                );
+
+                // Removed debug console.log
+              } else {
+                console.warn("⚠️ No order UUID found for ReleaseP2pFunds");
+              }
+            } catch (error) {
+              console.error("❌ Error calling ReleaseP2pFunds:", error);
+              // Don't block the UI flow, just log the error
+            }
+
+            // ✅ SIMPLIFIED: Show success message immediately after API call (no delay)
             const successMessage = {
               id: `success_${Date.now()}`,
               type: "text" as const,
@@ -694,23 +689,23 @@ export default defineComponent({
               info_icon: "",
               actions: [
                 {
-                  label: "View transaction",
-                  message: "View transaction",
+                  label: "Details",
+                  message: "Details",
                   type: "success" as const,
                   value: "view_transaction",
                   handler: () => {
-                    console.log("View transaction clicked");
-                    // Handle view transaction
+                    // Removed debug console.log
+                    // Handle view transaction details
                   }
                 },
                 {
-                  label: "Rate your experience",
-                  message: "Rate your experience",
+                  label: "Receipt",
+                  message: "Receipt",
                   type: "info" as const,
-                  value: "rate_experience",
+                  value: "receipt",
                   handler: () => {
-                    console.log("Rate experience clicked");
-                    // Handle rating
+                    // Removed debug console.log
+                    // Handle receipt download
                   }
                 }
               ],
@@ -720,89 +715,87 @@ export default defineComponent({
 
             messages.push(successMessage);
             scrollToBottom();
-          }, 1000);
-        }, 1000);
-      }
+          })();
+        }
       // Handle button actions with extraValue
-      else if (extraValue) {
-        structuredResponse = {
-          selected_option: extraValue,
-        };
+        else if (extraValue) {
+          // ✅ DEBUG: Log "yes" button clicks specifically
+          if (extraValue.toLowerCase() === "yes") {
+            // Removed debug console.log
+          }
 
-        // Add specific handling for delivery method selection
-        if (extraValue === "cash_delivery") {
-          structuredResponse.collection_method = "cash_delivery";
-        }
-        // ✅ NEW: Handle order confirmation via button
-        else if (extraValue === "confirm") {
-          console.log("🔧 P2P ORDER CREATION: Button confirm clicked, sending 'success'");
           structuredResponse = {
-            selected_option: "success",  // Backend expects "success", not "confirm"
+            selected_option: extraValue,
           };
-          console.log("🔧 P2P ORDER CREATION: Button structured response:", structuredResponse);
-        }
-      }
-      // Handle common text responses
-      else if (content.toLowerCase().includes("accept") || content.toLowerCase() === "i accept") {
-        structuredResponse = {
-          selected_option: "accept",
-        };
-      }
-      else if (content.toLowerCase().includes("cancel")) {
-        structuredResponse = {
-          selected_option: "cancel",
-        };
-      }
-      // Fallback for any other text
-      else {
-        structuredResponse = {
-          selected_option: content.toLowerCase().trim(),
-        };
-      }
 
-      console.log("🔧 Final structured response:", structuredResponse);
+          // Add specific handling for delivery method selection
+          if (extraValue === "cash_delivery") {
+            structuredResponse.collection_method = "cash_delivery";
+          }
+          // ✅ NEW: Handle cash pickup selection
+          else if (extraValue === "cash_pickup") {
+            // Removed debug console.log
+            structuredResponse = {
+              selected_option: "cash_pickup",
+            };
+            // Removed debug console.log
+          }
+          // ✅ NEW: Handle order confirmation via button
+          else if (extraValue === "confirm") {
+            // Removed debug console.log
+            structuredResponse = {
+              selected_option: "success",  // Backend expects "success", not "confirm"
+            };
+            // Removed debug console.log
+          }
+        }
+      // Handle common text responses
+        else if (content.toLowerCase().includes("accept") || content.toLowerCase() === "i accept") {
+          structuredResponse = {
+            selected_option: "accept",
+          };
+        }
+        else if (content.toLowerCase().includes("cancel")) {
+          structuredResponse = {
+            selected_option: "cancel",
+          };
+        }
+        // ✅ NEW: Handle cash pickup text input
+        else if (content.toLowerCase() === "cash_pickup") {
+          structuredResponse = {
+            selected_option: "cash_pickup",
+          };
+          // Removed debug console.log
+        }
+        // ✅ NEW: Handle branch selection for cash pickup
+        else if (content.toLowerCase() === "branch_selected") {
+          structuredResponse = {
+            selected_option: "branch_selected",
+          };
+          // Removed debug console.log
+        }
+        // ✅ NEW: Handle branch button clicks (Branch 1, Branch 2, Branch 3)
+        else if (content.toLowerCase().includes("branch") && (content.toLowerCase().includes("1") || content.toLowerCase().includes("2") || content.toLowerCase().includes("3"))) {
+          structuredResponse = {
+            selected_option: "branch_selected",
+          };
+          // Removed debug console.log
+        }
+        // Fallback for any other text
+        else {
+          structuredResponse = {
+            selected_option: content.toLowerCase().trim(),
+          };
+          // Removed debug console.log
+        }
+
+        // Removed debug console.log
       return structuredResponse;
     };
-
-    // ✅ REMOVED: Business participant logic to prevent loops
-
-    // ✅ NEW: Simulate business joining the conversation
-    const simulateBusinessJoining = async (businessUuid: string, businessName: string) => {
-      try {
-        console.log("🔧 Simulating business joining conversation:", { businessUuid, businessName });
-
-        // Send a system message to simulate the business joining
-        Logic.Messaging.CreateMessageForm = {
-          input: {
-            conversation_id: SingleConversation.value?.id || 0,
-            content: `@system:business_joined:${businessUuid}:${businessName}`,
-            type: "text",
-            sender_id: parseInt(AuthUser.value?.id || "0"),
-            metadata: JSON.stringify({
-              is_bot: false,
-              type: "system_notification",
-              action: "business_joined",
-              business_uuid: businessUuid,
-              business_name: businessName,
-              trigger_conversation: false
-            }),
-          },
-        };
-
-        await Logic.Messaging.CreateMessage();
-        console.log("✅ Business joining simulation sent to backend");
-      } catch (error) {
-        console.error("❌ Error simulating business joining:", error);
-      }
-    };
-
-
 
     // ✅ NEW: Send business message through WebSocket
     const sendBusinessMessage = async (content: string, userUuid: string, userName: string, media?: any) => {
       try {
-        console.log("🔧 Sending business message:", { content, userUuid, userName, media });
-
         if (!SingleConversation.value) {
           console.error("❌ No conversation available");
           return;
@@ -832,7 +825,6 @@ export default defineComponent({
 
           messages.push(aiMessage);
           await scrollToBottom();
-          console.log("🔧 AI message added to display:", aiMessage);
           return aiMessage;
         }
 
@@ -862,10 +854,8 @@ export default defineComponent({
             };
 
             const response = await Logic.Messaging.CreateMessage();
-            console.log("🔧 Business message sent through GraphQL:", response);
             return response;
           } catch (graphqlError) {
-            console.log("🔧 GraphQL failed, falling back to local message:", graphqlError);
             // Fall back to local message if GraphQL fails
           }
         }
@@ -895,10 +885,8 @@ export default defineComponent({
             };
 
             const response = await Logic.Messaging.CreateMessage();
-            console.log("🔧 Business message sent as system message:", response);
             return response;
           } catch (systemError) {
-            console.log("🔧 System message failed, falling back to local message:", systemError);
             // Fall back to local message if system message fails
           }
         }
@@ -926,51 +914,37 @@ export default defineComponent({
 
         messages.push(businessMessage);
         await scrollToBottom();
-
-        console.log("🔧 Business message added to display (fallback):", businessMessage);
         return businessMessage;
       } catch (error) {
         console.error("❌ Error sending business message:", error);
       }
     };
 
-
-
     const initializeMessages = async () => {
-      console.log("🔧 initializeMessages called, current messages length:", messages.length);
-      console.log("🔧 SingleConversation messages:", SingleConversation.value?.messages);
+      
 
-      // Only initialize if messages array is empty to avoid clearing existing messages
       if (messages.length > 0) {
-        console.log("🔧 Messages already exist, skipping initialization");
         return;
       }
 
       // If no messages exist, add only the seller welcome message
       if (!SingleConversation.value?.messages?.length) {
-        console.log("🔧 No conversation messages, adding seller welcome message");
+        
         const exchangeAd = SingleConversation.value?.exchangeAd;
         const sellerName = exchangeAd?.business?.business_name || "Fggh";
         const sellerUuid = exchangeAd?.business?.uuid || "seller_uuid";
 
-        messages.push({
-          id: "seller_welcome",
-          type: "text",
-          text_content: `Thanks for choosing to trade with me 😊 I'm fast, reliable, and always online for smooth transactions. If you ever need USDC again, I'm always here!`,
-          user_uuid: sellerUuid,
-          user_name: sellerName,
-          info_icon: "",
-          actions: []
-        });
+        // ✅ REFACTORED: Use message creation utility
+        const sellerWelcomeMessage = createSellerWelcomeMessage(sellerName, sellerUuid);
+        messages.push(sellerWelcomeMessage);
 
         setTimeout(() => {
-          console.log("🔧 About to trigger backend conversation start...");
           triggerBackendConversationStart();
         }, 1500);
       } else {
         // ✅ NEW: If current user is business, show only summary instead of all messages
         if (isBusinessUser.value) {
-          console.log("🎯 Business user - showing summary instead of all conversation messages");
+          
 
           // Create order summary message for business user
           const businessSummaryMessage = {
@@ -985,12 +959,27 @@ export default defineComponent({
             isOrderSummary: true
           };
 
+          // ✅ NEW: If business user and we have order UUID, fetch from API for better data
+          if (isBusinessUser.value && SingleConversation.value?.metadata) {
+            try {
+              const metadata = JSON.parse(SingleConversation.value.metadata);
+              if (metadata.order_uuid) {
+
+                // Fetch order data from API
+                const apiOrderSummary = await getOrderSummaryFromAPI(metadata.order_uuid);
+                if (apiOrderSummary) {
+                  businessSummaryMessage.orderSummary = apiOrderSummary;
+                } else {
+                }
+              }
+            } catch (error) {
+              console.error("❌ Error fetching API order summary for business:", error);
+            }
+          }
+
           messages.push(businessSummaryMessage);
-          console.log("📋 Business summary message added during initialization:", businessSummaryMessage);
         } else {
-          console.log("🔧 Processing existing conversation messages:", SingleConversation.value.messages.length);
           await Promise.all(SingleConversation.value.messages.map(async (message, index) => {
-            console.log(`🔧 Processing message ${index}:`, message.content);
             await addMessageToDisplay(message);
           }));
         }
@@ -1031,75 +1020,34 @@ export default defineComponent({
     };
 
     const addMessageToDisplay = async (message: any) => {
-      console.log("🔧 addMessageToDisplay called with message:", {
-        id: message.id,
-        content: message.content,
-        text_content: message.text_content,
-        user_uuid: message.user_uuid,
-        user_name: message.user_name,
-        sender: message.sender,
-        metadata: message.metadata
-      });
+      
 
       try {
-        const existingIndex = messages.findIndex(m => m.id === message.id.toString());
-        if (existingIndex !== -1) {
-          console.log("🔧 Message already exists, skipping:", message.id);
-          return;
-        }
-
-        // ✅ ENHANCED: Robust deduplication logic to prevent duplicate messages
-        console.log("🔍 Enhanced deduplication check for message:", message.id);
-        console.log("🔍 Current messages count:", messages.length);
-
-        // ✅ ENHANCED: Check for duplicate content within a short time window (5 seconds)
-        const messageContent = message.text_content || message.content;
-        const messageUserId = message.sender?.uuid || message.user_uuid;
-        const now = Date.now();
-        const timeWindow = 5000; // 5 seconds
-
-        const recentDuplicate = messages.find(m => {
-          const mContent = m.text_content;
-          const mUserId = m.user_uuid === "greep_ai" ? "greep_ai" :
-            (m.user_uuid === "temp_user" ? "temp_user" : m.user_uuid);
-
-          // Check if content and user match
-          const contentMatches = mContent === messageContent;
-          const userMatches = mUserId === messageUserId ||
-            (mUserId === "greep_ai" && messageUserId === "greep_ai");
-
-          // Check if message was added recently (within time window)
-          const isRecent = typeof m.id === 'string' && m.id.startsWith('temp_') ?
-            parseInt(m.id.split('_')[1]) > (now - timeWindow) : false;
-
-          return contentMatches && userMatches && isRecent;
-        });
-
-        if (recentDuplicate) {
-          console.log("⏭️ Recent duplicate message found, skipping:", {
-            existingId: recentDuplicate.id,
-            content: messageContent,
-            userId: messageUserId
-          });
-          return;
-        }
-
-        // ✅ ADDITIONAL: Check for exact content match from current user (prevents server confirmation duplicates)
-        const isFromCurrentUser = message.sender?.uuid === AuthUser.value?.uuid || message.user_uuid === AuthUser.value?.uuid;
-        if (isFromCurrentUser) {
-          const exactContentMatch = messages.find(m =>
-            m.text_content === messageContent &&
-            m.user_uuid === AuthUser.value?.uuid
-          );
-
-          if (exactContentMatch) {
-            console.log("⏭️ Exact content match found for current user, skipping duplicate:", {
-              existingId: exactContentMatch.id,
-              content: messageContent
-            });
-            return;
+        // ✅ REFACTORED: Use enhanced deduplication utility
+        const deduplicationResult = shouldSkipMessage(
+          message,
+          messages,
+          AuthUser.value?.uuid || "",
+          {
+            timeWindow: 5000, // 5 seconds
+            checkRecentDuplicates: true,
+            checkExactContentMatch: true,
+            checkExistingIds: true
           }
+        );
+
+        // Log deduplication decision for debugging
+        logDeduplicationDecision(message, deduplicationResult);
+
+        if (deduplicationResult.shouldSkip) {
+          return; // Skip this message
         }
+
+
+
+
+
+
 
         const metadata = message.metadata ? JSON.parse(message.metadata) : {};
         const options = metadata?.options || [];
@@ -1124,118 +1072,16 @@ export default defineComponent({
           isRegularChat: metadata?.type === 'chat_message'
         });
 
-        // ✅ FILTER OUT ERROR MESSAGES
-        if ((message.text_content || message.content)?.includes("Currency must be a string.")) {
-          console.log("🚫 Filtering out currency error message");
-          return; // Don't add this message to display
+        // ✅ REFACTORED: Use message filtering composable
+        const filterResult = await messageFiltering.filterMessage(message);
+        if (filterResult.shouldBlock) {
+          return; // Message was filtered out
         }
 
         // ✅ NEW: Ensure regular chat messages are always displayed
         if (metadata?.type === 'chat_message') {
           console.log("💬 Regular chat message detected, ensuring it's displayed");
           // Skip all filtering for regular chat messages
-        }
-
-        // ✅ FILTER OUT CONFIRMATION EMAIL MESSAGE
-        if ((message.text_content || message.content)?.includes("Your order has been confirmed. Please wait for the confirmation email.")) {
-          console.log("🚫 Filtering out confirmation email message, proceeding to next stage");
-
-          // ✅ NEW: Instead of filtering out, let's handle this as order confirmation
-          orderConfirmed.value = true;
-          showAddressInput.value = false;
-
-          console.log("🎯 BACKEND CONFIRMATION: orderConfirmed set to true, showAddressInput set to false");
-
-          // ✅ NEW: This confirmation should also enable business users to chat freely
-          // The business user will receive this message and should also get orderConfirmed = true
-
-          const orderConfirmationMessage = {
-            id: `order_confirmed_${Date.now()}`,
-            type: "text" as const,
-            text_content: "Order confirmed! Your P2P trade has been created successfully.",
-            user_uuid: "greep_ai",
-            user_name: "GreepPay AI",
-            info_icon: "",
-            actions: [
-              {
-                label: "View order details",
-                message: "View order details",
-                type: "success" as const,
-                value: "view_order",
-                handler: () => {
-                  console.log("View order details clicked");
-                  // Handle view order
-                }
-              }
-            ],
-            orderSummary: null,
-            isOrderSummary: false
-          };
-
-          messages.push(orderConfirmationMessage);
-          scrollToBottom();
-
-          return; // Don't add the original message
-        }
-
-        // ✅ HANDLE PAYMENT CONFIRMATION MESSAGE FROM BACKEND
-        if ((message.text_content || message.content)?.includes("Order confirmed! Pressing the") && (message.text_content || message.content)?.includes("Payment confirmed")) {
-          console.log("🔧 Payment confirmation message from backend detected");
-
-          // ✅ Make bottom bar a free chat input from now on
-          orderConfirmed.value = true;
-          showAddressInput.value = false;
-
-          console.log("🎯 PAYMENT CONFIRMATION: orderConfirmed set to true, showAddressInput set to false");
-
-          // ✅ FIXED: Check if business participant has been added - Updated detection logic
-          const businessExists = SingleConversation.value?.participants?.some(p =>
-            p.user_id !== parseInt(AuthUser.value?.id || "0") &&
-            p.user_id !== 0 && // Not AI
-            p.state === 'active'
-          ) || messages.some(m =>
-            m.user_uuid === SingleConversation.value?.exchangeAd?.business?.uuid ||
-            (m.user_name && m.user_name !== "GreepPay AI" && m.user_name !== AuthUser.value?.first_name)
-          );
-
-          // ✅ NEW: Business users should also get orderConfirmed = true when they receive this message
-          // This ensures both customer and business can chat freely after order confirmation
-
-          if (!businessExists) {
-            console.log("🔧 Business participant not found, showing payment confirmation message");
-            // Add the backend's payment confirmation message directly
-            const backendPaymentMessage = {
-              id: `backend_payment_${Date.now()}`,
-              type: "text" as const,
-              text_content: message.content,
-              user_uuid: "greep_ai",
-              user_name: "GreepPay AI",
-              info_icon: "",
-              actions: [
-                {
-                  label: "Payment confirmed",
-                  message: "Payment confirmed",
-                  type: "success" as const,
-                  value: "confirm_payment",
-                  handler: () => sendMessage("Payment confirmed", "confirm_payment")
-                }
-              ],
-              orderSummary: null,
-              isOrderSummary: false
-            };
-            messages.push(backendPaymentMessage);
-            scrollToBottom();
-            return; // Don't add this message yet, it will be added after business participant
-          } else {
-            console.log("✅ Business participant found, allowing payment confirmation message");
-          }
-          // If business already exists, let the message through normally
-        }
-
-        // ✅ HANDLE ADDRESS CONFIRMATION STEP
-        if (message.content?.includes("What is your address") && !message.content?.includes("Is this your correct address")) {
-          console.log("🔧 Address question detected, will show confirmation after user responds");
-          // This will be handled when user responds with address
         }
 
         // ✅ HANDLE ADDRESS CONFIRMATION MESSAGE
@@ -1268,6 +1114,15 @@ export default defineComponent({
           const conversationMetadata = SingleConversation.value?.metadata ?
             JSON.parse(SingleConversation.value.metadata) : {};
 
+          // ✅ DEBUG: Log conversation metadata for order summary
+          console.log("🔍 Conversation metadata for order summary:", {
+            hasMetadata: !!SingleConversation.value?.metadata,
+            metadataString: SingleConversation.value?.metadata,
+            parsedMetadata: conversationMetadata,
+            metadataKeys: Object.keys(conversationMetadata),
+            conversationId: SingleConversation.value?.id
+          });
+
           // Get the actual values from the conversation
           const amount = conversationMetadata.amount || orderData.amount || metadata.amount || 100;
           const currencySymbol = '₺'; // Always use TRY symbol
@@ -1294,21 +1149,120 @@ export default defineComponent({
             metadata
           });
 
+          // ✅ NEW: Get payment method from query parameter
+          const methodFromRoute = Logic.Common.route?.query?.method?.toString() || "cash";
+          const isTransferMethod = methodFromRoute === "transfer";
+
+          // ✅ NEW: Check if this is a cash pickup method
+          const isCashPickup = conversationMetadata.pickup_location ? true : false;
+
+          // ✅ DEBUG: Log pickup location detection
+          console.log("🔍 Pickup location detection:", {
+            hasPickupLocation: !!conversationMetadata.pickup_location,
+            pickupLocation: conversationMetadata.pickup_location,
+            pickupLocationName: conversationMetadata.pickup_location_name,
+            pickupLocationAddress: conversationMetadata.pickup_location_address,
+            isCashPickup,
+            conversationMetadataKeys: Object.keys(conversationMetadata)
+          });
+
           // Calculate fees
           const tradingFee = (amountNum * 0.0015).toFixed(2);
-          const deliveryFee = 3;
+          const deliveryFee = isTransferMethod ? 0 : (isCashPickup ? 0 : 3); // No delivery fee for transfers or pickup
           const totalToPay = (amountNum + parseFloat(tradingFee) + deliveryFee).toFixed(2);
+
+          // ✅ NEW: Get full bank details for transfers
+          let bankInfo = '';
+          if (isTransferMethod) {
+            // Look for saved bank accounts data first
+            if (savedBankAccounts.value && savedBankAccounts.value.length > 0) {
+              // Find the most recently selected bank account
+              const recentMessages = SingleConversation.value?.messages || [];
+              for (let i = recentMessages.length - 1; i >= 0; i--) {
+                const message = recentMessages[i];
+                if (message.content && message.content.includes('Selected:')) {
+                  // Extract account info from the message
+                  const selectedAccount = savedBankAccounts.value.find(account =>
+                    message.content.includes(account.account_number) ||
+                    message.content.includes(account.bank_name)
+                  );
+
+                  if (selectedAccount) {
+                    bankInfo = `${selectedAccount.bank_name}\nAccount: ${selectedAccount.account_number}\nName: ${selectedAccount.account_name}`;
+                    break;
+                  }
+                }
+              }
+            }
+
+            // Fallback: parse from message content if saved accounts not available
+            if (!bankInfo) {
+              const recentMessages = SingleConversation.value?.messages || [];
+              for (let i = recentMessages.length - 1; i >= 0; i--) {
+                const message = recentMessages[i];
+                if (message.content && (
+                  message.content.includes('Selected:') ||
+                  message.content.includes('Added:')
+                ) && (
+                    message.content.includes('Bank') ||
+                    message.content.includes('-')
+                  )) {
+                  const content = message.content.replace('Selected: ', '').replace('Added: ', '');
+                  // Try to parse bank details from content like "Bank Name - Account Number"
+                  if (content.includes(' - ')) {
+                    const [bankName, accountNumber] = content.split(' - ');
+                    bankInfo = `${bankName}\nAccount: ${accountNumber}\nName: Account Holder`;
+                  } else {
+                    bankInfo = content;
+                  }
+                  break;
+                }
+              }
+            }
+
+            // Final fallback
+            if (!bankInfo && deliveryAddress && deliveryAddress !== 'Address not provided') {
+              bankInfo = deliveryAddress;
+            }
+          }
+
+          // ✅ NEW: Get pickup location details for cash pickup orders
+          const pickupLocation = conversationMetadata.pickup_location;
+          const pickupLocationName = conversationMetadata.pickup_location_name;
+          const pickupLocationAddress = conversationMetadata.pickup_location_address;
+          const pickupLocationCity = conversationMetadata.pickup_location_city;
+          const pickupLocationCountry = conversationMetadata.pickup_location_country;
+
+          // ✅ NEW: Create pickup location display string
+          let pickupLocationDisplay = 'Pickup location not selected';
+          if (pickupLocation) {
+            pickupLocationDisplay = pickupLocation;
+          } else if (pickupLocationName && pickupLocationAddress) {
+            pickupLocationDisplay = `${pickupLocationName} - ${pickupLocationAddress}, ${pickupLocationCity || ''}, ${pickupLocationCountry || ''}`;
+          }
 
           orderSummaryDetails = {
             youSell: `${amount} USDC`,
             youGet: `${currencySymbol}${sellAmount}`,
             fee: `${tradingFee} USDC`,
-            deliveryFee: `${deliveryFee} USDC`,
+            deliveryFee: isTransferMethod ? '0 USDC' : (isCashPickup ? '0 USDC' : `${deliveryFee} USDC`),
             youPay: `${totalToPay} USDC`,
-            paymentType: 'Cash',
-            payoutOption: 'Delivery',
-            deliveryAddress: deliveryAddress || 'Address not provided'
+            paymentType: isTransferMethod ? 'Transfer' : (isCashPickup ? 'Cash Pickup' : 'Cash'),
+            payoutOption: isTransferMethod ? 'Bank Transfer' : (isCashPickup ? 'Pickup' : 'Delivery'),
+            deliveryAddress: isTransferMethod ? bankInfo || 'Bank details not provided' :
+              (isCashPickup ? `Pickup: ${pickupLocationDisplay}` : (deliveryAddress || 'Address not provided'))
           };
+
+          // ✅ DEBUG: Log order summary creation
+          console.log("🔍 Order summary creation:", {
+            isCashPickup,
+            isTransferMethod,
+            pickupLocationDisplay,
+            deliveryAddress,
+            finalDeliveryAddress: orderSummaryDetails.deliveryAddress,
+            payoutOption: orderSummaryDetails.payoutOption,
+            paymentType: orderSummaryDetails.paymentType
+          });
 
           console.log("✅ Order summary details created:", orderSummaryDetails);
         }
@@ -1351,32 +1305,49 @@ export default defineComponent({
           };
         });
 
-        const messageType = options.length > 0 ? "text" : (metadata?.type === "chat_message" ? "text" : metadata?.type || "text");
+        // Normalize message type for rendering: only 'text' and 'info' are supported in UI
+        const rawType = metadata?.type || "text";
+        const messageType = options.length > 0
+          ? "text"
+          : (rawType === "info" ? "info" : "text");
 
         // ✅ NEW: Ensure regular chat messages are properly formatted
         if (metadata?.type === 'chat_message' || (!options.length && !orderSummaryDetails && !isOrderSummary)) {
           console.log("💬 Creating regular chat message display");
         }
 
-        const displayMessage: MessageInfo = {
-          id: message.id.toString(),
-          type: messageType as "text" | "info",
-          text_content: message.text_content || message.content,
-          user_uuid: message.user_uuid || message.sender?.uuid || "greep_ai",
-          user_name: message.user_name || (message.sender
-            ? `${message.sender.first_name} ${message.sender.last_name}`.trim()
-            : "GreepPay AI"),
-          info_icon: metadata?.extras?.info_icon || "",
-          actions: actions || [],
-          // ✅ ADD ORDER SUMMARY DATA
-          orderSummary: orderSummaryDetails,
-          isOrderSummary: isOrderSummary
-        };
+        // ✅ REFACTORED: Use message creation utility
+        const displayMessage = createDisplayMessage(message, {
+          AuthUser: AuthUser.value,
+          SingleConversation: SingleConversation.value,
+          sendMessage: sendMessage,
+          currentConversationState: currentConversationState.value
+        });
+
+        // Add order summary data if it exists
+        if (orderSummaryDetails) {
+          displayMessage.orderSummary = orderSummaryDetails;
+          displayMessage.isOrderSummary = isOrderSummary;
+        }
 
         messages.push(displayMessage);
         console.log("✅ Message added to display:", displayMessage);
         console.log("📊 Current messages array length:", messages.length);
         console.log("📊 All messages in array:", messages.map(m => ({ id: m.id, content: m.text_content, user: m.user_name })));
+
+        // If a proof upload arrives, only the seller sees the confirm UI (no countdown yet)
+        try {
+          if (rawType === 'proof_upload') {
+            proofUploaded.value = true;
+            if (!isBusinessUser.value) {
+              showPaymentConfirmation.value = true;
+              // Start payment confirmation countdown (4 hours)
+              startCountdown('payment_confirmation', 14400); // 4 hours
+            }
+          }
+        } catch (e) {
+          // ignore
+        }
 
         // Force reactivity update
         await nextTick();
@@ -1587,8 +1558,21 @@ export default defineComponent({
 
     // ✅ IMPROVED sendMessage function with comprehensive debugging and proof upload support
     const sendMessage = async (content: string, extraValue = ""): Promise<boolean> => {
+      console.log("🔧 SendMessage called with:", {
+        content,
+        extraValue,
+        hasConversation: !!SingleConversation.value,
+        hasAuthUser: !!AuthUser.value,
+        isProcessing: isProcessing.value,
+        conversationId: SingleConversation.value?.id
+      });
+
       if (!SingleConversation.value || !AuthUser.value || isProcessing.value) {
-        console.log("❌ Cannot send message - missing requirements");
+        console.log("❌ Cannot send message - missing requirements:", {
+          conversation: !!SingleConversation.value,
+          authUser: !!AuthUser.value,
+          processing: isProcessing.value
+        });
         return false;
       }
 
@@ -1610,22 +1594,14 @@ export default defineComponent({
         return await handleProofUpload(trimmedContent);
       }
 
-      // ✅ NEW: Business users - check if this is a structured response first
-      if (isBusinessUser.value) {
-        // Check if this is a structured response (like amount, address, etc.)
-        if (isStructuredResponse(trimmedContent, currentConversationState.value.stage)) {
-          console.log("🔧 Business user sending structured response:", trimmedContent);
-          // Let it continue to the structured response flow below
-        } else {
-          console.log("🔧 Business user sending regular chat message:", trimmedContent);
-          return await sendRegularChatMessage(trimmedContent);
-        }
+      // ✅ NEW: Check if this is a structured response first (for ALL users)
+      if (isStructuredResponse(trimmedContent, currentConversationState.value.stage)) {
+        console.log("🔧 Sending structured response:", trimmedContent);
+        // Let it continue to the structured response flow below
       } else {
-        // ✅ NEW: Handle regular chat messages (not structured responses) for non-business users
-        if (!isStructuredResponse(trimmedContent, currentConversationState.value.stage)) {
-          console.log("🔧 Sending regular chat message:", trimmedContent);
-          return await sendRegularChatMessage(trimmedContent);
-        }
+        // ✅ NEW: Handle regular chat messages (not structured responses)
+        console.log("🔧 Sending regular chat message:", trimmedContent);
+        return await sendRegularChatMessage(trimmedContent);
       }
 
       if (!validateInput(trimmedContent, currentConversationState.value.stage, extraValue)) {
@@ -1690,6 +1666,15 @@ export default defineComponent({
         await addNewMessage(userMessage);
 
         // ✅ CRITICAL: Ensure structured_response is in the metadata
+        // ✅ DEBUG: Log what we're about to send to backend
+        console.log("🔧 BACKEND SEND DEBUG:", {
+          content: trimmedContent,
+          currentStage: currentConversationState.value.stage,
+          structuredResponse: structuredResponse,
+          isWithdrawalMethod: currentConversationState.value.stage === "withdrawal_method",
+          selectedOption: structuredResponse.selected_option
+        });
+
         const fullMetadata = {
           is_bot: false,
           type: "text",
@@ -1727,9 +1712,9 @@ export default defineComponent({
           structuredResponse.selected_option === "success";
 
         if (isOrderSummaryConfirmation && !orderCreationInProgress.value) {
-          console.log("🎯 P2P ORDER CREATION: This should trigger P2P order creation!");
-          console.log("🎯 P2P ORDER CREATION: Order summary confirmed with success");
-          console.log("🎯 P2P ORDER CREATION: Delivery address:", structuredResponse.delivery_address);
+                      // console.log("🎯 P2P ORDER CREATION: This should trigger P2P order creation!");
+            // console.log("🎯 P2P ORDER CREATION: Order summary confirmed with success");
+            // console.log("🎯 P2P ORDER CREATION: Delivery address:", structuredResponse.delivery_address);
 
           // ✅ Make bottom bar a free chat input from now on
           orderConfirmed.value = true;
@@ -1744,25 +1729,194 @@ export default defineComponent({
           // ✅ NEW: Set flag to prevent double creation
           orderCreationInProgress.value = true;
 
-          // ✅ NEW: P2P Order creation is not yet supported by backend GraphQL
-          // TODO: Backend needs to add CreateP2pOrder mutation
-          console.log("⚠️ P2P Order creation via GraphQL not yet supported by backend");
-          console.log("📋 Order data that would be sent:", {
-            exchange_ad_uuid: SingleConversation.value?.exchangeAd?.uuid,
-            amount: structuredResponse.amount,
-            delivery_address: structuredResponse.delivery_address,
-            payment_type: structuredResponse.payment_type,
-            payout_option: structuredResponse.payout_option,
-            conversation_uuid: SingleConversation.value?.uuid
-          });
+          // ✅ NEW: Create P2P Order using GraphQL mutation
+          try {
+            console.log("🚀 Creating P2P Order via GraphQL...");
+
+            // Get required data from conversation
+            const exchangeAd = SingleConversation.value?.exchangeAd;
+            const conversationUuid = SingleConversation.value?.uuid;
+
+            if (!exchangeAd?.uuid || !conversationUuid) {
+              console.error("❌ Missing required data for P2P order creation:", {
+                exchangeAdUuid: exchangeAd?.uuid,
+                conversationUuid: conversationUuid
+              });
+              throw new Error("Missing required data for P2P order creation");
+            }
+
+            // ✅ NEW: Check if this is a cash pickup order
+            const isCashPickupOrder = conversationMetadata.pickup_location ? true : false;
+            const pickupLocation = conversationMetadata.pickup_location;
+            const pickupLocationName = conversationMetadata.pickup_location_name;
+            const pickupLocationAddress = conversationMetadata.pickup_location_address;
+            const pickupLocationCity = conversationMetadata.pickup_location_city;
+            const pickupLocationCountry = conversationMetadata.pickup_location_country;
+
+            // ✅ NEW: Determine correct payment type and payout option
+            let paymentType = "cash";
+            let payoutOption = "cash_delivery";
+            let deliveryAddress = structuredResponse.delivery_address || "";
+            let city = exchangeAd.business?.city || "Lagos";
+            let country = exchangeAd.business?.country || "Nigeria";
+
+            if (isCashPickupOrder) {
+              paymentType = "cash_pickup";
+              payoutOption = "pickup";
+              deliveryAddress = pickupLocation || `Pickup: ${pickupLocationName} - ${pickupLocationAddress}, ${pickupLocationCity}, ${pickupLocationCountry}`;
+              city = pickupLocationCity || exchangeAd.business?.city || "Lagos";
+              country = pickupLocationCountry || exchangeAd.business?.country || "Nigeria";
+            } else if (structuredResponse.selected_option === "bank_transfer" || 
+                       structuredResponse.selected_option?.startsWith("Selected:") ||
+                       conversationMetadata.method === "transfer") {
+              paymentType = "transfer";
+              payoutOption = "bank_transfer";
+              // ✅ NEW: For bank transfers, use the selected bank account as delivery address
+              if (structuredResponse.selected_bank_account) {
+                deliveryAddress = structuredResponse.selected_bank_account;
+              } else if (structuredResponse.selected_option?.startsWith("Selected:")) {
+                deliveryAddress = structuredResponse.selected_option;
+              }
+            }
+
+            // ✅ DEBUG: Log order type detection
+            // console.log("🔍 P2P Order type detection:", {
+            //   isCashPickupOrder,
+            //   pickupLocation,
+            //   paymentType,
+            //   payoutOption,
+            //   deliveryAddress,
+            //   city,
+            //   country
+            // });
+
+            // Prepare order data for GraphQL mutation
+            const orderData = {
+              exchange_ad_uuid: exchangeAd.uuid,
+              amount: parseFloat(structuredResponse.amount || "0"),
+              delivery_address: deliveryAddress,
+              city: city,
+              country: country,
+              payment_type: paymentType,
+              payout_option: payoutOption,
+              conversation_uuid: conversationUuid,
+              metadata: JSON.stringify({
+                conversation_id: SingleConversation.value.id,
+                stage: currentConversationState.value.stage,
+                user_id: AuthUser.value?.id,
+                user_uuid: AuthUser.value?.uuid,
+                business_name: exchangeAd.business?.business_name,
+                business_uuid: exchangeAd.business?.uuid,
+                created_at: new Date().toISOString(),
+                // Add location context if available
+                location_context: {
+                  city: city,
+                  country: country
+                },
+                // ✅ NEW: Include pickup location details for pickup orders
+                ...(isCashPickupOrder && {
+                  pickup_location: pickupLocation,
+                  pickup_location_name: pickupLocationName,
+                  pickup_location_address: pickupLocationAddress,
+                  pickup_location_city: pickupLocationCity,
+                  pickup_location_country: pickupLocationCountry
+                })
+              })
+            };
+
+            // console.log("📋 P2P Order data prepared:", orderData);
+            // console.log("🔍 Order type details:", {
+            //   isCashPickupOrder,
+            //   paymentType: orderData.payment_type,
+            //   payoutOption: orderData.payout_option,
+            //   deliveryAddress: orderData.delivery_address,
+            //   city: orderData.city,
+            //   country: orderData.country
+            // });
+            // console.log("🔍 Amount from structuredResponse:", structuredResponse.amount);
+            // console.log("🔍 Final amount being sent:", orderData.amount);
+
+            // Call the GraphQL mutation
+            const createdOrder = await Logic.Wallet.CreateP2pOrder(orderData);
+
+            if (createdOrder) {
+              console.log("✅ P2P Order created successfully:", createdOrder);
+
+              // ✅ CRITICAL: Store order UUID in conversation metadata for later retrieval
+              if (createdOrder.uuid && SingleConversation.value) {
+                try {
+                  const currentMetadata = SingleConversation.value.metadata ?
+                    JSON.parse(SingleConversation.value.metadata) : {};
+                  currentMetadata.order_uuid = createdOrder.uuid;
+                  currentMetadata.order_data = orderData;
+                  SingleConversation.value.metadata = JSON.stringify(currentMetadata);
+                  console.log("✅ Stored order UUID in conversation metadata:", createdOrder.uuid);
+                } catch (error) {
+                  console.error("❌ Error storing order UUID in metadata:", error);
+                }
+              }
+
+              // ✅ NEW: Create appropriate success message based on order type
+              let orderDetailsText = `🎉 P2P Order created successfully!\n\n📋 Order Details:\n• Amount: ${orderData.amount} USDC\n• Payment: ${orderData.payment_type}`;
+
+              if (isCashPickupOrder) {
+                orderDetailsText += `\n• Pickup Location: ${pickupLocationName} - ${pickupLocationAddress}, ${pickupLocationCity}, ${pickupLocationCountry}`;
+              } else if (paymentType === "transfer") {
+                orderDetailsText += `\n• Bank Transfer Details: ${deliveryAddress}`;
+              } else {
+                orderDetailsText += `\n• Delivery Address: ${deliveryAddress}`;
+              }
+
+              orderDetailsText += `\n• Order ID: ${createdOrder.uuid || 'N/A'}`;
+
+              const orderCreatedMessage = {
+                id: `order_created_${Date.now()}`,
+                type: "text" as const,
+                text_content: orderDetailsText,
+                user_uuid: "greep_ai",
+                user_name: "GreepPay AI",
+                info_icon: "",
+                actions: [],
+                orderSummary: null,
+                isOrderSummary: false
+              };
+
+              messages.push(orderCreatedMessage);
+              scrollToBottom();
+            } else {
+              throw new Error("Failed to create P2P order - no response from GraphQL");
+            }
+
+          } catch (error) {
+            console.error("❌ Error creating P2P order:", error);
+
+            // Add error message to chat
+            const errorMessage = {
+              id: `order_error_${Date.now()}`,
+              type: "text" as const,
+              text_content: "❌ Failed to create P2P order. Please try again or contact support.",
+              user_uuid: "greep_ai",
+              user_name: "GreepPay AI",
+              info_icon: "",
+              actions: [],
+              orderSummary: null,
+              isOrderSummary: false
+            };
+
+            messages.push(errorMessage);
+            scrollToBottom();
+
+            // Reset the flag to allow retry
+            orderCreationInProgress.value = false;
+          }
 
           // ✅ NEW: Clear chat and show order summary for regular users (like business users)
           if (!isBusinessUser.value) {
             console.log("🎯 Regular user confirmed order - clearing chat and showing summary");
-            
+
             // Clear all existing messages
             messages.length = 0;
-            
+
             // Create order summary message for regular users
             const userSummaryMessage = {
               id: `user_summary_${Date.now()}`,
@@ -1775,30 +1929,32 @@ export default defineComponent({
               orderSummary: getOrderSummaryFromConversation(),
               isOrderSummary: true
             };
-            
+
             messages.push(userSummaryMessage);
             console.log("📋 User summary message added after order confirmation:", userSummaryMessage);
           }
 
-          // ✅ NEW: Start countdown timer after order creation
-          setTimeout(() => {
-            startCountdownTimer();
+          // ✅ NEW: Start countdown timer after order creation (only for customer/seller, not business)
+          if (!isBusinessUser.value) {
+            setTimeout(() => {
+              startCountdown('waiting_business', 600); // 10 minutes
 
-            // Add countdown message
-            const countdownMessage = {
-              id: `countdown_${Date.now()}`,
-              type: "text" as const,
-              text_content: `⏰ Order created! Waiting for business to accept... (10:00)`,
-              user_uuid: "greep_ai",
-              user_name: "GreepPay AI",
-              info_icon: "",
-              actions: [],
-              orderSummary: null,
-              isOrderSummary: false
-            };
-            messages.push(countdownMessage);
-            scrollToBottom();
-          }, 1000);
+              // Add countdown message
+              const countdownMessage = {
+                id: `countdown_${Date.now()}`,
+                type: "text" as const,
+                text_content: `⏰ Order created! Waiting for business to accept...`,
+                user_uuid: "greep_ai",
+                user_name: "GreepPay AI",
+                info_icon: "",
+                actions: [],
+                orderSummary: null,
+                isOrderSummary: false
+              };
+              messages.push(countdownMessage);
+              scrollToBottom();
+            }, 1000);
+          }
         }
 
         Logic.Messaging.CreateMessageForm = {
@@ -1925,8 +2081,90 @@ export default defineComponent({
         }
 
         // Get conversation metadata
-        const conversationMetadata = conversation.metadata ? 
+        const conversationMetadata = conversation.metadata ?
           JSON.parse(conversation.metadata) : {};
+
+        // ✅ DEBUG: Log conversation metadata for business order summary
+        console.log("🔍 Business order summary - conversation metadata:", {
+          hasMetadata: !!conversation.metadata,
+          metadataKeys: Object.keys(conversationMetadata),
+          pickupLocation: conversationMetadata.pickup_location,
+          pickupLocationName: conversationMetadata.pickup_location_name,
+          pickupLocationAddress: conversationMetadata.pickup_location_address,
+          conversationId: conversation.id
+        });
+
+        // ✅ NEW: Check if we have order UUID in metadata (for business users joining existing conversations)
+        if (conversationMetadata.order_uuid) {
+          console.log("🔍 Found order UUID in conversation metadata:", conversationMetadata.order_uuid);
+
+          // For business users, we need to fetch the actual order data from the API
+          // This will be handled in the business order summary creation below
+          console.log("🔍 Will fetch order data from API for business user");
+        }
+
+        // ✅ NEW: Check if we have order data in metadata (from P2P order creation)
+        if (conversationMetadata.order_data) {
+          console.log("🔍 Found order data in conversation metadata:", conversationMetadata.order_data);
+
+          const orderData = conversationMetadata.order_data;
+
+          // Extract data from stored order data
+          const amount = orderData.amount || 0;
+          const exchangeAd = conversation.exchangeAd;
+          const sellRate = exchangeAd?.rate || 10;
+          const localCurrency = `₺${(amount * sellRate).toFixed(2)}`;
+
+          // Determine payment type and payout option from order data
+          let paymentType = "Cash";
+          let payoutOption = "Delivery";
+          let deliveryAddress = orderData.delivery_address || "Address not provided";
+          let deliveryFee = "3 USDC";
+
+          if (orderData.payment_type === "cash_pickup") {
+            paymentType = "Cash Pickup";
+            payoutOption = "Pickup";
+            deliveryFee = "0 USDC";
+            // Format pickup location nicely
+            if (orderData.delivery_address && orderData.delivery_address.startsWith("Pickup:")) {
+              deliveryAddress = orderData.delivery_address;
+            } else {
+              deliveryAddress = `Pickup: ${orderData.delivery_address}`;
+            }
+          } else if (orderData.payment_type === "transfer") {
+            paymentType = "Transfer";
+            payoutOption = "Bank Transfer";
+            deliveryFee = "0 USDC";
+          }
+
+          // Calculate fees
+          const tradingFee = (amount * 0.0015).toFixed(2);
+          const deliveryFeeAmount = orderData.payment_type === "transfer" ? 0 : (orderData.payment_type === "cash_pickup" ? 0 : 3);
+          const totalAmount = (amount + parseFloat(tradingFee) + deliveryFeeAmount).toFixed(2);
+
+          console.log("🔍 Order summary from stored order data:", {
+            paymentType,
+            payoutOption,
+            deliveryAddress,
+            deliveryFee,
+            amount,
+            localCurrency
+          });
+
+          return {
+            youSell: `${amount} USDC`,
+            youGet: localCurrency,
+            fee: `${tradingFee} USDC`,
+            deliveryFee: `${deliveryFeeAmount} USDC`,
+            youPay: `${totalAmount} USDC`,
+            paymentType: paymentType,
+            payoutOption: payoutOption,
+            deliveryAddress: deliveryAddress
+          };
+        }
+
+        // ✅ FALLBACK: Use existing logic if no order data found
+        console.log("🔍 Falling back to metadata-based order summary");
 
         // Get exchange ad data for rate
         const exchangeAd = conversation.exchangeAd;
@@ -1934,11 +2172,11 @@ export default defineComponent({
 
         // ✅ IMPROVED: Get delivery address directly from order data instead of parsing messages
         let deliveryAddress = "Address to be confirmed";
-        
+
         // Check if we have order data with delivery address (wallet service P2P format)
         if (conversationMetadata.order_data) {
           const orderData = conversationMetadata.order_data;
-          
+
           // Use wallet service order format (pickup location)
           if (orderData.pickup_location_address_line) {
             const addressParts = [
@@ -1946,7 +2184,7 @@ export default defineComponent({
               orderData.pickup_location_city,
               orderData.pickup_location_country
             ].filter(Boolean);
-            
+
             if (addressParts.length > 0) {
               deliveryAddress = addressParts.join(", ");
               console.log("✅ Found delivery address from order pickup location:", deliveryAddress);
@@ -1963,7 +2201,7 @@ export default defineComponent({
         if (conversation.messages && conversation.messages.length > 0) {
           for (const message of conversation.messages) {
             const content = message.content?.toLowerCase() || "";
-            
+
             // Look for USDC amount
             if (content.includes("usdc") && content.includes("sell")) {
               const amountMatch = content.match(/(\d+(?:\.\d+)?)\s*usdc/i);
@@ -1976,7 +2214,7 @@ export default defineComponent({
                 }
               }
             }
-            
+
             // Look for payment type
             if (content.includes("cash")) {
               paymentType = "Cash";
@@ -1992,9 +2230,14 @@ export default defineComponent({
             localCurrency = `₺${(amount * sellRate).toFixed(2)}`;
           }
         }
-        
-        // ✅ IMPROVED: If no delivery address found in messages, try conversation metadata
-        if (deliveryAddress === "Address to be confirmed" && conversationMetadata.delivery_address) {
+
+                // ✅ NEW: Check for pickup location in conversation metadata FIRST (for cash pickup method)
+        if (conversationMetadata.pickup_location) {
+          deliveryAddress = `Pickup: ${conversationMetadata.pickup_location}`;
+          console.log("✅ Found pickup location in conversation metadata:", deliveryAddress);
+        }
+        // ✅ IMPROVED: If no pickup location, try delivery address from conversation metadata
+        else if (deliveryAddress === "Address to be confirmed" && conversationMetadata.delivery_address) {
           deliveryAddress = conversationMetadata.delivery_address;
           console.log("✅ Found delivery address in conversation metadata:", deliveryAddress);
         }
@@ -2008,20 +2251,126 @@ export default defineComponent({
           }
         }
 
+        // ✅ NEW: Get payment method from query parameter and order data
+        const methodFromRoute = Logic.Common.route?.query?.method?.toString() || "cash";
+        const isTransferMethod = methodFromRoute === "transfer";
+        
+        // ✅ NEW: Check if this is a cash pickup order
+        const isCashPickupOrder = conversationMetadata.pickup_location ? true : false;
+        
+        // ✅ NEW: Check if this is a bank transfer order from order data
+        const isBankTransferOrder = conversationMetadata.order_data?.payment_type === "transfer" || 
+                                   conversationMetadata.order_data?.payout_option === "bank_transfer";
+        
+        // ✅ IMPROVED: Determine final method type
+        const finalIsTransferMethod = isTransferMethod || isBankTransferOrder;
+        
+        // ✅ DEBUG: Log method type detection
+        console.log("🔍 Method type detection:", {
+          methodFromRoute,
+          isTransferMethod,
+          isBankTransferOrder,
+          finalIsTransferMethod,
+          orderData: conversationMetadata.order_data,
+          paymentType: conversationMetadata.order_data?.payment_type,
+          payoutOption: conversationMetadata.order_data?.payout_option
+        });
+
+        // ✅ DEBUG: Log final delivery address determination
+        console.log("🔍 Final delivery address determination:", {
+          originalDeliveryAddress: "Address to be confirmed",
+          hasPickupLocation: !!conversationMetadata.pickup_location,
+          pickupLocation: conversationMetadata.pickup_location,
+          finalDeliveryAddress: deliveryAddress,
+          isCashPickupOrder
+        });
+
         // Calculate fees and total
         let fee = "0.05 USDC";
-        let deliveryFee = "3 USDC";
+        let deliveryFee = finalIsTransferMethod ? "0 USDC" : (isCashPickupOrder ? "0 USDC" : "3 USDC");
         let totalAmount = "N/A";
 
         if (usdcAmount !== "N/A") {
           const amount = parseFloat(usdcAmount.replace(" USDC", ""));
           if (!isNaN(amount)) {
             const feeAmount = 0.05;
-            const deliveryFeeAmount = 3;
+            const deliveryFeeAmount = finalIsTransferMethod ? 0 : (isCashPickupOrder ? 0 : 3); // No delivery fee for transfers or pickup
             const total = amount + feeAmount + deliveryFeeAmount;
             totalAmount = `${total.toFixed(2)} USDC`;
           }
         }
+
+        // ✅ NEW: Get full bank details for transfers
+        let displayInfo = deliveryAddress;
+        if (finalIsTransferMethod) {
+          // Look for saved bank accounts data first
+          if (savedBankAccounts.value && savedBankAccounts.value.length > 0) {
+            // Find the most recently selected bank account
+            const recentMessages = conversation.messages || [];
+            for (let i = recentMessages.length - 1; i >= 0; i--) {
+              const message = recentMessages[i];
+              if (message.content && message.content.includes('Selected:')) {
+                // Extract account info from the message
+                const selectedAccount = savedBankAccounts.value.find(account =>
+                  message.content.includes(account.account_number) ||
+                  message.content.includes(account.bank_name)
+                );
+
+                if (selectedAccount) {
+                  displayInfo = `${selectedAccount.bank_name}\nAccount: ${selectedAccount.account_number}\nName: ${selectedAccount.account_name}`;
+                  break;
+                }
+              }
+            }
+          }
+
+          // Fallback: parse from message content if saved accounts not available
+          if (displayInfo === deliveryAddress) {
+            const recentMessages = conversation.messages || [];
+            for (let i = recentMessages.length - 1; i >= 0; i--) {
+              const message = recentMessages[i];
+              if (message.content && (
+                message.content.includes('Selected:') ||
+                message.content.includes('Added:')
+              ) && (
+                  message.content.includes('Bank') ||
+                  message.content.includes('-')
+                )) {
+                const content = message.content.replace('Selected: ', '').replace('Added: ', '');
+                // Try to parse bank details from content like "Bank Name - Account Number"
+                if (content.includes(' - ')) {
+                  const [bankName, accountNumber] = content.split(' - ');
+                  displayInfo = `${bankName}\nAccount: ${accountNumber}\nName: Account Holder`;
+                } else {
+                  displayInfo = content;
+                }
+                break;
+              }
+            }
+          }
+        }
+
+        // ✅ NEW: Determine correct payment type and payout option
+        let finalPaymentType = paymentType;
+        let finalPayoutOption = "Delivery";
+
+        if (finalIsTransferMethod) {
+          finalPaymentType = 'Transfer';
+          finalPayoutOption = "Bank Transfer";
+        } else if (isCashPickupOrder) {
+          finalPaymentType = 'Cash Pickup';
+          finalPayoutOption = "Pickup";
+        }
+
+        // ✅ DEBUG: Log order summary creation for business
+        console.log("🔍 Business order summary creation:", {
+          isCashPickupOrder,
+          isTransferMethod,
+          finalPaymentType,
+          finalPayoutOption,
+          deliveryFee,
+          deliveryAddress
+        });
 
         return {
           youSell: usdcAmount,
@@ -2029,14 +2378,92 @@ export default defineComponent({
           fee: fee,
           deliveryFee: deliveryFee,
           youPay: totalAmount,
-          paymentType: paymentType,
-          payoutOption: "Delivery",
-          deliveryAddress: deliveryAddress
+          paymentType: finalPaymentType,
+          payoutOption: finalPayoutOption,
+          deliveryAddress: displayInfo || (isTransferMethod ? 'Bank details not provided' : 'Address to be confirmed')
         };
       } catch (error) {
         console.error("Error extracting order summary:", error);
         return getDefaultOrderSummary();
       }
+    }
+
+    // ✅ NEW: Function to fetch order summary from API for business users
+    const getOrderSummaryFromAPI = async (orderUuid: string) => {
+      try {
+        console.log("🔍 Fetching order data from API for business user:", orderUuid);
+
+        // Call GetP2pOrder API
+        const orderResponse = await Logic.Wallet.GetP2pOrder(orderUuid);
+
+        if (orderResponse) {
+          console.log("✅ Successfully fetched order data from API:", orderResponse);
+
+          // Extract data from API response
+          const amount = orderResponse.amount || 0;
+          const exchangeAd = SingleConversation.value?.exchangeAd;
+          const sellRate = exchangeAd?.rate || 10;
+          const localCurrency = `₺${(amount * sellRate).toFixed(2)}`;
+
+          // Determine payment type and payout option from API data
+          let paymentType = "Cash";
+          let payoutOption = "Delivery";
+          let deliveryAddress = "Address not provided";
+          let deliveryFee = "3 USDC";
+
+          if (orderResponse.payment_type === "cash_pickup") {
+            paymentType = "Cash Pickup";
+            payoutOption = "Pickup";
+            deliveryFee = "0 USDC";
+            // Format pickup location from API data
+            const addressParts = [
+              orderResponse.pickup_location_address_line,
+              orderResponse.pickup_location_city,
+              orderResponse.pickup_location_country
+            ].filter(Boolean);
+
+            if (addressParts.length > 0) {
+              deliveryAddress = `Pickup: ${addressParts.join(", ")}`;
+            } else {
+              deliveryAddress = "Pickup: Location details not available";
+            }
+          } else if (orderResponse.payment_type === "transfer") {
+            paymentType = "Transfer";
+            payoutOption = "Bank Transfer";
+            deliveryFee = "0 USDC";
+            deliveryAddress = "Bank transfer details not available";
+          }
+
+          // Calculate fees
+          const tradingFee = (amount * 0.0015).toFixed(2);
+          const deliveryFeeAmount = orderResponse.payment_type === "transfer" ? 0 : (orderResponse.payment_type === "cash_pickup" ? 0 : 3);
+          const totalAmount = (amount + parseFloat(tradingFee) + deliveryFeeAmount).toFixed(2);
+
+          console.log("🔍 Order summary from API for business:", {
+            paymentType,
+            payoutOption,
+            deliveryAddress,
+            deliveryFee,
+            amount,
+            localCurrency
+          });
+
+          return {
+            youSell: `${amount} USDC`,
+            youGet: localCurrency,
+            fee: `${tradingFee} USDC`,
+            deliveryFee: `${deliveryFeeAmount} USDC`,
+            youPay: `${totalAmount} USDC`,
+            paymentType: paymentType,
+            payoutOption: payoutOption,
+            deliveryAddress: deliveryAddress
+          };
+        }
+      } catch (apiError) {
+        console.error("❌ Failed to fetch order from API for business user:", apiError);
+      }
+
+      return null;
     }
 
     // ✅ NEW: Default order summary fallback
@@ -2054,67 +2481,19 @@ export default defineComponent({
     }
 
 
-    const setupWebSocketListeners = () => {
-      if (!SingleConversation.value?.uuid || echoChannel.value) return;
+    const setupChatWebSocket = () => {
+      if (!SingleConversation.value?.uuid) return;
 
-      try {
-        const conversationUuid = SingleConversation.value.uuid;
-        console.log("🔧 Setting up unified WebSocket for:", conversationUuid);
+      const conversationUuid = SingleConversation.value.uuid;
 
-        // Check if WebSocket is properly initialized
-        if (!Logic.Common.laravelEcho) {
-          console.error("❌ WebSocket not initialized");
-          Logic.Common.initiateWebSocket();
-        }
-
-        // ✅ SINGLE UNIFIED CHANNEL - Fix 1: Unified Channel Management
-        echoChannel.value = Logic.Common.laravelEcho?.join(`conversation.${conversationUuid}`)
-          .here((users: any) => {
-            console.log("🔧 Users currently in conversation:", users);
-          })
-          .joining((user: any) => {
-            console.log("🔧 User joining conversation:", user);
-            handleUserJoining(user);
-          })
-          .leaving((user: any) => {
-            console.log("🔧 User leaving conversation:", user);
-          })
-          // ✅ LISTEN FOR ALL MESSAGE TYPES ON SAME CHANNEL - Fix 1: Unified Channel Management
-          .listen('.message.created', (data: any) => {
-            console.log("🔧 WebSocket message.created event received:", data);
-            handleNewMessage(data);
-          })
-          .listen('.participant.created', handleParticipantAdded)
-          .listen('.business.joined', handleBusinessJoined);
-
-        // ✅ RESTORED: Message channel listener (this is the working one)
-        const messageChannel = Logic.Common.laravelEcho?.join(`message.${conversationUuid}`)
-          .here((users: any) => {
-            console.log("🔧 Users currently in message channel:", users);
-          })
-          .joining((user: any) => {
-            console.log("🔧 User joining message channel:", user);
-            handleUserJoining(user);
-          })
-          .leaving((user: any) => {
-            console.log("🔧 User leaving message channel:", user);
-          })
-          .listen('.message.created', (data: any) => {
-            console.log("🔧 WebSocket message channel message.created event received:", data);
-            handleNewMessage(data);
-          })
-          .listen('.participant.created', handleParticipantAdded)
-          .listen('.business.joined', handleBusinessJoined);
-
-        console.log("✅ Unified WebSocket listeners set up successfully");
-        console.log("🔧 Listening on channels:", {
-          conversation: `conversation.${conversationUuid}`,
-          message: `message.${conversationUuid}`
-        });
-
-      } catch (error) {
-        console.error("❌ Error setting up WebSocket listeners:", error);
-      }
+      setupWebSocketListeners(conversationUuid, {
+        onUserJoining: handleUserJoining,
+        onUserLeaving: (user) => {
+          console.log("🔧 User leaving conversation:", user);
+        },
+        onMessageCreated: handleNewMessage,
+        onBusinessJoined: handleBusinessJoined,
+      });
     };
 
     // ✅ NEW: Handle user joining the conversation
@@ -2152,7 +2531,7 @@ export default defineComponent({
         console.log("🎉 BUSINESS JOINED EVENT:", eventData);
 
         // Stop countdown timer
-        stopCountdownTimer();
+        stopCountdown();
 
         // ✅ FIXED: Get the actual business name from the user data
         const businessName = eventData.first_name && eventData.last_name
@@ -2216,85 +2595,6 @@ export default defineComponent({
       }
     };
 
-    // ✅ NEW: Handle participant added event - Fix 2: Improved Participant Addition Detection
-    const handleParticipantAdded = async (eventData: any) => {
-      try {
-        console.log("🎉 PARTICIPANT ADDED:", eventData);
-
-        // Stop countdown timer
-        stopCountdownTimer();
-
-        // ✅ FIXED: Check if this is a business participant - Updated detection logic
-        const isBusiness = eventData.participant_type === 'business' ||
-          eventData.user_type === 'business' ||
-          eventData.is_business === true ||
-          (eventData.user_id && eventData.user_id !== parseInt(AuthUser.value?.id || "0") && eventData.user_id !== 0);
-
-        if (isBusiness) {
-          console.log("🎉 Business participant added:", eventData);
-
-          // ✅ FIXED: Get the actual business name from the event data
-          const businessName = eventData.first_name && eventData.last_name
-            ? `${eventData.first_name} ${eventData.last_name}`
-            : eventData.name || eventData.user_name || "Seller";
-
-          // Add business joined message
-          const businessJoinedMessage = {
-            id: `business_joined_${Date.now()}`,
-            type: "text" as const,
-            text_content: `✅ ${businessName} has joined the conversation!`,
-            user_uuid: "greep_ai",
-            user_name: "GreepPay AI",
-            info_icon: "",
-            actions: [],
-            orderSummary: null,
-            isOrderSummary: false
-          };
-
-          messages.push(businessJoinedMessage);
-          await scrollToBottom();
-
-          // ✅ NEW: If current user is business, show only summary instead of all messages
-          if (isBusinessUser.value) {
-            console.log("🎯 Business user joined via participant addition - showing summary instead of all messages");
-
-            // Clear any existing messages (except the business joined message we just added)
-            const businessJoinedMessageId = businessJoinedMessage.id;
-            messages.length = 0;
-
-            // Re-add the business joined message
-            messages.push(businessJoinedMessage);
-
-            // Create order summary message for business user
-            const businessSummaryMessage = {
-              id: `business_summary_${Date.now()}`,
-              type: "text" as const,
-              text_content: "Order confirmed - continue from here",
-              user_uuid: "greep_ai",
-              user_name: "GreepPay AI",
-              info_icon: "",
-              actions: [],
-              orderSummary: getOrderSummaryFromConversation(),
-              isOrderSummary: true
-            };
-
-            messages.push(businessSummaryMessage);
-            console.log("📋 Business summary message added via participant addition:", businessSummaryMessage);
-          } else {
-            // For regular users, refresh conversation data to show all messages
-            await refreshConversationData();
-          }
-
-          console.log("✅ Business participant added message displayed");
-        } else {
-          console.log("👤 Regular participant added:", eventData);
-        }
-
-      } catch (error) {
-        console.error("❌ Error handling participant addition:", error);
-      }
-    };
-
     // ✅ NEW: Handle new message - Fix 4: Message Filtering Fix with Deduplication
     const handleNewMessage = async (eventData: any) => {
       try {
@@ -2348,12 +2648,13 @@ export default defineComponent({
           return;
         }
 
-        // ✅ ENHANCED: Check for duplicate content within a short time window (5 seconds)
+        // ✅ ENHANCED: Check for duplicate content within a short time window (10 seconds)
         const messageContent = eventData.text_content || eventData.content;
         const messageUserId = eventData.user_id;
         const now = Date.now();
-        const timeWindow = 5000; // 5 seconds
+        const timeWindow = 10000; // 10 seconds
 
+        // ✅ IMPROVED: Better duplication detection for AI messages
         const recentDuplicate = messages.find(m => {
           const mContent = m.text_content;
           const mUserId = m.user_uuid === "greep_ai" ? "greep_ai" :
@@ -2364,11 +2665,30 @@ export default defineComponent({
           const userMatches = mUserId === messageUserId ||
             (mUserId === "greep_ai" && messageUserId === "greep_ai");
 
+          // ✅ SPECIFIC: Check for "Are you sure..." message duplication
+          const isConfirmationMessage = messageContent?.toLowerCase().includes('are you sure') &&
+            messageContent?.toLowerCase().includes('collected') &&
+            messageContent?.toLowerCase().includes('cash');
+
+          // For confirmation messages, check if any similar message exists regardless of timestamp
+          if (isConfirmationMessage) {
+            const existingConfirmation = messages.some(existingMsg =>
+              existingMsg.text_content?.toLowerCase().includes('are you sure') &&
+              existingMsg.text_content?.toLowerCase().includes('collected') &&
+              existingMsg.text_content?.toLowerCase().includes('cash')
+            );
+            if (existingConfirmation) {
+              console.log("⏭️ Confirmation message already exists, preventing duplication");
+              return true;
+            }
+          }
+
           // Check if message was added recently (within time window)
           const isRecent = typeof m.id === 'string' && m.id.startsWith('temp_') ?
-            parseInt(m.id.split('_')[1]) > (now - timeWindow) : false;
+            parseInt(m.id.split('_')[1]) > (now - timeWindow) :
+            (typeof m.id === 'number' ? (now - m.id) < timeWindow : false);
 
-          return contentMatches && userMatches && isRecent;
+          return contentMatches && userMatches && (isRecent || isConfirmationMessage);
         });
 
         if (recentDuplicate) {
@@ -2505,21 +2825,6 @@ export default defineComponent({
           // Update local state
           Logic.Messaging.SingleConversation = updatedConversation;
 
-          // ✅ NEW: If current user is business, don't load all messages
-          // if (isBusinessUser.value) {
-          //   console.log("🎯 Business user - skipping message loading in refreshConversationData");
-          // } else {
-          //   // Process any new messages for regular users
-          //   if (updatedConversation.messages) {
-          //     await Promise.all(updatedConversation.messages.map(async message => {
-          //       const exists = messages.find(m => m.id === message.id.toString());
-          //       if (!exists) {
-          //         await addMessageToDisplay(message);
-          //       }
-          //     }));
-          //   }
-          // }
-
           console.log("✅ Conversation data refreshed");
           await scrollToBottom();
         }
@@ -2530,16 +2835,15 @@ export default defineComponent({
     };
 
     const cleanup = () => {
-      if (echoChannel.value) {
-        try {
-          echoChannel.value = null;
-        } catch (error) {
-          console.error("Error leaving WebSocket channel:", error);
-        }
-      }
+      try {
+        // Clean up WebSocket connections
+        cleanupWebSocket();
 
-      // ✅ NEW: Clean up countdown timer
-      stopCountdownTimer();
+        // ✅ NEW: Clean up countdown timer
+        stopCountdown();
+      } catch (error) {
+        console.error("Error during cleanup:", error);
+      }
     };
 
     const loadConversation = async () => {
@@ -2600,12 +2904,16 @@ export default defineComponent({
         await loadConversation();
 
         await initializeMessages();
-        setupWebSocketListeners();
+        setupChatWebSocket();
 
         if (SingleConversation.value?.entity_type === 'p2p_withdrawal') {
           const conversationMetadata = SingleConversation.value.metadata
             ? JSON.parse(SingleConversation.value.metadata)
             : {};
+
+          // ✅ NEW: Get method from query parameter like amount
+          const methodFromRoute = Logic.Common.route?.query?.method?.toString() || "";
+          console.log("🔧 Method from route:", methodFromRoute);
 
           // ✅ NEW: Auto-send the pre-entered amount after AI asks the question
           const hasMessages = SingleConversation.value?.messages && SingleConversation.value.messages.length > 0;
@@ -2667,6 +2975,75 @@ export default defineComponent({
             setTimeout(checkForAmountQuestion, 1000);
           }
 
+          // ✅ NEW: Auto-send the payment method when AI asks for withdrawal method
+          // ✅ FIXED: Only auto-send for transfer, let cash users choose pickup vs delivery
+          if (methodFromRoute === "transfer") {
+            console.log("🔧 WAITING FOR AI TO ASK WITHDRAWAL METHOD QUESTION:", methodFromRoute);
+
+            // Wait for AI to ask "Great! Choose how do you want to collect your cash"
+            const checkForWithdrawalMethodQuestion = () => {
+              const conversationMessages = SingleConversation.value?.messages || [];
+              const hasWithdrawalMethodQuestion = conversationMessages.some(msg =>
+                msg.content?.includes("Choose how do you want to collect") ||
+                msg.content?.includes("choose how do you want to collect")
+              );
+
+              if (hasWithdrawalMethodQuestion) {
+                console.log("🔧 AI ASKED WITHDRAWAL METHOD QUESTION, AUTO-SENDING BANK TRANSFER");
+
+                // Check if user has already sent a withdrawal method selection
+                const userHasSentMethod = conversationMessages.some(msg => {
+                  if (msg.sender?.uuid === 'greep_ai' || msg.sender?.uuid !== AuthUser.value?.uuid) {
+                    return false;
+                  }
+
+                  // Check if message has structured_response with selected_option
+                  try {
+                    const metadata = msg.metadata ? JSON.parse(msg.metadata) : {};
+                    const structuredResponse = metadata.structured_response || {};
+
+                    // Check if this is a withdrawal method selection
+                    const isMethodSelection = structuredResponse.selected_option === 'cash_delivery' ||
+                      structuredResponse.selected_option === 'bank_transfer' ||
+                      structuredResponse.selected_option === 'cash_pickup';
+
+                    if (isMethodSelection) {
+                      console.log("🔧 Found existing method selection:", {
+                        content: msg.content,
+                        selected_option: structuredResponse.selected_option,
+                        metadata: metadata
+                      });
+                      return true;
+                    }
+                  } catch (error) {
+                    // Ignore parse errors
+                  }
+
+                  return false;
+                });
+
+                if (!userHasSentMethod) {
+                  console.log("🔧 AUTO-SENDING BANK TRANSFER METHOD");
+
+                  setTimeout(() => {
+                    // ✅ Auto-send bank transfer only
+                    sendMessageDirectly("bank_transfer");
+                  }, 500);
+                } else {
+                  console.log("🔧 USER ALREADY SENT METHOD, NOT AUTO-SENDING");
+                }
+              } else {
+                // Check again in 500ms
+                setTimeout(checkForWithdrawalMethodQuestion, 500);
+              }
+            };
+
+            // Start checking after amount is processed
+            setTimeout(checkForWithdrawalMethodQuestion, 2000);
+          } else if (methodFromRoute === "cash") {
+            console.log("🔧 CASH METHOD DETECTED - User will manually choose pickup vs delivery");
+          }
+
           if (conversationMetadata?.currency) {
             // Logic.Wallet.GetGlobalExchangeRate("USD", conversationMetadata.currency);
           }
@@ -2702,67 +3079,7 @@ export default defineComponent({
           console.log("🎉 Business participant detected, showing order confirmation messages");
 
           // ✅ NEW: Stop countdown timer when business joins
-          stopCountdownTimer();
-
-          // Add a system message to show business joined
-          const businessJoinedMessage = {
-            id: `business_joined_${Date.now()}`,
-            type: "text" as const,
-            text_content: "✅ Seller has joined the conversation!",
-            user_uuid: "greep_ai",
-            user_name: "GreepPay AI",
-            info_icon: "",
-            actions: [],
-            orderSummary: null,
-            isOrderSummary: false
-          };
-
-          messages.push(businessJoinedMessage);
-          scrollToBottom();
-
-          // Add the order confirmation messages from the image
-          setTimeout(() => {
-            const orderConfirmedMessage = {
-              id: `order_confirmed_${Date.now()}`,
-              type: "text" as const,
-              text_content: "Order confirmed! Pressing the \"Payment confirmed\" button will release USDC to the buyer, do so after you get your cash.",
-              user_uuid: "greep_ai",
-              user_name: "GreepPay AI",
-              info_icon: "",
-              actions: [
-                {
-                  label: "Payment confirmed",
-                  message: "Payment confirmed",
-                  type: "success" as const,
-                  value: "confirm_payment",
-                  handler: () => sendMessage("Payment confirmed", "confirm_payment")
-                }
-              ],
-              orderSummary: null,
-              isOrderSummary: false
-            };
-
-            messages.push(orderConfirmedMessage);
-            scrollToBottom();
-
-            // Add the second message about chatting with Abass/rider
-            setTimeout(() => {
-              const chatInstructionsMessage = {
-                id: `chat_instructions_${Date.now()}`,
-                type: "text" as const,
-                text_content: "You can chat with Abass or the delivery rider while waiting for payment. Use @abass for Abass and @rider for the delivery rider.",
-                user_uuid: "greep_ai",
-                user_name: "GreepPay AI",
-                info_icon: "",
-                actions: [],
-                orderSummary: null,
-                isOrderSummary: false
-              };
-
-              messages.push(chatInstructionsMessage);
-              scrollToBottom();
-            }, 1000);
-          }, 500);
+          stopCountdown();
         }
       }
     }, { deep: true });
@@ -2785,25 +3102,6 @@ export default defineComponent({
       Logic.Wallet.watchProperty("CurrentGlobalExchangeRate", CurrentGlobalExchangeRate);
     });
 
-    // ✅ NEW: Manual test function for participant joining (for debugging) - Updated for unified approach
-    const testParticipantJoining = () => {
-      console.log("🧪 Testing participant joining manually...");
-
-      // Simulate the participant.created event
-      const testEventData = {
-        conversation_id: SingleConversation.value?.uuid,
-        user_id: 999, // Test business user ID
-        added_by: 1,
-        conversation_entity: "p2p_withdrawal",
-        conversation_stage: "order_summary",
-        participant_type: "business",
-        is_business: true
-      };
-
-      // Trigger the participant.created event handler manually
-      handleParticipantAdded(testEventData);
-    };
-
     // ✅ NEW: Check if message is a structured response
     const isStructuredResponse = (content: string, stage: string): boolean => {
       const lowerContent = content.toLowerCase();
@@ -2815,14 +3113,28 @@ export default defineComponent({
       }
 
       // Check if content is a button action
-      const buttonActions = ["accept", "cancel", "confirm", "success", "cash_delivery"];
-      if (buttonActions.some(action => lowerContent.includes(action))) {
+      const buttonActions = ["accept", "cancel", "confirm", "success", "cash_delivery", "cash_pickup", "branch_selected", "branch", "bank_transfer", "yes", "no", "payment confirmed"];
+      if (buttonActions.some(action => lowerContent === action)) {
         return true;
       }
 
       // Check if content is an address
       if (stage === "cash_delivery" && isAddressContent(content)) {
         return true;
+      }
+
+      // ✅ NEW: Check if content is a bank account UUID/identifier
+      if (stage === "bank_transfer" || stage.includes("bank_transfer")) {
+        // Check if it's a UUID pattern (bank account selection)
+        const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        if (uuidPattern.test(content.trim())) {
+          return true;
+        }
+
+        // Check if it's a bank-account pattern (BankName-AccountNumber)
+        if (content.includes('-') && content.length > 5) {
+          return true;
+        }
       }
 
       return false;
@@ -2836,32 +3148,8 @@ export default defineComponent({
         // ✅ NEW: Generate a temporary client-side ID for deduplication
         const tempMessageId = `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-        // Create proof message with temporary ID
-        const proofMessage = {
-          id: tempMessageId,
-          type: "text" as const,
-          text_content: `📸 Proof uploaded: ${content}`,
-          user_uuid: AuthUser.value?.uuid || "",
-          user_name: `${AuthUser.value?.first_name} ${AuthUser.value?.last_name}`.trim(),
-          info_icon: "📸",
-          actions: [
-            {
-              label: "View proof",
-              message: "View proof",
-              type: "info" as const,
-              value: "view_proof",
-              handler: () => {
-                console.log("View proof clicked");
-                // Handle proof viewing
-              }
-            }
-          ],
-          orderSummary: null,
-          isOrderSummary: false
-        };
-
-        messages.push(proofMessage);
-        await scrollToBottom();
+        // Avoid pushing a local copy to prevent double rendering on other clients
+        // We rely on the server broadcast (CreateMessage) to add it to the chat
 
         // Send proof to backend
         Logic.Messaging.CreateMessageForm = {
@@ -2999,27 +3287,422 @@ export default defineComponent({
       }
     };
 
+    // ✅ NEW: Centralized function to handle bank transfer modal visibility
+    const updateBankTransferModalVisibility = (shouldShow: boolean) => {
+      // Only show bank transfer modal for conversation owner/buyer, not business users
+      if (shouldShow && isBusinessUser.value) {
+        console.log("🚫 Skipping bank transfer modal for business user");
+        showBankTransferModal.value = false;
+      } else {
+        console.log(`🔧 Setting bank transfer modal visibility: ${shouldShow} (isBusinessUser: ${isBusinessUser.value})`);
+        showBankTransferModal.value = shouldShow;
+
+        // Load saved bank accounts when showing modal
+        if (shouldShow) {
+          loadSavedBankAccounts();
+        }
+      }
+    };
+
+    // ✅ NEW: Centralized function to handle cash pickup modal visibility
+    const updateCashPickupModalVisibility = (shouldShow: boolean) => {
+      // Only show cash pickup modal for conversation owner/buyer, not business users
+      if (shouldShow && isBusinessUser.value) {
+        console.log("🚫 Skipping cash pickup modal for business user");
+        showCashPickupModal.value = false;
+      } else {
+        console.log(`🔧 Setting cash pickup modal visibility: ${shouldShow} (isBusinessUser: ${isBusinessUser.value})`);
+        showCashPickupModal.value = shouldShow;
+      }
+    };
+
+    // ✅ NEW: Load saved bank accounts from P2P Payment Methods API
+    const loadSavedBankAccounts = async () => {
+      try {
+        console.log("🔧 Loading saved bank accounts...");
+        const response = await Logic.Wallet.GetMyP2pPaymentMethods(20, 1);
+        savedBankAccounts.value = response?.data || [];
+        console.log("✅ Loaded saved bank accounts:", savedBankAccounts.value.length);
+      } catch (error) {
+        console.error("❌ Failed to load saved bank accounts:", error);
+        savedBankAccounts.value = [];
+      }
+    };
+
+    // ✅ NEW: Get business store locations from exchange ad
+    const businessStoreLocations = computed(() => {
+      const storeLocations = SingleConversation.value?.exchangeAd?.business?.storeLocations || [];
+      // Filter out locations with missing required fields and map to our interface
+      return storeLocations
+        .filter(location => location.name && location.address && location.city && location.country)
+        .map(location => ({
+          name: location.name || '',
+          address: location.address || '',
+          city: location.city || '',
+          country: location.country || '',
+          __typename: location.__typename || 'StoreLocation'
+        }));
+    });
+
+    // ✅ NEW: Handle pickup location selection
+    const handlePickupLocationSelected = async (location: any) => {
+      try {
+        showCashPickupModal.value = false;
+
+        // Create the full address string for display
+        const fullAddress = `${location.name} - ${location.address}, ${location.city}, ${location.country}`;
+
+        // Store pickup location in conversation metadata for order summary
+        if (SingleConversation.value) {
+          const currentMetadata = SingleConversation.value.metadata ? JSON.parse(SingleConversation.value.metadata) : {};
+          const updatedMetadata = {
+            ...currentMetadata,
+            pickup_location: fullAddress,
+            pickup_location_name: location.name,
+            pickup_location_address: location.address,
+            pickup_location_city: location.city,
+            pickup_location_country: location.country
+          };
+
+          // Update conversation metadata
+          SingleConversation.value.metadata = JSON.stringify(updatedMetadata);
+
+          // ✅ DEBUG: Log metadata update
+          console.log("🔍 Updated conversation metadata with pickup location:", {
+            fullAddress,
+            location,
+            updatedMetadata,
+            conversationId: SingleConversation.value.id
+          });
+        }
+
+        // Send a message that will be converted to a structured response by buildStructuredResponse
+        // The backend expects a selected_option to progress to the next step
+        const success = await sendMessage("branch_selected");
+
+        if (success) {
+          console.log("✅ Pickup location selected and sent successfully:", fullAddress);
+        } else {
+          console.error("❌ Failed to send pickup location selection");
+        }
+      } catch (error) {
+        console.error("❌ Error handling pickup location selection:", error);
+      }
+    };
+
+    // ✅ NEW: Handle pickup location modal cancel
+    const handlePickupLocationCancel = () => {
+      showCashPickupModal.value = false;
+    };
+
+    // ✅ NEW: Handle bank details submission from modal
+    const handleBankDetailsSubmitted = async (bankDetails: any, savedAccount?: any) => {
+      console.log("🔧 Bank details submitted:", bankDetails, savedAccount);
+
+      try {
+        showBankTransferModal.value = false;
+
+        // Ensure we're not in processing state
+        if (isProcessing.value) {
+          console.log("🔧 Resetting processing state before sending bank details");
+          isProcessing.value = false;
+        }
+
+        // Create structured response for bank transfer
+        const bankAccountSelection = savedAccount ? {
+          selected_bank_account: savedAccount.uuid,
+          bank_account: savedAccount.account_number,
+          bank_name: savedAccount.bank_name,
+          account_name: savedAccount.account_name,
+          currency: savedAccount.currency || 'TRY' // Default to TRY if no currency
+        } : {
+          bank_account: bankDetails.accountNumber,
+          bank_name: bankDetails.bankName,
+          account_name: bankDetails.accountName,
+          currency: bankDetails.currency || 'TRY' // Default to TRY if no currency
+        };
+
+        // Send bank account selection to chat with proper content
+        const displayText = savedAccount
+          ? `Selected: ${savedAccount.bank_name} - ${savedAccount.account_number}`
+          : `Added: ${bankDetails.bankName} - ${bankDetails.accountNumber}`;
+
+        // Send simple string for workflow progression, store complex data in metadata
+        const simpleValue = savedAccount ? savedAccount.uuid : `${bankDetails.bankName}-${bankDetails.accountNumber}`;
+
+        console.log("🔧 About to send bank details message:", {
+          displayText,
+          simpleValue,
+          bankAccountSelection,
+          hasConversation: !!SingleConversation.value,
+          hasAuthUser: !!AuthUser.value,
+          conversationId: SingleConversation.value?.id,
+          processing: isProcessing.value
+        });
+
+        // Send bank account UUID directly (like address flow)
+        const success = await sendMessage(simpleValue);
+
+        if (success) {
+          console.log("✅ Bank details sent successfully");
+          updateBankTransferModalVisibility(false);
+        } else {
+          console.error("❌ Failed to send bank details");
+          Logic.Common.showAlert({
+            show: true,
+            message: "Failed to send bank details. Please try again.",
+            type: "error",
+          });
+        }
+      } catch (error) {
+        console.error("❌ Error sending bank details:", error);
+        Logic.Common.showAlert({
+          show: true,
+          message: "Error sending bank details. Please try again.",
+          type: "error",
+        });
+      }
+    };
+
+    // ✅ NEW: Handle saved account selection from modal
+    const handleSavedAccountSelected = async (account: any) => {
+      console.log("🔧 Saved bank account selected:", account);
+
+      try {
+        showBankTransferModal.value = false;
+
+        // Ensure we're not in processing state
+        if (isProcessing.value) {
+          console.log("🔧 Resetting processing state before sending saved account");
+          isProcessing.value = false;
+        }
+
+        const bankAccountSelection = {
+          selected_bank_account: account.uuid,
+          bank_account: account.account_number,
+          bank_name: account.bank_name,
+          account_name: account.account_name,
+          currency: account.currency || 'TRY' // Default to TRY if no currency
+        };
+
+        // Send bank account details - use simple string for workflow progression
+        const displayText = `Selected: ${account.bank_name} - ${account.account_number} - ${account.account_name}`;
+        const simpleValue = displayText;
+
+        console.log("🔧 About to send saved account message:", {
+          displayText,
+          simpleValue,
+          bankAccountSelection,
+          hasConversation: !!SingleConversation.value,
+          hasAuthUser: !!AuthUser.value,
+          conversationId: SingleConversation.value?.id,
+          processing: isProcessing.value
+        });
+
+        // Send bank account UUID directly (like address flow)
+        const success = await sendMessage(simpleValue);
+
+        if (success) {
+          console.log("✅ Bank account selection sent successfully");
+          updateBankTransferModalVisibility(false);
+        } else {
+          console.error("❌ Failed to send bank account selection");
+          Logic.Common.showAlert({
+            show: true,
+            message: "Failed to send bank account selection. Please try again.",
+            type: "error",
+          });
+        }
+      } catch (error) {
+        console.error("❌ Error sending bank account selection:", error);
+        Logic.Common.showAlert({
+          show: true,
+          message: "Error sending bank account selection. Please try again.",
+          type: "error",
+        });
+      }
+    };
+
+    // ✅ NEW: Handle bank transfer modal cancel
+    const handleBankTransferCancel = () => {
+      console.log("Bank transfer modal cancelled");
+      showBankTransferModal.value = false;
+    };
+
+    // Proof of Payment Upload
+    const proofUploaded = ref(false);
+    const showProofBanner = ref(true);
+    const proofFileUrl = ref<string>('');
+    const paymentConfirmed = ref(false);
+    const showPaymentConfirmation = ref(false);
+
+    // Initialize countdown composable with visibility options
+    countdown = useCountdown({
+      isBusinessUser,
+      orderConfirmed: computed(() => orderConfirmed.value),
+      isConversationCompleted,
+      paymentConfirmed: computed(() => paymentConfirmed.value),
+      stage: computed(() => currentConversationState.value.stage),
+    });
+
+    // Extract countdown properties
+    const {
+      countdownSeconds,
+      countdownType,
+      countdownText,
+      isCountdownActive,
+      shouldShowCountdown,
+      startCountdown,
+      stopCountdown,
+    } = countdown;
+
+    // Initialize message filtering composable
+    const messageFiltering = useMessageFiltering({
+      isBusinessUser,
+      AuthUser,
+      SingleConversation,
+      orderConfirmed,
+      showAddressInput,
+      proofUploaded,
+      showPaymentConfirmation,
+      startCountdown,
+      scrollToBottom: async () => {
+        await nextTick();
+        const bottomAnchor = document.getElementById('bottom-anchor');
+        if (bottomAnchor) {
+          bottomAnchor.scrollIntoView({
+            behavior: 'smooth',
+            block: 'end',
+          });
+        }
+      },
+      messages,
+    });
+
+    // Proof Upload Event Handlers
+    const handleProofUploadSuccess = async (uploadData: { fileUrl: string; fileName: string; fileType: string }) => {
+      try {
+        proofFileUrl.value = uploadData.fileUrl;
+        proofUploaded.value = true;
+        showProofBanner.value = false;
+
+        // Close the proof modal
+        showProofModal.value = false;
+
+        // Send proof message to all participants
+        const success = await sendMessage(`📸 Proof of payment uploaded: ${uploadData.fileUrl}`);
+
+        if (success) {
+          // Show payment confirmation section
+          showPaymentConfirmation.value = true;
+        } else {
+          // If sending failed, reset the state
+          proofUploaded.value = false;
+          proofFileUrl.value = '';
+          Logic.Common.showAlert({
+            show: true,
+            message: 'Failed to send proof message. Please try again.',
+            type: 'error'
+          });
+        }
+      } catch (error) {
+        console.error('Error handling proof upload success:', error);
+        Logic.Common.showAlert({
+          show: true,
+          message: 'Error processing uploaded proof. Please try again.',
+          type: 'error'
+        });
+      }
+    };
+
+    const handleProofUploadError = (error: any) => {
+      console.error('Proof upload error:', error);
+      Logic.Common.showAlert({
+        show: true,
+        message: 'Failed to upload proof of payment. Please try again.',
+        type: 'error'
+      });
+    };
+
+    // Payment confirmation method
+    const confirmPayment = async () => {
+      try {
+        // Optimistic UI
+        paymentConfirmed.value = true;
+        showPaymentConfirmation.value = false;
+
+        // Send structured confirm to backend to move to next stage
+        console.log("🔧 Sending 'Payment confirmed' message to backend...");
+        const sent = await sendMessage("Payment confirmed", "confirm_payment");
+        console.log("🔧 'Payment confirmed' message sent successfully:", sent);
+
+        if (!sent) {
+          // Rollback if backend send fails
+          paymentConfirmed.value = false;
+          showPaymentConfirmation.value = true;
+          Logic.Common.showAlert({
+            show: true,
+            message: 'Failed to confirm payment. Please try again.',
+            type: 'error'
+          });
+          return;
+        }
+
+        // Do NOT start any countdown here; backend will send the next prompt with buttons
+      } catch (error) {
+        console.error('Failed to confirm payment:', error);
+        paymentConfirmed.value = false;
+        showPaymentConfirmation.value = true;
+        Logic.Common.showAlert({
+          show: true,
+          message: 'Failed to confirm payment. Please try again.',
+          type: 'error'
+        });
+      }
+    };
+
+    // Reset payment confirmation state
+    const resetPaymentConfirmation = () => {
+      paymentConfirmed.value = false;
+      showPaymentConfirmation.value = false;
+      proofUploaded.value = false;
+      proofFileUrl.value = '';
+      stopCountdown();
+    };
+
+    // Computed property for order summary confirmation
+    const isOrderSummaryConfirmation = computed(() => {
+      return currentConversationState.value.stage === "order_summary";
+    });
+
     return {
       Logic,
       SingleConversation,
       AuthUser,
       CurrentGlobalExchangeRate,
       isProcessing,
-      echoChannel,
       showAddressInput,
+      // WebSocket composable exports
+      echoChannel,
+      wsConnected,
+      getUserDisplayName,
       showAddressModal,
       showProofModal,
       orderConfirmed,
       orderCreationInProgress,
-      countdownTimer,
-      countdownSeconds,
       messages,
       updateHeight,
       mobileFullHeight,
-      startCountdownTimer,
-      stopCountdownTimer,
-      formatCountdown,
+      handleCountdownExpired,
+      handlePaymentConfirmationExpired,
+      // Countdown composable exports
+      countdownSeconds,
+      countdownType,
+      countdownText,
       isCountdownActive,
+      shouldShowCountdown,
+      startCountdown,
+      stopCountdown,
       currentConversationState,
       displayMessages,
       lastAIMessage,
@@ -3028,7 +3711,6 @@ export default defineComponent({
       isBusinessUser,
       isAddressContent,
       buildStructuredResponse,
-      simulateBusinessJoining,
       sendBusinessMessage,
       initializeMessages,
       triggerBackendConversationStart,
@@ -3043,18 +3725,41 @@ export default defineComponent({
       getActionButtonClass,
       getDeliveryAddressFromHistory,
       getOrderSummaryFromConversation,
+      getOrderSummaryFromAPI,
       getDefaultOrderSummary,
-      setupWebSocketListeners,
+      setupChatWebSocket,
       handleUserJoining,
       handleBusinessJoined,
-      handleParticipantAdded,
       handleNewMessage,
       refreshConversationData,
-      testParticipantJoining,
       handleProofUploadModal,
       handleProofCancel,
-      updateAddressInputVisibility
+      handleProofUploadSuccess,
+      handleProofUploadError,
+      updateAddressInputVisibility,
+      updateBankTransferModalVisibility,
+      updateCashPickupModalVisibility,
+      showBankTransferModal,
+      showCashPickupModal,
+      savedBankAccounts,
+      businessStoreLocations,
+      loadSavedBankAccounts,
+      handleBankDetailsSubmitted,
+      handleSavedAccountSelected,
+      handleBankTransferCancel,
+      handlePickupLocationSelected,
+      handlePickupLocationCancel,
+      proofUploaded,
+      proofFileUrl,
+      isOrderSummaryConfirmation,
+      confirmPayment,
+      showPaymentConfirmation,
+      paymentConfirmed,
+      resetPaymentConfirmation,
+      showProofBanner
     };
   },
 });
 </script>
+
+<style scoped></style>
