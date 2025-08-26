@@ -134,7 +134,7 @@
 
       <!-- Bottom button -->
       <div
-        v-if="order"
+        v-if="order && order.status?.toLowerCase() !== 'completed'"
         class="w-full fixed bg-white dark:bg-black bottom-0 left-0 pt-4 px-4 flex flex-col"
         :style="`
           ${getBottomPadding}

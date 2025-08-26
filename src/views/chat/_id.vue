@@ -104,8 +104,6 @@
       <!-- Proof Upload Modal -->
       <proof-upload-modal :show="showProofModal" @cancel="handleProofCancel" @upload-success="handleProofUploadSuccess"
         @upload-error="handleProofUploadError" />
-
-      <!-- Removed duplicate success banner -->
     </div>
   </app-wrapper>
 </template>
@@ -160,6 +158,33 @@ export default defineComponent({
     ],
   },
   setup() {
+    // Ref to persist orderId across reloads and as fallback
+    const persistedOrderId = ref<string | null>(null);
+
+    // Helper to save orderId to localStorage
+    const saveOrderIdToStorage = (orderId: string) => {
+      persistedOrderId.value = orderId;
+      try {
+        localStorage.setItem('greep_order_uuid', orderId);
+      } catch (e) {
+        console.warn('Failed to save orderId to localStorage', e);
+      }
+    };
+
+    // Helper to load orderId from localStorage
+    const loadOrderIdFromStorage = () => {
+      try {
+        const stored = localStorage.getItem('greep_order_uuid');
+        if (stored) persistedOrderId.value = stored;
+      } catch (e) {
+        console.warn('Failed to load orderId from localStorage', e);
+      }
+    };
+
+    // Load orderId on mount
+    onMounted(() => {
+      loadOrderIdFromStorage();
+    });
     const innerHeight = ref(window.innerHeight);
     const SingleConversation = ref(Logic.Messaging.SingleConversation);
     const AuthUser = ref(Logic.Auth.AuthUser);
@@ -243,7 +268,6 @@ export default defineComponent({
       scrollToBottom();
     };
 
-    // ✅ IMPROVED currentConversationState with better stage detection
     const currentConversationState = computed(() => {
       const stage = SingleConversation.value?.stage || 0;
 
@@ -256,9 +280,7 @@ export default defineComponent({
       // Check backend stage first and normalize it  
       let backendStage = "withdrawal_amount";
       if (stage) {
-        // ✅ FIXED: Remove any numeric suffixes that cause duplication (_0, _1, _2, etc.)
         backendStage = stage.toString().replace(/_\d+$/, "");
-
       }
 
       let detectedStage = "withdrawal_amount";
@@ -266,7 +288,6 @@ export default defineComponent({
       if (lastAIMessage?.content) {
         const content = lastAIMessage.content.toLowerCase();
 
-        // ✅ Better stage detection including new stages
         if (content.includes("p2p trade successful")) {
           detectedStage = "usdc_sent";
         } else if (content.includes("usdc sent")) {
@@ -444,20 +465,24 @@ export default defineComponent({
 
     // ✅ HELPER FUNCTION: Better address detection
     const isAddressContent = (content: string): boolean => {
+      // Accept any country or city as valid address, not just Nigeria
       const addressIndicators = [
-        'nigeria', 'lagos', 'abuja', 'ibadan', 'kano', 'port harcourt', 'ota',
+        'nigeria', 'cyprus', 'lagos', 'abuja', 'ibadan', 'kano', 'port harcourt', 'ota',
         'street', 'avenue', 'road', 'close', 'estate', 'area', 'university',
         'house', 'apartment', 'flat', 'block', 'plot', 'deliver', 'address',
-        'covenant', 'idiroko', 'campus', 'building', 'complex'
+        'covenant', 'idiroko', 'campus', 'building', 'complex',
+        'country', 'city', 'region', 'state', 'province', 'island', 'district', 'postal', 'zip', 'code'
       ];
 
       const lowerContent = content.toLowerCase();
+      // Accept if it contains any known address indicator or any country/city name
       const hasAddressIndicators = addressIndicators.some(indicator => lowerContent.includes(indicator));
       const hasCommas = content.includes(',');
-      const isLongText = content.length > 15;
+      const isLongText = content.length > 5; // Lowered threshold for short addresses
       const notCurrencyRelated = !lowerContent.includes('usdc') && !lowerContent.includes('cash') && !lowerContent.includes('money');
 
-      const isAddress = hasAddressIndicators || (hasCommas && isLongText && notCurrencyRelated);
+      // Accept if it looks like an address or is a valid country/city
+      const isAddress = hasAddressIndicators || (hasCommas && isLongText && notCurrencyRelated) || (isLongText && notCurrencyRelated && /[a-z]{3,}/.test(lowerContent));
 
       return isAddress;
     };
@@ -605,123 +630,116 @@ export default defineComponent({
             : deliveryAddress;
 
           structuredResponse = {
-            selected_option: "success",  // Backend expects "success", not "confirm"
-            delivery_address: finalDeliveryAddress, // Include the delivery address
-            amount: getAmountFromConversation(), // Add amount from conversation context
+            selected_option: "success",
+            delivery_address: finalDeliveryAddress,
+            amount: getAmountFromConversation(),
           };
-          // Removed debug console.log
+         
         }
-      // ✅ NEW: Handle payment confirmation (for any stage)
+      // Handle payment confirmation (for any stage)
         else if (content.toLowerCase().includes("payment confirmed")) {
           structuredResponse = {
             selected_option: "confirm_payment",
           };
-          // Removed debug console.log
-          // ✅ FIXED: Don't add local confirmation message - it comes from backend to prevent duplication
         }
-      // ✅ NEW: Handle final payment confirmation
+      // Handle final payment confirmation
         else if (currentStage === "finalize_payment" && content.toLowerCase().includes("yes")) {
           structuredResponse = {
             selected_option: "yes",
           };
 
-          // ✅ SIMPLIFIED: Call ReleaseP2pFunds mutation and show success immediately
+          // Call getOrderSummaryFromAPI to verify order_uuid before releasing funds
           (async () => {
             try {
-              // Get order details from conversation
               const conversationMetadata = SingleConversation.value?.metadata ?
                 JSON.parse(SingleConversation.value.metadata) : {};
 
-              // Try to extract order UUID from conversation messages
-              let orderUuid = conversationMetadata?.order_uuid;
-
-              // If not in metadata, search through messages for the order UUID
-              if (!orderUuid && SingleConversation.value?.messages) {
-                for (const message of SingleConversation.value.messages) {
-                  const content = message.content || "";
-                  // Look for "Order ID: [uuid]" pattern in messages
-                  const orderIdMatch = content.match(/Order ID:\s*([a-f0-9-]{36})/i);
-                  if (orderIdMatch) {
-                    orderUuid = orderIdMatch[1];
-                    // Removed debug console.log
-                    break;
-                  }
-                }
-              }
-
-              // Final fallback - use conversation UUID (but log warning)
+              // Try to get orderUuid from metadata, ref, or localStorage
+              let orderUuid = conversationMetadata?.order_uuid || persistedOrderId.value;
               if (!orderUuid) {
-                orderUuid = SingleConversation.value?.uuid;
-                console.warn("⚠️ Using conversation UUID as fallback for order UUID:", orderUuid);
+                loadOrderIdFromStorage();
+                orderUuid = persistedOrderId.value;
               }
-
               const amount = conversationMetadata?.amount;
 
               if (orderUuid) {
-                // Removed debug console.log
-
-                await Logic.Wallet.ReleaseP2pFunds(
-                  orderUuid,
-                  amount,
-                  JSON.stringify({
-                    stage: "finalize_payment",
-                    action: "release_usdc",
-                    timestamp: Date.now()
-                  })
-                );
-
-                // Removed debug console.log
+                const orderSummary = await getOrderSummaryFromAPI(orderUuid);
+                if (orderSummary) {
+                  // Order exists, proceed to release funds
+                  await Logic.Wallet.ReleaseP2pFunds(
+                    orderUuid,
+                    amount,
+                    JSON.stringify({
+                      stage: "finalize_payment",
+                      action: "release_usdc",
+                      timestamp: Date.now()
+                    })
+                  );
+                  // Show success message
+                  const successMessage = {
+                    id: `success_${Date.now()}`,
+                    type: "text" as const,
+                    text_content: "P2P trade successful!",
+                    user_uuid: "greep_ai",
+                    user_name: "GreepPay AI",
+                    info_icon: "",
+                    actions: [
+                      {
+                        label: "Details",
+                        message: "Details",
+                        type: "success" as const,
+                        value: "view_transaction",
+                        handler: () => {
+                          // Handle view transaction details
+                        }
+                      },
+                      {
+                        label: "Receipt",
+                        message: "Receipt",
+                        type: "info" as const,
+                        value: "receipt",
+                        handler: () => {
+                          // Handle receipt download
+                        }
+                      }
+                    ],
+                    orderSummary: null,
+                    isOrderSummary: false
+                  };
+                  messages.push(successMessage);
+                  scrollToBottom();
+                } else {
+                  // Order not found, show error and do not release
+                  Logic.Common.showAlert({
+                    show: true,
+                    message: "Order not found or not confirmed. Please try again or contact support.",
+                    type: "error",
+                  });
+                  console.warn("⚠️ Order UUID not found in API for ReleaseP2pFunds");
+                }
               } else {
+                Logic.Common.showAlert({
+                  show: true,
+                  message: "No order UUID found for ReleaseP2pFunds.",
+                  type: "error",
+                });
                 console.warn("⚠️ No order UUID found for ReleaseP2pFunds");
               }
             } catch (error) {
               console.error("❌ Error calling ReleaseP2pFunds:", error);
-              // Don't block the UI flow, just log the error
+              Logic.Common.showAlert({
+                show: true,
+                message: "Error releasing funds. Please try again or contact support.",
+                type: "error",
+              });
             }
-
-            // ✅ SIMPLIFIED: Show success message immediately after API call (no delay)
-            const successMessage = {
-              id: `success_${Date.now()}`,
-              type: "text" as const,
-              text_content: "P2P trade successful!",
-              user_uuid: "greep_ai",
-              user_name: "GreepPay AI",
-              info_icon: "",
-              actions: [
-                {
-                  label: "Details",
-                  message: "Details",
-                  type: "success" as const,
-                  value: "view_transaction",
-                  handler: () => {
-                    // Removed debug console.log
-                    // Handle view transaction details
-                  }
-                },
-                {
-                  label: "Receipt",
-                  message: "Receipt",
-                  type: "info" as const,
-                  value: "receipt",
-                  handler: () => {
-                    // Removed debug console.log
-                    // Handle receipt download
-                  }
-                }
-              ],
-              orderSummary: null,
-              isOrderSummary: false
-            };
-
-            messages.push(successMessage);
-            scrollToBottom();
           })();
         }
       // Handle button actions with extraValue
         else if (extraValue) {
           // ✅ DEBUG: Log "yes" button clicks specifically
           if (extraValue.toLowerCase() === "yes") {
-            // Removed debug console.log
+           
           }
 
           structuredResponse = {
@@ -734,19 +752,19 @@ export default defineComponent({
           }
           // ✅ NEW: Handle cash pickup selection
           else if (extraValue === "cash_pickup") {
-            // Removed debug console.log
+           
             structuredResponse = {
               selected_option: "cash_pickup",
             };
-            // Removed debug console.log
+           
           }
           // ✅ NEW: Handle order confirmation via button
           else if (extraValue === "confirm") {
-            // Removed debug console.log
+           
             structuredResponse = {
               selected_option: "success",  // Backend expects "success", not "confirm"
             };
-            // Removed debug console.log
+           
           }
         }
       // Handle common text responses
@@ -765,31 +783,31 @@ export default defineComponent({
           structuredResponse = {
             selected_option: "cash_pickup",
           };
-          // Removed debug console.log
+         
         }
         // ✅ NEW: Handle branch selection for cash pickup
         else if (content.toLowerCase() === "branch_selected") {
           structuredResponse = {
             selected_option: "branch_selected",
           };
-          // Removed debug console.log
+         
         }
         // ✅ NEW: Handle branch button clicks (Branch 1, Branch 2, Branch 3)
         else if (content.toLowerCase().includes("branch") && (content.toLowerCase().includes("1") || content.toLowerCase().includes("2") || content.toLowerCase().includes("3"))) {
           structuredResponse = {
             selected_option: "branch_selected",
           };
-          // Removed debug console.log
+         
         }
         // Fallback for any other text
         else {
           structuredResponse = {
             selected_option: content.toLowerCase().trim(),
           };
-          // Removed debug console.log
+         
         }
 
-        // Removed debug console.log
+       
       return structuredResponse;
     };
 
@@ -1842,7 +1860,7 @@ export default defineComponent({
             if (createdOrder) {
               console.log("✅ P2P Order created successfully:", createdOrder);
 
-              // ✅ CRITICAL: Store order UUID in conversation metadata for later retrieval
+              // Save order_uuid and order_data to conversation metadata immediately
               if (createdOrder.uuid && SingleConversation.value) {
                 try {
                   const currentMetadata = SingleConversation.value.metadata ?
@@ -1851,12 +1869,14 @@ export default defineComponent({
                   currentMetadata.order_data = orderData;
                   SingleConversation.value.metadata = JSON.stringify(currentMetadata);
                   console.log("✅ Stored order UUID in conversation metadata:", createdOrder.uuid);
+                  // Persist orderId to localStorage and ref
+                  saveOrderIdToStorage(createdOrder.uuid);
                 } catch (error) {
                   console.error("❌ Error storing order UUID in metadata:", error);
                 }
               }
 
-              // ✅ NEW: Create appropriate success message based on order type
+              // Now proceed with success message and UI updates
               let orderDetailsText = `🎉 P2P Order created successfully!\n\n📋 Order Details:\n• Amount: ${orderData.amount} USDC\n• Payment: ${orderData.payment_type}`;
 
               if (isCashPickupOrder) {
@@ -3180,15 +3200,10 @@ export default defineComponent({
       }
     };
 
-    // ✅ NEW: Handle regular chat messages
     const sendRegularChatMessage = async (content: string): Promise<boolean> => {
       try {
-        console.log("🔧 Sending regular chat message:", content);
-
-        // ✅ NEW: Generate a temporary client-side ID for deduplication
         const tempMessageId = `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-        // Create chat message with temporary ID
         const chatMessage = {
           id: tempMessageId,
           type: "text" as const,
@@ -3223,7 +3238,6 @@ export default defineComponent({
         };
 
         await Logic.Messaging.CreateMessage();
-        console.log("✅ Chat message sent successfully");
         return true;
 
       } catch (error) {
@@ -3232,7 +3246,6 @@ export default defineComponent({
       }
     };
 
-    // ✅ NEW: Handle proof upload from modal
     const handleProofUploadModal = async (type: 'photo' | 'document' | 'text') => {
       try {
         console.log("🔧 Handling proof upload modal:", type);
@@ -3275,29 +3288,20 @@ export default defineComponent({
       showProofModal.value = false;
     };
 
-    // ✅ NEW: Centralized function to handle address input visibility
     const updateAddressInputVisibility = (shouldShow: boolean) => {
-      // Only show address input for conversation owner/buyer, not business users
       if (shouldShow && isBusinessUser.value) {
-        console.log("🚫 Skipping address input for business user");
         showAddressInput.value = false;
       } else {
-        console.log(`🔧 Setting address input visibility: ${shouldShow} (isBusinessUser: ${isBusinessUser.value})`);
         showAddressInput.value = shouldShow;
       }
     };
 
-    // ✅ NEW: Centralized function to handle bank transfer modal visibility
     const updateBankTransferModalVisibility = (shouldShow: boolean) => {
       // Only show bank transfer modal for conversation owner/buyer, not business users
       if (shouldShow && isBusinessUser.value) {
-        console.log("🚫 Skipping bank transfer modal for business user");
         showBankTransferModal.value = false;
       } else {
-        console.log(`🔧 Setting bank transfer modal visibility: ${shouldShow} (isBusinessUser: ${isBusinessUser.value})`);
         showBankTransferModal.value = shouldShow;
-
-        // Load saved bank accounts when showing modal
         if (shouldShow) {
           loadSavedBankAccounts();
         }
@@ -3306,12 +3310,9 @@ export default defineComponent({
 
     // ✅ NEW: Centralized function to handle cash pickup modal visibility
     const updateCashPickupModalVisibility = (shouldShow: boolean) => {
-      // Only show cash pickup modal for conversation owner/buyer, not business users
       if (shouldShow && isBusinessUser.value) {
-        console.log("🚫 Skipping cash pickup modal for business user");
         showCashPickupModal.value = false;
       } else {
-        console.log(`🔧 Setting cash pickup modal visibility: ${shouldShow} (isBusinessUser: ${isBusinessUser.value})`);
         showCashPickupModal.value = shouldShow;
       }
     };
@@ -3319,10 +3320,8 @@ export default defineComponent({
     // ✅ NEW: Load saved bank accounts from P2P Payment Methods API
     const loadSavedBankAccounts = async () => {
       try {
-        console.log("🔧 Loading saved bank accounts...");
         const response = await Logic.Wallet.GetMyP2pPaymentMethods(20, 1);
         savedBankAccounts.value = response?.data || [];
-        console.log("✅ Loaded saved bank accounts:", savedBankAccounts.value.length);
       } catch (error) {
         console.error("❌ Failed to load saved bank accounts:", error);
         savedBankAccounts.value = [];
@@ -3366,14 +3365,6 @@ export default defineComponent({
 
           // Update conversation metadata
           SingleConversation.value.metadata = JSON.stringify(updatedMetadata);
-
-          // ✅ DEBUG: Log metadata update
-          console.log("🔍 Updated conversation metadata with pickup location:", {
-            fullAddress,
-            location,
-            updatedMetadata,
-            conversationId: SingleConversation.value.id
-          });
         }
 
         // Send a message that will be converted to a structured response by buildStructuredResponse
@@ -3397,14 +3388,11 @@ export default defineComponent({
 
     // ✅ NEW: Handle bank details submission from modal
     const handleBankDetailsSubmitted = async (bankDetails: any, savedAccount?: any) => {
-      console.log("🔧 Bank details submitted:", bankDetails, savedAccount);
 
       try {
         showBankTransferModal.value = false;
 
-        // Ensure we're not in processing state
         if (isProcessing.value) {
-          console.log("🔧 Resetting processing state before sending bank details");
           isProcessing.value = false;
         }
 
@@ -3430,21 +3418,10 @@ export default defineComponent({
         // Send simple string for workflow progression, store complex data in metadata
         const simpleValue = savedAccount ? savedAccount.uuid : `${bankDetails.bankName}-${bankDetails.accountNumber}`;
 
-        console.log("🔧 About to send bank details message:", {
-          displayText,
-          simpleValue,
-          bankAccountSelection,
-          hasConversation: !!SingleConversation.value,
-          hasAuthUser: !!AuthUser.value,
-          conversationId: SingleConversation.value?.id,
-          processing: isProcessing.value
-        });
-
         // Send bank account UUID directly (like address flow)
         const success = await sendMessage(simpleValue);
 
         if (success) {
-          console.log("✅ Bank details sent successfully");
           updateBankTransferModalVisibility(false);
         } else {
           console.error("❌ Failed to send bank details");
@@ -3466,14 +3443,12 @@ export default defineComponent({
 
     // ✅ NEW: Handle saved account selection from modal
     const handleSavedAccountSelected = async (account: any) => {
-      console.log("🔧 Saved bank account selected:", account);
 
       try {
         showBankTransferModal.value = false;
 
         // Ensure we're not in processing state
         if (isProcessing.value) {
-          console.log("🔧 Resetting processing state before sending saved account");
           isProcessing.value = false;
         }
 
@@ -3485,25 +3460,13 @@ export default defineComponent({
           currency: account.currency || 'TRY' // Default to TRY if no currency
         };
 
-        // Send bank account details - use simple string for workflow progression
         const displayText = `Selected: ${account.bank_name} - ${account.account_number} - ${account.account_name}`;
         const simpleValue = displayText;
-
-        console.log("🔧 About to send saved account message:", {
-          displayText,
-          simpleValue,
-          bankAccountSelection,
-          hasConversation: !!SingleConversation.value,
-          hasAuthUser: !!AuthUser.value,
-          conversationId: SingleConversation.value?.id,
-          processing: isProcessing.value
-        });
 
         // Send bank account UUID directly (like address flow)
         const success = await sendMessage(simpleValue);
 
         if (success) {
-          console.log("✅ Bank account selection sent successfully");
           updateBankTransferModalVisibility(false);
         } else {
           console.error("❌ Failed to send bank account selection");
@@ -3630,14 +3593,9 @@ export default defineComponent({
         // Optimistic UI
         paymentConfirmed.value = true;
         showPaymentConfirmation.value = false;
-
-        // Send structured confirm to backend to move to next stage
-        console.log("🔧 Sending 'Payment confirmed' message to backend...");
         const sent = await sendMessage("Payment confirmed", "confirm_payment");
-        console.log("🔧 'Payment confirmed' message sent successfully:", sent);
 
         if (!sent) {
-          // Rollback if backend send fails
           paymentConfirmed.value = false;
           showPaymentConfirmation.value = true;
           Logic.Common.showAlert({
