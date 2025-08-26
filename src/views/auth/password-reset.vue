@@ -47,7 +47,7 @@ export default defineComponent({
       loadingState.value = true;
 
       try {
-        Logic.Auth.VerifyUserOTPForm = {
+        Logic.Auth.VerifyUserOTPayload = {
           user_uuid: String(uuid || ""),
           otp: String(otpCode.value),
         };

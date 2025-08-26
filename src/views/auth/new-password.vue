@@ -70,7 +70,7 @@ import {
 import { Logic } from "@greep/logic";
 
 export default defineComponent({
-  name: "NewSetPassWordpage",
+  name: "NewPassWordpage",
   components: {
     AppNormalText,
     AppFormWrapper,
@@ -107,9 +107,9 @@ export default defineComponent({
 
           // Send the reset password request
           await Logic.Auth.ResetPassword({
-            newPassword: formData.password,
-            otpCode: otp,
-            userUuid: uuid || "",
+            new_password: formData.password,
+            otp_code: otp,
+            user_uuid: uuid || "",
           });
 
           // Clear the OTP from local storage
