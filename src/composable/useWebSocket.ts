@@ -44,17 +44,19 @@ export function useWebSocket() {
     }
   ) => {
     if (!conversationUuid || echoChannel.value) {
-      console.log('🔧 WebSocket already setup or missing conversation UUID');
       return;
     }
 
     try {
-      console.log('🔧 Setting up unified WebSocket for:', conversationUuid);
-
       // Check if WebSocket is properly initialized
       if (!Logic.Common.laravelEcho) {
-        console.error('❌ WebSocket not initialized');
-        Logic.Common.initiateWebSocket();
+        Logic.Common.initiateWebSocket({
+          pusherKey: import.meta.env.VITE_PUSHER_APP_KEY,
+          pusherHost: import.meta.env.VITE_PUSHER_HOST,
+          pusherPort: import.meta.env.VITE_PUSHER_PORT,
+          pusherCluster: import.meta.env.VITE_PUSHER_APP_CLUSTER,
+          socketAuthUrl: import.meta.env.VITE_SOCKET_AUTH_URL,
+        });
       }
 
       // ✅ SINGLE UNIFIED CHANNEL - Conversation channel
