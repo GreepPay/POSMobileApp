@@ -8,4 +8,4 @@ import  AuthSetPassword from "./set-password.vue"
 
 import AuthAccountInfo from "./account-info.vue"
 
-export { AuthSetPassword,AuthVerifyEmail, AuthAccountInfo, AuthBusinessType, AuthPickCurrency   }
+export { AuthSetPassword,AuthVerifyEmail, AuthAccountInfo, AuthBusinessType, AuthPickCurrency }
