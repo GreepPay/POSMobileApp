@@ -63,7 +63,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, onMounted, watch } from "vue";
+import { defineComponent, onMounted } from "vue";
 import { AppAvatar, AppNormalText, AppIcon } from "@greep/ui-components";
 import { Logic } from "@greep/logic";
 import { reactive } from "vue";
@@ -92,70 +92,41 @@ export default defineComponent({
         content: string;
       }[];
     }>({
-      title: "P2P Trade",
-      photo_url: "/images/chat-logo.png",
-      partitipants: [],
-      alerts: [],
+      title: "P2P Trade with <span class='font-semibold'>Abass Damilare</span>",
+      photo_url: "https://randomuser.me/api/portraits/men/4.jpg",
+      alerts: [
+        {
+          type: "danger",
+          content:
+            "Avoid scam! Only scammers will ask to interact outside GreepPay.",
+        },
+      ],
     });
 
     const setContent = () => {
-      if (props.conversation) {
-        // ✅ NEW: Check if this is a P2P trade conversation
-        if (props.conversation.entity_type === 'p2p_withdrawal') {
-          // Get the business participant if available
-          const participants = props.conversation.participants;
-          const businessParticipant = participants?.find(p => 
-            p.user && p.user.uuid !== props.conversation?.created_by?.uuid
-          );
-          
-          if (businessParticipant?.user) {
-            const businessName = `${businessParticipant.user.first_name} ${businessParticipant.user.last_name}`.trim();
-            topBarInfo.title = `P2P Trade with <span class='font-semibold'>${businessName}</span>`;
-            console.log("✅ Top bar updated with business participant:", businessName);
-          } else {
-            topBarInfo.title = props.conversation.name || "P2P Trade";
-          }
-        } else {
-          topBarInfo.title = props.conversation.name || "Chat";
-        }
-        
-        topBarInfo.photo_url = "/images/chat-logo.png";
-        topBarInfo.alerts = [];
+       if (props.conversation) {
+         topBarInfo.title = props.conversation.name
+         topBarInfo.photo_url = "/images/chat-logo.png",
+          topBarInfo.alerts = [];
 
-        const participants = props.conversation.participants;
-        if (participants && participants.length > 0) {
-          topBarInfo.partitipants = participants.map(
-            (participant) => { 
-               if(participant.user) {
-                 return participant.user.first_name + " " + participant.user.last_name;
-               } else {
-                 return "Greep AI";
-               }
-            }
-          );
-        }
-        
-        console.log("🔧 Top bar content updated:", {
-          title: topBarInfo.title,
-          participants: topBarInfo.partitipants,
-          participantCount: participants?.length || 0
-        });
-      }
-    };
+          const participants = props.conversation.participants;
+          if (participants && participants.length > 0) {
+            topBarInfo.partitipants = participants.map(
+              (participant) => { 
+                 if(participant.user) {
+                   return participant.user.first_name + " " + participant.user.last_name;
+                 } else {
+                   return "Greep AI";
+                 }
+              }
+            );
+       }
+    }
+  }
 
     onMounted(() => {
       setContent();
     });
-
-    // ✅ NEW: Watch for conversation changes to update the top bar
-    watch(() => props.conversation, () => {
-      setContent();
-    }, { deep: true });
-
-    // ✅ NEW: Watch for participant changes specifically
-    watch(() => props.conversation?.participants, () => {
-      setContent();
-    }, { deep: true });
 
     return {
       Logic,

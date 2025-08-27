@@ -110,6 +110,18 @@ export interface MessageInfo {
     value: string;
     handler: () => void;
   }[];
+  
+  orderSummary?: {
+    youSell: string;
+    youGet: string;
+    fee: string;
+    deliveryFee: string;
+    youPay: string;
+    paymentType: string;
+    payoutOption: string;
+    deliveryAddress: string;
+  } | null;
+  isOrderSummary?: boolean;
 }
 
 export const withdrawalAvailableCurrencies = reactive<Currency[]>([

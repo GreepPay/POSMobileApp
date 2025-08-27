@@ -134,7 +134,13 @@ export default defineComponent({
 
       // If user is authenticated
       if (currentAuthUser) {
-        Logic.Common.initiateWebSocket();
+        Logic.Common.initiateWebSocket({
+          pusherKey: import.meta.env.VITE_PUSHER_APP_KEY,
+          pusherHost: import.meta.env.VITE_PUSHER_HOST,
+          pusherPort: import.meta.env.VITE_PUSHER_PORT,
+          pusherCluster: import.meta.env.VITE_PUSHER_APP_CLUSTER,
+          socketAuthUrl: import.meta.env.VITE_SOCKET_AUTH_URL,
+        });
         Logic.Auth.GetAuthUser();
 
         const pathContainsIsForceReload =
