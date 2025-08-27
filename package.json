@@ -44,11 +44,15 @@
     "@capacitor/assets": "^3.0.5",
     "@capacitor/cli": "7.0.1",
 <<<<<<< HEAD
+<<<<<<< HEAD
     "@greep/logic": "file:../logic",
     "@greep/ui-components": "file:../MobileUIComponents",
     "@vite-pwa/assets-generator": "^1.0.0",
 =======
     "@greep/logic": "file:../POSFrontendLogic",
+=======
+    "@greep/logic": "file:../logic",
+>>>>>>> ea37646 (as:)
     "@greep/ui-components": "file:../MobileUIComponents",
 >>>>>>> 8da1691 (...)
     "@vitejs/plugin-legacy": "^5.0.0",
