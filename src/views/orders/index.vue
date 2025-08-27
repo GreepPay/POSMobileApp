@@ -22,17 +22,38 @@
       <div
         class="w-full flex flex-col items-center justify-start !space-y-[20px]"
       >
-        <div class="w-full flex flex-col px-4">
+        <!-- Loading State -->
+        <div v-if="isLoading" class="w-full flex flex-col items-center py-8">
+          <app-normal-text class="!text-center !text-gray-500">
+            Loading orders...
+          </app-normal-text>
+        </div>
+
+        <!-- Error State -->
+        <div v-else-if="error" class="w-full flex flex-col items-center py-8">
+          <app-normal-text class="!text-center !text-red-500">
+            {{ error }}
+          </app-normal-text>
+          <button 
+            @click="loadOrders" 
+            class="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg"
+          >
+            Retry
+          </button>
+        </div>
+
+        <!-- Orders List -->
+        <div v-else class="w-full flex flex-col px-4">
           <div
-            v-for="(item, index) in currentOrders"
-            :key="index"
-            class="w-full flex flex-row items-center pt-4 pb-4 !border-b-[1.5px] !border-[#F0F3F6]"
-            @click="Logic.Common.GoToRoute('/orders/1')"
+            v-for="(order, index) in currentOrders"
+            :key="order.uuid || index"
+            class="w-full flex flex-row items-center pt-4 pb-4 !border-b-[1.5px] !border-[#F0F3F6] cursor-pointer"
+            @click="goToOrder(order.uuid)"
           >
             <div class="w-[48px] mr-3">
               <div class="w-[48px]">
                 <app-icon
-                  :name="`order-${item.status}`"
+                  :name="`order-${getOrderStatus(order.status)}`"
                   custom-class="!h-[48px]"
                 />
               </div>
@@ -42,28 +63,35 @@
               <app-normal-text
                 class="!text-left !text-black !font-[500] !text-sm mb-[3px]"
               >
-                {{ item.name }}
+                {{ formatOrderTitle(order) }}
               </app-normal-text>
 
               <div class="w-full flex flex-row items-center">
                 <app-normal-text class="!text-left !text-[#616161]">
-                  {{ item.type_label }}
+                  {{ getOrderTypeLabel(order) }}
                 </app-normal-text>
 
                 <div
                   class="h-[4px] w-[4px] rounded-full mx-[6px]"
                   :style="`background-color: ${colorByStatus(
-                    item.status
+                    getOrderStatus(order.status)
                   )} !important;`"
                 ></div>
                 <app-normal-text
                   class="!text-left"
-                  :style="`color: ${colorByStatus(item.status)} !important;`"
+                  :style="`color: ${colorByStatus(getOrderStatus(order.status))} !important;`"
                 >
-                  {{ item.type_status }}
+                  {{ getOrderStatusLabel(order.status) }}
                 </app-normal-text>
               </div>
             </div>
+          </div>
+
+          <!-- Empty State -->
+          <div v-if="currentOrders.length === 0" class="w-full flex flex-col items-center py-8">
+            <app-normal-text class="!text-center !text-gray-500">
+              No {{ activeTab === 'active' ? 'active' : 'completed' }} orders found
+            </app-normal-text>
           </div>
         </div>
       </div>
@@ -72,7 +100,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, reactive, ref } from "vue";
+import { defineComponent, reactive, ref, onMounted, watch, nextTick } from "vue";
 import {
   DefaultPageLayout,
   AppTabs,
@@ -80,7 +108,7 @@ import {
   AppNormalText,
 } from "@greep/ui-components";
 import { Logic } from "@greep/logic";
-import { User } from "@greep/logic/src/gql/graphql";
+import { User, ExchangeOrder } from "@greep/logic/src/gql/graphql";
 import { computed } from "vue";
 
 export default defineComponent({
@@ -97,8 +125,9 @@ export default defineComponent({
   },
   setup() {
     const AuthUser = ref<User>(Logic.Auth.AuthUser);
-
     const activeTab = ref("active");
+    const isLoading = ref(false);
+    const error = ref<string | null>(null);
 
     const orderTab = reactive([
       {
@@ -108,70 +137,6 @@ export default defineComponent({
       {
         key: "history",
         label: "History",
-      },
-    ]);
-
-    const orders = reactive<
-      {
-        name: string;
-        type_label: string;
-        type_status: string;
-        status: "success" | "failed" | "pending";
-      }[]
-    >([
-      {
-        name: "80 USDC to ₺3240",
-        status: "success",
-        type_label: "Trade",
-        type_status: "Completed",
-      },
-      {
-        name: "100 USDC to ₺3000",
-        status: "pending",
-        type_label: "Withdrawal",
-        type_status: "Pending",
-      },
-      {
-        name: "50 USDC to Wallet",
-        status: "success",
-        type_label: "Transfer",
-        type_status: "Completed",
-      },
-      {
-        name: "₺1500 Deposit",
-        status: "success",
-        type_label: "Deposit",
-        type_status: "Completed",
-      },
-      {
-        name: "200 USDC to ₺600",
-        status: "failed",
-        type_label: "Trade",
-        type_status: "Failed",
-      },
-      {
-        name: "₺500 Withdrawal",
-        status: "pending",
-        type_label: "Withdrawal",
-        type_status: "Pending",
-      },
-      {
-        name: "1 USDC to Cold Storage",
-        status: "success",
-        type_label: "Transfer",
-        type_status: "Completed",
-      },
-      {
-        name: "₺2000 Deposit",
-        status: "success",
-        type_label: "Deposit",
-        type_status: "Completed",
-      },
-      {
-        name: "100 USDC to ₺300",
-        status: "success",
-        type_label: "Trade",
-        type_status: "Completed",
       },
     ]);
 
@@ -185,22 +150,165 @@ export default defineComponent({
       }
     };
 
+    // Load orders from GraphQL
+    const loadOrders = async () => {
+      try {
+        isLoading.value = true;
+        error.value = null;
+        
+        // Get all orders - filtering will be done on the frontend
+        await Logic.Wallet.GetP2pOrders(1, 50);
+        
+        // Force a reactive update by triggering the computed property
+        await nextTick();
+        
+        // Force a manual trigger to ensure UI updates
+        updateTrigger.value++;
+        
+      } catch (err) {
+        error.value = "Failed to load orders. Please try again.";
+        console.error("Error loading orders:", err);
+      } finally {
+        isLoading.value = false;
+      }
+    };
+
+    // Check for expired orders and update status
+    const checkExpiredOrders = () => {
+      const orders = Logic.Wallet.ManyP2pOrders?.data || [];
+      const now = new Date();
+      
+      orders.forEach((order) => {
+        if (order.status?.toLowerCase() === 'pending' && order.expired_at) {
+          const expiredAt = new Date(order.expired_at);
+          if (now > expiredAt) {
+            // Order has expired - should be marked as failed/cancelled
+            console.log(`Order ${order.uuid} has expired and should be marked as failed`);
+            // This would typically trigger a backend call to update the order status
+            // For now, we'll just log it
+          }
+        }
+      });
+    };
+
+    // Format order title
+    const formatOrderTitle = (order: ExchangeOrder) => {
+      if (!order.ad) return "Unknown Order";
+      
+      const fromCurrency = order.ad.from_currency;
+      const toCurrency = order.ad.to_currency;
+      const amount = order.amount;
+      const expectedAmount = order.expected_amount;
+      
+      return `${amount} ${fromCurrency} to ${expectedAmount} ${toCurrency}`;
+    };
+
+    // Get order type label
+    const getOrderTypeLabel = (order: ExchangeOrder) => {
+      return "P2P Trade";
+    };
+
+    // Get order status for UI
+    const getOrderStatus = (status: string) => {
+      switch (status?.toLowerCase()) {
+        case "completed":
+          return "success";
+        case "cancelled":
+        case "failed":
+          return "failed";
+        case "pending":
+        case "processing":
+        default:
+          return "pending";
+      }
+    };
+
+    // Get order status label
+    const getOrderStatusLabel = (status: string) => {
+      switch (status?.toLowerCase()) {
+        case "completed":
+          return "Completed";
+        case "cancelled":
+          return "Cancelled";
+        case "failed":
+          return "Failed";
+        case "processing":
+          return "Processing";
+        case "pending":
+        default:
+          return "Pending";
+      }
+    };
+
+    // Navigate to order details
+    const goToOrder = (uuid: string) => {
+      if (uuid) {
+        Logic.Common.GoToRoute(`/orders/${uuid}`);
+      }
+    };
+
+    // Create a reactive trigger for forcing updates
+    const updateTrigger = ref(0);
+
+    // Computed for current orders with immediate reactivity
     const currentOrders = computed(() => {
-      if (activeTab.value == "active") {
-        return orders.filter((item) => item.status == "pending");
+      // Use the trigger to force re-computation
+      updateTrigger.value;
+      
+      const orders = Logic.Wallet.ManyP2pOrders?.data || [];
+      console.log('Orders data updated:', orders.length, 'orders');
+      
+      if (activeTab.value === "active") {
+        const activeOrders = orders.filter((order) => 
+          ["pending", "processing"].includes(order.status?.toLowerCase() || "")
+        );
+        console.log('Active orders:', activeOrders.length);
+        return activeOrders;
       } else {
-        return orders.filter((item) => item.status != "pending");
+        const historyOrders = orders.filter((order) => 
+          ["completed", "cancelled", "failed"].includes(order.status?.toLowerCase() || "")
+        );
+        console.log('History orders:', historyOrders.length);
+        return historyOrders;
       }
     });
+
+    // Load orders on mount and when tab changes
+    onMounted(() => {
+      loadOrders();
+      // Check for expired orders every minute
+      setInterval(checkExpiredOrders, 60000);
+    });
+
+    // Watch for tab changes
+    watch(activeTab, () => {
+      loadOrders();
+    });
+
+    // Watch for changes in the orders data to trigger re-computation
+    watch(() => Logic.Wallet.ManyP2pOrders, () => {
+      // Force re-computation of currentOrders when data changes
+      checkExpiredOrders();
+      updateTrigger.value++; // Force reactive update
+      console.log('Orders data changed, triggering update');
+    }, { deep: true, immediate: true });
 
     return {
       Logic,
       AuthUser,
       orderTab,
       activeTab,
-      orders,
+      isLoading,
+      error,
       currentOrders,
       colorByStatus,
+      loadOrders,
+      goToOrder,
+      formatOrderTitle,
+      getOrderTypeLabel,
+      getOrderStatus,
+      getOrderStatusLabel,
+      updateTrigger,
     };
   },
 });
