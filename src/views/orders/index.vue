@@ -254,18 +254,26 @@ export default defineComponent({
     const currentOrders = computed(() => {
       // Use the trigger to force re-computation
       updateTrigger.value;
-      
+
       const orders = Logic.Wallet.ManyP2pOrders?.data || [];
       console.log('Orders data updated:', orders.length, 'orders');
-      
+
+      // Sort by most recent first (descending by created_at or updated_at)
+      const sortedOrders = orders.slice().sort((a, b) => {
+        // Use updated_at if available, else fallback to created_at
+        const aTime = new Date(a.updated_at || a.created_at || 0).getTime();
+        const bTime = new Date(b.updated_at || b.created_at || 0).getTime();
+        return bTime - aTime;
+      });
+
       if (activeTab.value === "active") {
-        const activeOrders = orders.filter((order) => 
+        const activeOrders = sortedOrders.filter((order) =>
           ["pending", "processing"].includes(order.status?.toLowerCase() || "")
         );
         console.log('Active orders:', activeOrders.length);
         return activeOrders;
       } else {
-        const historyOrders = orders.filter((order) => 
+        const historyOrders = sortedOrders.filter((order) =>
           ["completed", "cancelled", "failed"].includes(order.status?.toLowerCase() || "")
         );
         console.log('History orders:', historyOrders.length);
