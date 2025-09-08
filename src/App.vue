@@ -103,7 +103,6 @@ export default defineComponent({
 
     // Set routers
     Logic.Common.SetRouter(router);
-    // @ts-expect-error no real type for route
     Logic.Common.SetRoute(route);
 
     // Set UI frontend logic
@@ -190,7 +189,13 @@ export default defineComponent({
 
       // If user is authenticated
       if (authToken) {
-        Logic.Common.initiateWebSocket();
+        Logic.Common.initiateWebSocket({
+          pusherKey: import.meta.env.VITE_PUSHER_APP_KEY,
+          pusherHost: import.meta.env.VITE_PUSHER_HOST,
+          pusherPort: import.meta.env.VITE_PUSHER_PORT,
+          pusherCluster: import.meta.env.VITE_PUSHER_APP_CLUSTER,
+          socketAuthUrl: import.meta.env.VITE_SOCKET_AUTH_URL,
+        });
         Logic.Auth.GetAuthUser();
 
         const pathContainsIsForceReload =

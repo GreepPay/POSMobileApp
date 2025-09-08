@@ -702,12 +702,24 @@ export interface MessageInfo {
     url: string
   }
   actions?: {
-    label: string
-    type: "success" | "info" | "danger" | "warning" | "primary"
-    message: string
-    value: string
-    handler: () => void
-  }[]
+    label: string;
+    type: "success" | "info" | "danger" | "warning" | "primary";
+    message: string;
+    value: string;
+    handler: () => void;
+  }[];
+  
+  orderSummary?: {
+    youSell: string;
+    youGet: string;
+    fee: string;
+    deliveryFee: string;
+    youPay: string;
+    paymentType: string;
+    payoutOption: string;
+    deliveryAddress: string;
+  } | null;
+  isOrderSummary?: boolean;
 }
 
 export const withdrawalAvailableCurrencies = reactive<Currency[]>([
