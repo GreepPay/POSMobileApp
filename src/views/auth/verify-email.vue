@@ -2,19 +2,24 @@
   <app-wrapper>
     <subpage-layout title="Verify Email">
       <div class="w-full flex flex-col items-center justify-center h-full px-4">
-        <auth-setup-verify-email ref="componentRef" class="-mt-[10%]" />
+        <auth-setup-verify-email ref="componentRef"  />
+      </div>
 
-        <!-- Bottom section -->
-        <div class="w-full flex flex-col px-4 pt-4">
-          <app-button
-            variant="secondary"
-            class="!py-4 col-span-4"
-            @click="handleNext"
-            :loading="buttonIsLoading"
-          >
-            Continue
-          </app-button>
-        </div>
+      <!-- Bottom section -->
+      <div
+        :class="`w-full flex flex-col px-4 fixed z-50 bottom-0 left-0 pt-4 bg-white`"
+        :style="`
+          ${getBottomPadding}
+        `"
+      >
+        <app-button
+          variant="secondary"
+          class="!py-4 col-span-4"
+          @click="handleNext"
+          :loading="buttonIsLoading"
+        >
+          Continue
+        </app-button>
       </div>
     </subpage-layout>
   </app-wrapper>
@@ -29,6 +34,7 @@ import {
   MutationSignInArgs,
   MutationVerifyUserOtpArgs,
 } from "@greep/logic/src/gql/graphql";
+import { getBottomPadding } from "../../composable";
 
 export default defineComponent({
   name: "VerifyEmailPage",
@@ -80,6 +86,7 @@ export default defineComponent({
       Logic,
       handleNext,
       buttonIsLoading,
+      getBottomPadding,
     };
   },
 });

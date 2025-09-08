@@ -80,13 +80,12 @@ export default defineComponent({
         try {
           // First send OTP to email
           localStorage.setItem("auth_email", formData.email);
-          await Logic.Auth.sendResetPasswordOTP({
-            email: String(formData.email),
-          });
+          await Logic.Auth.SendResetPasswordOTP(formData.email);
 
           // Navigate to OTP verification
           Logic.Common.GoToRoute("/auth/password-reset");
         } catch (error) {
+          console.error("Error in sending reset OTP:", error);
           Logic.Common.showAlert({
             show: true,
             type: "error",

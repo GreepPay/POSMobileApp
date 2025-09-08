@@ -17,14 +17,20 @@
       <div class="w-full flex flex-col space-y-1">
         <div
           class="w-full flex flex-row justify-between items-center py-2"
-          v-for="(currency, index) in availableCurrencies"
+            v-for="(currency, index) in availableCurrencies
+            .filter(item => !item.is_crypto)
+            .sort((a, b) => (b.is_foreign_currency ? 1 : 0) - (a.is_foreign_currency ? 1 : 0))"
           :key="index"
           @click="formData.preferred_currency = currency.code"
         >
           <div class="flex flex-row space-x-3 items-center">
             <app-image-loader
-              :photo-url="`/images/icons/flags/${currency.code.toLocaleLowerCase()}.svg`"
-              class="h-[40px] w-[40px] rounded-full"
+              :photo-url="`/images/icons/flags/${
+                currency.use_country_code
+                  ? currency.country_code?.toLocaleLowerCase()
+                  : currency.code?.toLocaleLowerCase()
+              }.${currency?.icon_extension || 'svg'}`"
+              class="size-10 rounded-full border-[1px] border-gray-200 object-cover"
             />
 
             <app-normal-text custom-class="!text-left">
@@ -43,6 +49,8 @@
             />
           </div>
         </div>
+
+        <div class="h-[120px]"></div>
       </div>
 
       <!-- Form fields -->
@@ -78,7 +86,7 @@ export default defineComponent({
     const formData = reactive<{
       preferred_currency: string;
     }>({
-      preferred_currency: "TRY",
+      preferred_currency: "USD",
     });
 
     const continueWithForm = () => {

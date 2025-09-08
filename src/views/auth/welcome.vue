@@ -150,7 +150,7 @@
 
         Logic.Common.hideLoader()
 
-        Logic.Common.GoToRoute("/")
+        Logic.Common.GoToRoute("/", true)
       }
 
       const innerHeight = ref(window.innerHeight)

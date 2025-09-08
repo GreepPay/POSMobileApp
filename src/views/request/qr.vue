@@ -1,17 +1,20 @@
 <template>
   <app-wrapper>
-    <subpage-layout title="Make Payment" :hasExtraTopContent="true">
-      <template #extra-top-content>
-        <div class="flex justify-end flex-row items-center">
-          <app-icon name="share" :customClass="'h-[22px]'" />
-        </div>
-      </template>
-
+    <subpage-layout title="Pay with GreepPay">
       <div
-        class="w-full flex flex-col items-center justify-center px-4 h-full -mt-[35%]"
+        class="w-full flex flex-col px-4 pb-3"
+        id="qrPaymentContent"
       >
+       <div class="w-full flex flex-col items-center pt-2 justify-center">
+           
+          <div class="!w-[70%] h-[220px] xs:h-[220px]">
+            <div class="w-full h-full flex items-center justify-center py-3">
+              <app-qr-code v-if="qrCodeData" :data="qrCodeData" />
+            </div>
+          </div>
+        </div>
         <app-image-loader
-          class="w-full h-fit rounded-[32px] flex flex-col relative justify-center items-center space-y-5 px-4 py-5 xs:!py-4 bg-[linear-gradient(359.13deg,#10BB76_25.37%,#008651_99.25%)]"
+          class="w-full h-fit !mt-3 rounded-[12px] flex flex-col relative justify-center items-center px-4 py-3 xs:!py-4 bg-[linear-gradient(359.13deg,#0D965E_25.37%,#00683F_99.25%)]"
           :photoUrl="''"
         >
           <!-- Image bg -->
@@ -21,14 +24,14 @@
           />
 
           <div
-            class="w-full flex flex-col !space-y-1 justify-center items-center z-[2] py-3 !pt-2"
+            class="w-full flex flex-col !space-y-1 justify-center items-center z-[2] py-2"
           >
             <app-normal-text class="text-center !text-white">
               Amount
             </app-normal-text>
 
             <app-header-text
-              class="text-center !text-white !text-3xl !font-normal pt-1 pb-3"
+              class="text-center !text-white !text-3xl !font-[50] pt-1"
             >
               {{ currentCurrency }}
               {{
@@ -40,17 +43,20 @@
           </div>
         </app-image-loader>
 
-        <div class="w-full flex flex-col items-center justify-center !pt-7">
-          <app-normal-text class="text-center font-semibold !text-base z-30">
-            Scan QR code to pay
-          </app-normal-text>
-          <div class="!h-[20px]"></div>
-          <div class="w-[90%] h-[300px] xs:h-[250px] mt-3">
-            <div class="w-full h-full flex items-center justify-center">
-              <app-qr-code v-if="qrCodeData" :data="qrCodeData" />
-            </div>
+        <div class="w-full flex flex-col pt-3">
+
+          <div class="w-full px-4 !py-4 border-[1.5px] border-[#F0F3F6] rounded-[12px] items-center justify-between !flex !flex-row">
+
+            <app-normal-text class="!text-[#616161]">
+              Note
+            </app-normal-text>
+
+             <app-normal-text class="!text-[#050709] !font-semibold">
+              {{ narration }}
+            </app-normal-text>
           </div>
         </div>
+       
       </div>
 
       <!-- Bottom button -->
@@ -60,22 +66,18 @@
           ${getBottomPadding}
         `"
       >
-        <div class="col-span-4 flex flex-col">
+        <div class="col-span-12 flex flex-col">
           <app-button
             variant="secondary"
-            :class="`!py-4 !border-red !text-red !border-[1.5px] hover:!bg-red/20 `"
-            @click="Logic.Common.GoToRoute('/')"
+            :class="`!py-4 !border-[#E0E2E4]`"
             outlined
-            >Cancel</app-button
-          >
-        </div>
-
-        <div class="col-span-8 flex flex-col">
-          <app-button
-            variant="secondary"
-            :class="`!py-4 `"
-            @click="Logic.Common.goBack()"
-            >New Request</app-button
+            @click="downloadReceipt('image','qrPaymentContent')"
+            >
+             <div class="flex flex-row justify-center items-center">
+              <app-icon name="send-green" class="h-[20px]" />
+              <span class="!text-[#17A068] pl-2 !text-sm">Share</span>
+             </div>
+            </app-button
           >
         </div>
       </div>
@@ -100,6 +102,7 @@
   import { computed } from "vue"
   import { User } from "@greep/logic/src/gql/graphql"
   import { availableCurrencies, getBottomPadding } from "../../composable"
+import { downloadReceipt } from "../../composable/common"
 
   export default defineComponent({
     name: "RequestQRPage",
@@ -115,12 +118,14 @@
       const amount = ref("0")
 
       const AuthUser = ref<User>(Logic.Auth.AuthUser)
+      const narration = ref("")
 
       const setAmount = () => {
         //  Get amount from query params
         const queryParams = Logic.Common.route?.query
         if (queryParams) {
           amount.value = queryParams.amount as string
+          narration.value = (queryParams.narration as string) || "Payment Request"
         }
       }
 
@@ -152,6 +157,8 @@
         Logic.Auth.watchProperty("AuthUser", AuthUser)
       })
 
+      
+
       return {
         amount,
         Logic,
@@ -159,6 +166,8 @@
         continueToNext,
         currentCurrency,
         getBottomPadding,
+        narration,
+        downloadReceipt
       }
     },
   })

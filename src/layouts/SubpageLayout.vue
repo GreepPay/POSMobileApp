@@ -27,13 +27,14 @@
           </div>
 
           <div class="flex justify-center flex-1">
-            <app-header-text class="!text-left">
+            <app-header-text class="!text-left !text-xl">
               {{ title }}
             </app-header-text>
           </div>
 
-          <div v-if="!hasExtraTopContent" class="flex justify-start invisible">
-            <app-icon name="arrow-left" :customClass="'h-[22px]'" />
+           
+          <div v-if="!hasExtraTopContent" class="flex justify-start" @click="Logic.Common.GoToRoute('/')">
+            <app-icon name="close" :customClass="'h-[22px]'" />
           </div>
           <template v-else>
             <slot name="extra-top-content" />
@@ -60,6 +61,7 @@ import { useRoute, useRouter } from "vue-router";
 import { AppHeaderText, AppIcon } from "@greep/ui-components";
 import { computed } from "vue";
 import { getPlatforms } from "@ionic/vue";
+import { Logic } from "@greep/logic";
 
 export default defineComponent({
   components: {
@@ -131,6 +133,7 @@ export default defineComponent({
       handleBack,
       goToRoute,
       currentPlatform,
+      Logic
     };
   },
 });

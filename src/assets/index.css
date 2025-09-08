@@ -140,9 +140,3 @@ body {
   animation-timing-function: cubic-bezier(0.1, -0.1, 0.2, 0);
 }
 
-/* Skeleton loader class */
-.skeleton {
-  @apply bg-linear-to-r from-gray-200 via-gray-100 to-gray-200 dark:from-gray-700 dark:via-gray-600 dark:to-gray-700;
-  @apply bg-[length:200%_100%];
-  @apply animate-[shimmer_1.5s_infinite];
-}

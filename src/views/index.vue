@@ -29,6 +29,7 @@
                   v-model="selectedCurrency"
                   v-model:model-symbol="currencySymbol"
                   :availableCurrencies="availableCurrencies"
+                  v-model:model-country="selectedCountry"
                 />
               </div>
 
@@ -45,7 +46,7 @@
                   {{ currencySymbol }}
                   {{
                     Logic.Common.convertToMoney(
-                     currentWalletBalance,
+                     currentWalletBalance || 0,
                       true,
                       "",
                       false
@@ -192,7 +193,7 @@ import {
 import { Logic } from "@greep/logic";
 import { ref } from "vue";
 import { onMounted } from "vue";
-import { getPlatforms, onIonViewDidEnter } from "@ionic/vue";
+import { getPlatforms, onIonViewDidEnter, onIonViewWillEnter } from "@ionic/vue";
 import { User } from "@greep/logic/src/gql/graphql";
 import { computed } from "vue";
 import { availableCurrencies } from "../composable";
@@ -250,14 +251,16 @@ export default defineComponent({
   },
   setup() {
     const defaultCurrency = ref(
-      Logic.Auth.AuthUser?.businesses[0]?.default_currency
+      Logic.Auth.AuthUser?.businesses[0]?.default_currency || "USD"
     ); 
     const selectedCurrency = ref(
-      Logic.Auth.AuthUser?.businesses[0]?.default_currency
+      Logic.Auth.AuthUser?.businesses[0]?.default_currency || "USD"
     );
 
-    const currencySymbol = ref(
-      availableCurrencies.find(
+    const selectedCountry = ref("")
+
+    const currencySymbol = computed(
+      () => availableCurrencies.find(
         (currency) => currency.code === selectedCurrency.value
       )?.symbol
     );
@@ -335,7 +338,7 @@ export default defineComponent({
     const quickActions = reactive([
       {
         icon: "quick-actions/request",
-        route_path: "/request",
+        route_path: "/request/method",
         name: "Request",
         soon: false,
       },
@@ -412,6 +415,12 @@ export default defineComponent({
       }, 5000);
     });
 
+    onIonViewWillEnter(() => {
+        //  Logic.Auth.GetCurrentAppVersion()?.then((version) => {
+        //    checkAppVersion(version || '1.0');
+        // });
+    });
+
     watch(
       [
         ManyPointTransactions,
@@ -421,7 +430,7 @@ export default defineComponent({
       ],
       () => {
         setTransactionData();
-       
+       setCurrentWalletBalance();
       }
     );
 
@@ -459,7 +468,8 @@ export default defineComponent({
       homeTab,
       activeTab,
       tools,
-      currentWalletBalance
+      currentWalletBalance,
+      selectedCountry
     };
   },
 });

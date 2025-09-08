@@ -6,12 +6,12 @@
         :parent-refs="parentRefs"
         class="w-full flex flex-col pt-2"
       >
-        <app-normal-text  
+        <app-normal-text
           custom-class="!text-center !text-gray-600 !text-sm !mb-6"
         >
           Protect your account with a strong password.
         </app-normal-text>
-        
+
         <div class="w-full flex flex-col space-y-4 pt-4 px-4">
           <app-text-field
             v-model="formData.password"
@@ -42,12 +42,12 @@
             custom-class="!border-gray-300 focus:!border-primary"
           />
         </div>
-        
+
         <!-- Button -->
-          <div class="w-full pt-5 px-4">
+        <div class="w-full pt-5 px-4">
           <app-button
             variant="secondary"
-            class="w-full py-4 "
+            class="w-full py-4"
             @click.prevent="handlePassword"
           >
             Continue
@@ -58,7 +58,6 @@
   </app-wrapper>
 </template>
 
-
 <script lang="ts">
 import { defineComponent, reactive, ref } from "vue";
 import {
@@ -68,6 +67,7 @@ import {
   AppButton,
 } from "@greep/ui-components";
 import { Logic } from "@greep/logic";
+import { MutationSignInArgs } from "@greep/logic/src/gql/graphql";
 
 export default defineComponent({
   name: "NewPassWordpage",
@@ -89,12 +89,29 @@ export default defineComponent({
       const isValid = formComponent.value?.validate();
 
       if (isValid) {
-         Logic.Auth.SignUpForm = {
-            ...Logic.Auth.SignUpForm || {},
-            password: formData.password,
-         }
+        Logic.Common.showLoader({
+          show: true,
+          loading: true
+        })
 
-         Logic.Common.GoToRoute("/auth/pick-currency");
+        Logic.Auth.SignUpForm = {
+          ...(Logic.Auth.SignUpForm || {}),
+          password: formData.password,
+        };
+
+        await Logic.Auth.SignUp(true, () => {});
+
+        const formSignIn: MutationSignInArgs = {
+          email: localStorage.getItem("auth_email") || Logic.Auth.SignUpForm?.email,
+          password: formData.password || "",
+        };
+
+        Logic.Auth.SignInForm = formSignIn;
+        await Logic.Auth.SignIn(true);
+
+        Logic.Common.hideLoader();
+
+        Logic.Common.GoToRoute("/auth/setup-account");
       }
     };
 

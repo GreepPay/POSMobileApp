@@ -119,6 +119,8 @@ export default defineComponent({
         };
 
         try {
+          localStorage.clear();
+          Logic.Auth.AccessToken = "";
           await Logic.Auth.SignIn(true);
           await Logic.Auth.GetAuthUser();
 

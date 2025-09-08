@@ -43,6 +43,7 @@
       </div>
 
       <div
+      v-if="false"
         class="w-full flex flex-col space-y-1 border-[#E0E2E4] border-[1.5px] px-4 py-4 rounded-[16px] mt-4"
       >
         <div class="w-full flex flex-row items-center justify-between">
