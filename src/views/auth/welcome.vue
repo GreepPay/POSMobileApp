@@ -94,7 +94,7 @@
       const AuthUser = ref<User>(Logic.Auth.AuthUser)
 
       const formData = reactive({
-        passcode: "",
+        passcode: "35146",
       })
 
       watch(formData, async () => {

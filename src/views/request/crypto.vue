@@ -3,42 +3,50 @@
     <subpage-layout
       :title="`Accept ${transferResponse?.source_deposit_instructions?.currency.toUpperCase()}`"
     >
-      <div class="w-full flex flex-col px-4 pb-5 pt-4" id="qrPaymentContentCrypto">
+      <div
+        class="w-full flex flex-col px-4 pb-5 pt-4"
+        id="qrPaymentContentCrypto"
+      >
         <div class="w-full flex flex-col items-center justify-center">
-
           <!-- Network switch -->
-           <div class="w-full flex flex-row justify-center items-center pb-3">
-
-            <div class="px-3 py-3 border-[1.5px] border-[#F0F3F6] rounded-[12px] justify-center items-center flex flex-col min-w-[150px]">
-
+          <div class="w-full flex flex-row justify-center items-center pb-3">
+            <div
+              class="px-3 py-3 border-[1.5px] border-[#F0F3F6] rounded-[12px] justify-center items-center flex flex-col min-w-[150px]"
+            >
               <app-normal-text class="!text-[#616161] !text-center pb-1">
                 Network
               </app-normal-text>
 
               <app-select
-              v-if="currentPaymentRail"
-              v-model="currentPaymentRail"
-              :options="paymentRailOptions"
-              is-wrapper
-              @OnOptionSelected="
-                (option) => {
-                 handlePaymentRailSelected(option);
-                }
-              "
-            >
-              <div
-                class="flex flex-row space-x-[3px] items-center w-full justify-center"
+                v-if="currentPaymentRail"
+                v-model="currentPaymentRail"
+                :options="paymentRailOptions"
+                is-wrapper
+                @OnOptionSelected="
+                  (option) => {
+                    handlePaymentRailSelected(option)
+                  }
+                "
               >
-                <app-normal-text
-                  custom-class="!text-black !font-semibold !text-left !text-sm"
-                  >{{ paymentRailOptions?.find(item =>item.key == currentPaymentRail)?.value }}</app-normal-text
+                <div
+                  class="flex flex-row space-x-[3px] items-center w-full justify-center"
                 >
-                <app-icon name="chevron-down-black" custom-class="!h-[18px]" /> 
-              </div>
-            </app-select>
-
+                  <app-normal-text
+                    custom-class="!text-black !font-semibold !text-left !text-sm"
+                    >{{
+                      paymentRailOptions?.find(
+                        (item) => item.key == currentPaymentRail
+                      )?.value
+                    }}</app-normal-text
+                  >
+                  <app-icon
+                    name="chevron-down-black"
+                    custom-class="!h-[18px]"
+                  />
+                </div>
+              </app-select>
             </div>
-           </div>
+          </div>
           <div class="!w-[70%] h-[230px] xs:h-[230px]">
             <div class="w-full h-full flex items-center justify-center py-3">
               <app-qr-code v-if="qrCodeData" :data="qrCodeData" />
@@ -61,7 +69,15 @@
               </app-normal-text>
             </div>
 
-            <div class="pr-1 pt-0.5" @click="Logic.Common.copytext(transferResponse?.source_deposit_instructions?.to_address || '')">
+            <div
+              class="pr-1 pt-0.5"
+              @click="
+                Logic.Common.copytext(
+                  transferResponse?.source_deposit_instructions?.to_address ||
+                    ''
+                )
+              "
+            >
               <div class="justify-end cursor-pointer items-center">
                 <app-icon name="copy-white" custom-class="!h-[25px]" />
               </div>
@@ -70,30 +86,29 @@
         </app-image-loader>
 
         <div class="w-full flex flex-col pt-3">
-            <div
-          class="w-full flex flex-col space-y-2 px-4 border-[1px] border-light-gray-one rounded-[10px] py-4 mt-2"
-        >
           <div
-            :class="`w-full flex flex-row items-center justify-between pb-2 pt-2 ${
-              index < paymentDetails.length - 1
-                ? 'border-b-[1.5px] border-light-gray-one'
-                : ''
-            }  `"
-            v-for="(item, index) in paymentDetails"
-            :key="index"
+            class="w-full flex flex-col space-y-2 px-4 border-[1px] border-light-gray-one rounded-[10px] py-4 mt-2"
           >
-            <app-normal-text class="!text-gray-two !text-left">
-              {{ item.title }}
-            </app-normal-text>
-
-            <app-normal-text
-              class="!text-black !text-right !text-sm font-[500]"
+            <div
+              :class="`w-full flex flex-row items-center justify-between pb-2 pt-2 ${
+                index < paymentDetails.length - 1
+                  ? 'border-b-[1.5px] border-light-gray-one'
+                  : ''
+              }  `"
+              v-for="(item, index) in paymentDetails"
+              :key="index"
             >
-              {{ item.value }}
-            </app-normal-text>
-          </div>
-        </div>
+              <app-normal-text class="!text-gray-two !text-left">
+                {{ item.title }}
+              </app-normal-text>
 
+              <app-normal-text
+                class="!text-black !text-right !text-sm font-[500]"
+              >
+                {{ item.value }}
+              </app-normal-text>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -109,7 +124,7 @@
             variant="secondary"
             :class="`!py-4 !border-[#E0E2E4]`"
             outlined
-            @click="downloadReceipt('image','qrPaymentContentCrypto')"
+            @click="downloadReceipt('image', 'qrPaymentContentCrypto')"
           >
             <div class="flex flex-row justify-center items-center">
               <app-icon name="send-green" class="h-[20px]" />
@@ -123,166 +138,181 @@
 </template>
 
 <script lang="ts">
-import {  defineComponent, reactive } from "vue";
-import {
-  AppNormalText,
-  AppQrCode,
-  AppButton,
-  AppImageLoader,
-  AppIcon,
-  AppSelect,
-} from "@greep/ui-components";
-import { ref } from "vue";
-import { Logic } from "@greep/logic";
-import { onMounted } from "vue";
-import { onIonViewWillEnter } from "@ionic/vue";
-import { computed } from "vue";
-import { OffRamp, User } from "@greep/logic/src/gql/graphql";
-import { depositCryptoAndNetworkMap, getBottomPadding } from "../../composable";
-import { SingleTransferResponse } from "../../composable/financials";
-import { SelectOption } from "@greep/ui-components/src/types";
-import { downloadReceipt } from "../../composable/common";
-
-export default defineComponent({
-  name: "RequestCryptoQRPage",
-  components: {
+  import { defineComponent, reactive } from "vue"
+  import {
     AppNormalText,
     AppQrCode,
     AppButton,
     AppImageLoader,
     AppIcon,
-    AppSelect
-  },
-  setup() {
-    const AuthUser = ref<User>(Logic.Auth.AuthUser);
-    const narration = ref("");
+    AppSelect,
+  } from "@greep/ui-components"
+  import { ref } from "vue"
+  import { Logic } from "@greep/logic"
+  import { onMounted } from "vue"
+  import { onIonViewWillEnter } from "@ionic/vue"
+  import { computed } from "vue"
+  import { OffRamp, User } from "@greep/logic/src/gql/graphql"
+  import {
+    depositCryptoAndNetworkMap,
+    getBottomPadding,
+  } from "../../composable"
+  import { SingleTransferResponse } from "../../composable/financials"
+  import { SelectOption } from "@greep/ui-components/src/types"
+  import { downloadReceipt } from "../../composable/common"
 
-    const cryptoTransferResponse = ref<OffRamp | null>(null);
-    const transferResponse = ref<SingleTransferResponse | null>(null);
-    const currentPaymentRail = ref("")
-    const paymentRailOptions = reactive<SelectOption[]>([])
-    const switchIsLock = ref(true)
+  export default defineComponent({
+    name: "RequestCryptoQRPage",
+    components: {
+      AppNormalText,
+      AppQrCode,
+      AppButton,
+      AppImageLoader,
+      AppIcon,
+      AppSelect,
+    },
+    setup() {
+      const AuthUser = ref<User>(Logic.Auth.AuthUser)
+      const narration = ref("")
 
-     const paymentDetails = reactive<
-      {
-        title: string;
-        value: string;
-      }[]
-    >([
-       
-    ]);
+      const cryptoTransferResponse = ref<OffRamp | null>(null)
+      const transferResponse = ref<SingleTransferResponse | null>(null)
+      const currentPaymentRail = ref("")
+      const paymentRailOptions = reactive<SelectOption[]>([])
+      const switchIsLock = ref(true)
 
-    const qrCodeData = computed(() => {
-      const sourceInfo = transferResponse.value?.source_deposit_instructions;
-      return `${sourceInfo?.payment_rail}:${sourceInfo?.to_address}${
-        sourceInfo?.blockchain_memo ? `?memo=${sourceInfo.blockchain_memo}` : ""
-      }`;
-    });
+      const paymentDetails = reactive<{ title: string; value: string }[]>([])
 
-    const setCryptoDetails = () => {
-      cryptoTransferResponse.value = localStorage.getItem(
-        "currentCryptoTransfer"
-      )
-        ? JSON.parse(localStorage.getItem("currentCryptoTransfer") || "")
-        : null;
+      const qrCodeData = computed(() => {
+        const sourceInfo = transferResponse.value?.source_deposit_instructions
+        return `${sourceInfo?.payment_rail}:${sourceInfo?.to_address}${
+          sourceInfo?.blockchain_memo
+            ? `?memo=${sourceInfo.blockchain_memo}`
+            : ""
+        }`
+      })
 
-      if (cryptoTransferResponse.value) {
-        const extraData: any = JSON.parse(
-          cryptoTransferResponse.value?.extra_data || "{}"
-        );
-        if (extraData) {
-          transferResponse.value = extraData?.transferResponse || null;
-        }
-      }
+      const setCryptoDetails = () => {
+        cryptoTransferResponse.value = localStorage.getItem(
+          "currentCryptoTransfer"
+        )
+          ? JSON.parse(localStorage.getItem("currentCryptoTransfer") || "")
+          : null
 
-      paymentDetails.length = 0;
-      if (transferResponse.value) {
-
-        const paymentRails = depositCryptoAndNetworkMap[
-          transferResponse.value?.source?.currency?.toUpperCase() as keyof typeof depositCryptoAndNetworkMap
-        ] || [];
-
-        currentPaymentRail.value = transferResponse.value?.source_deposit_instructions?.payment_rail || '';
-        paymentDetails.push(
-          {
-            title: "Currency",
-            value: `${transferResponse.value?.source?.currency?.toUpperCase()}`,
-          },
-          {
-            title: "Network",
-            value: paymentRails?.find(item => item.key == transferResponse.value?.source_deposit_instructions?.payment_rail)?.title || '-',
+        if (cryptoTransferResponse.value) {
+          const extraData: any = JSON.parse(
+            cryptoTransferResponse.value?.extra_data || "{}"
+          )
+          if (extraData) {
+            transferResponse.value = extraData?.transferResponse || null
           }
-        );
-
-        if(transferResponse.value?.source_deposit_instructions?.blockchain_memo){
-          paymentDetails.push({
-            title: "Memo",
-            value: transferResponse.value?.source_deposit_instructions?.blockchain_memo || '-',
-          })
         }
 
-        
-        if(paymentRails.length > 1){
-          paymentRailOptions.length = 0;
-          paymentRails.forEach((rail) => {
-            paymentRailOptions.push({
-              key: rail.key,
-              value: rail.title,
-            });
-          });
-          currentPaymentRail.value = transferResponse.value?.source_deposit_instructions?.payment_rail || paymentRails[0].key;
+        paymentDetails.length = 0
+        if (transferResponse.value) {
+          const paymentRails =
+            depositCryptoAndNetworkMap[
+              transferResponse.value?.source?.currency?.toUpperCase() as keyof typeof depositCryptoAndNetworkMap
+            ] || []
+
+          currentPaymentRail.value =
+            transferResponse.value?.source_deposit_instructions?.payment_rail ||
+            ""
+          paymentDetails.push(
+            {
+              title: "Currency",
+              value: `${transferResponse.value?.source?.currency?.toUpperCase()}`,
+            },
+            {
+              title: "Network",
+              value:
+                paymentRails?.find(
+                  (item) =>
+                    item.key ==
+                    transferResponse.value?.source_deposit_instructions
+                      ?.payment_rail
+                )?.title || "-",
+            }
+          )
+
+          if (
+            transferResponse.value?.source_deposit_instructions?.blockchain_memo
+          ) {
+            paymentDetails.push({
+              title: "Memo",
+              value:
+                transferResponse.value?.source_deposit_instructions
+                  ?.blockchain_memo || "-",
+            })
+          }
+
+          if (paymentRails.length > 1) {
+            paymentRailOptions.length = 0
+            paymentRails.forEach((rail) => {
+              paymentRailOptions.push({
+                key: rail.key,
+                value: rail.title,
+              })
+            })
+            currentPaymentRail.value =
+              transferResponse.value?.source_deposit_instructions
+                ?.payment_rail || paymentRails[0].key
+          }
         }
       }
-    };
 
-    const handlePaymentRailSelected = async (option: SelectOption) => {
-      if(switchIsLock.value) return;
-       Logic.Common.showLoader({
+      const handlePaymentRailSelected = async (option: SelectOption) => {
+        if (switchIsLock.value) return
+        Logic.Common.showLoader({
           show: true,
           loading: true,
-        });
+        })
 
-        const cryptoTransferResponse = await Logic.Wallet.CreateCrpytoTransfer(transferResponse?.value?.source?.currency?.toUpperCase() || '', option?.key || '');
+        const cryptoTransferResponse = await Logic.Wallet.CreateCrpytoTransfer(
+          transferResponse?.value?.source?.currency?.toUpperCase() || "",
+          option?.key || ""
+        )
 
-        localStorage.setItem('currentCryptoTransfer', JSON.stringify(cryptoTransferResponse));
+        localStorage.setItem(
+          "currentCryptoTransfer",
+          JSON.stringify(cryptoTransferResponse)
+        )
 
-        Logic.Common.hideLoader();
+        Logic.Common.hideLoader()
 
-        setCryptoDetails();
-    };
+        setCryptoDetails()
+      }
 
-    const continueToNext = () => {
-      // Navigate to the next page
-      // Logic.Common.navigate("/request/qr");
-    };
+      const continueToNext = () => {
+        // Navigate to the next page
+        // Logic.Common.navigate("/request/qr");
+      }
 
-    onIonViewWillEnter(() => {
-      setCryptoDetails();
-      setTimeout(() => {
-        switchIsLock.value = false;
-      }, 600);
-    });
+      onIonViewWillEnter(() => {
+        setCryptoDetails()
+        setTimeout(() => {
+          switchIsLock.value = false
+        }, 600)
+      })
 
-    onMounted(() => {
-      setCryptoDetails();
-      Logic.Auth.watchProperty("AuthUser", AuthUser);
-    });
+      onMounted(() => {
+        setCryptoDetails()
+        Logic.Auth.watchProperty("AuthUser", AuthUser)
+      })
 
-
-
-    return {
-      Logic,
-      qrCodeData,
-      continueToNext,
-      getBottomPadding,
-      narration,
-      transferResponse,
-      paymentDetails,
-      currentPaymentRail,
-      paymentRailOptions,
-      handlePaymentRailSelected,
-      downloadReceipt
-    };
-  },
-});
+      return {
+        Logic,
+        qrCodeData,
+        continueToNext,
+        getBottomPadding,
+        narration,
+        transferResponse,
+        paymentDetails,
+        currentPaymentRail,
+        paymentRailOptions,
+        handlePaymentRailSelected,
+        downloadReceipt,
+      }
+    },
+  })
 </script>

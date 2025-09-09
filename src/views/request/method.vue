@@ -5,10 +5,7 @@
         <template v-for="(method, index) in paymentMethods" :key="index">
           <div
             :class="`w-full flex flex-col space-y-1 px-4 py-4 !border-[2px] mb-3 border-[#F0F3F6] rounded-[16px]`"
-            @click="
-              selectedMethod = method.key;
-              continueToNext();
-            "
+            @click="handleSlectedMethod(method)"
           >
             <div
               class="w-full flex flex-row justify-between items-center h-full"
@@ -51,7 +48,7 @@
         v-if="showRedirectInfoModal"
         :close="
           () => {
-            showRedirectInfoModal = false;
+            showRedirectInfoModal = false
           }
         "
         :contentClass="'!px-0'"
@@ -97,7 +94,7 @@
         can-close
         :close="
           () => {
-            showCryptoOptions = false;
+            showCryptoOptions = false
           }
         "
         :innerClass="'!px-0 !pt-0 px-0'"
@@ -153,226 +150,241 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from "vue";
-import {
-  AppIcon,
-  AppNormalText,
-  AppModal,
-  AppImageLoader,
-  AppHeaderText,
-  AppButton
-} from "@greep/ui-components";
-import { Logic } from "@greep/logic";
-import { reactive } from "vue";
-import { ref } from "vue";
-import { availableCurrencies, depositCryptoAndNetworkMap, getBottomPadding } from "../../composable";
-import { Browser } from "@capacitor/browser";
-
-interface BridgeKYCInitiaionResponse {
-  created_at: string;
-  customer_id: string;
-  email: string;
-  full_name: string;
-  id: string;
-  kyc_link: string;
-  kyc_status: string;
-  persona_inquiry_type: string;
-  provider: string;
-  rejection_reasons: any[];
-  tos_link: string;
-  tos_status: string;
-  type: string;
-}
-
-export default defineComponent({
-  name: "RequestMethodPage",
-  components: {
+  import { defineComponent } from "vue"
+  import {
     AppIcon,
     AppNormalText,
     AppModal,
     AppImageLoader,
     AppHeaderText,
-    AppButton
-  },
-  setup() {
-    const selectedMethod = ref<string>("greep_pay");
-    const kycInitiaionResponse = ref();
+    AppButton,
+  } from "@greep/ui-components"
+  import { Logic } from "@greep/logic"
+  import { reactive } from "vue"
+  import { ref } from "vue"
+  import {
+    availableCurrencies,
+    depositCryptoAndNetworkMap,
+    getBottomPadding,
+  } from "../../composable"
+  import { Browser } from "@capacitor/browser"
 
-    const selectedCurrency = ref("USDC");
+  interface BridgeKYCInitiaionResponse {
+    created_at: string
+    customer_id: string
+    email: string
+    full_name: string
+    id: string
+    kyc_link: string
+    kyc_status: string
+    persona_inquiry_type: string
+    provider: string
+    rejection_reasons: any[]
+    tos_link: string
+    tos_status: string
+    type: string
+  }
+  interface PaymentMethod {
+    title: string
+    key: string
+    description: string
+    icon: string
+  }
 
-    const showRedirectInfoModal = ref(false);
+  export default defineComponent({
+    name: "RequestMethodPage",
+    components: {
+      AppIcon,
+      AppNormalText,
+      AppModal,
+      AppImageLoader,
+      AppHeaderText,
+      AppButton,
+    },
+    setup() {
+      const selectedMethod = ref<string>("greep_pay")
+      const kycInitiaionResponse = ref()
 
-    const modalContent = ref("");
+      const selectedCurrency = ref("USDC")
 
-    const modalRedirectButtonCopy = ref("Continue");
+      const showRedirectInfoModal = ref(false)
 
-    const partnerLogoUrl = ref("");
+      const modalContent = ref("")
 
-    const partnerName = ref("Bridge");
+      const modalRedirectButtonCopy = ref("Continue")
 
-    const modalIsOpen = ref(false);
+      const partnerLogoUrl = ref("")
 
-    const paymentMethods = reactive<
-      {
-        title: string;
-        key: string;
-        description: string;
-        icon: string;
-      }[]
-    >([
-      {
-        title: "Greep Pay",
-        key: "greep_pay",
-        description: "Your customer pays with their GreepPay wallet.",
-        icon: "greep-pay",
-      },
-      {
-        title: "Crypto Wallet",
-        key: "crypto_wallet",
-        description: "Your customer pays with their crypto wallet.",
-        icon: "crypto",
-      },
-    ]);
+      const partnerName = ref("Bridge")
 
-    const checkForUserKYCStatus = async () => {
-      Logic.Common.showLoader({
-        show: true,
-        loading: true,
-      });
+      const modalIsOpen = ref(false)
 
-      const responseString = await Logic.Wallet.InitiateWalletKYC("USDC");
+      const paymentMethods = reactive<PaymentMethod[]>([
+        {
+          title: "Greep Pay",
+          key: "greep_pay",
+          description: "Your customer pays with their GreepPay wallet.",
+          icon: "greep-pay",
+        },
+        {
+          title: "Crypto Wallet",
+          key: "crypto_wallet",
+          description: "Your customer pays with their crypto wallet.",
+          icon: "crypto",
+        },
+      ])
 
-      if (responseString) {
-        const responseData: any = JSON.parse(responseString);
+      const checkForUserKYCStatus = async () => {
+        Logic.Common.showLoader({
+          show: true,
+          loading: true,
+        })
 
-        if (responseData.provider == "bridge") {
-          const bridgeKYCLink: BridgeKYCInitiaionResponse = responseData;
+        const responseString = await Logic.Wallet.InitiateWalletKYC("USDC")
 
-          if (bridgeKYCLink.provider != "bridge") {
-            return;
+        if (responseString) {
+          const responseData: any = JSON.parse(responseString)
+
+          if (responseData.provider == "bridge") {
+            const bridgeKYCLink: BridgeKYCInitiaionResponse = responseData
+
+            if (bridgeKYCLink.provider != "bridge") {
+              return
+            }
+
+            kycInitiaionResponse.value = bridgeKYCLink
+
+            const forceSkipVerification = false
+
+            let kycStatus = bridgeKYCLink.tos_status
+
+            if (import.meta.env.VITE_API_URL?.includes("dev")) {
+              kycStatus = "approved"
+            }
+
+            if (kycStatus != "approved" && !forceSkipVerification) {
+              showRedirectInfoModal.value = true
+              partnerName.value = "Bridge"
+              partnerLogoUrl.value =
+                "https://cdn.prod.website-files.com/66c78bffc753432b33c4f61a/676f68fb0dcc0518dabd8fdb_Co-branded-Bridge-Stripe-Vertical-Small-trans.svg"
+              modalContent.value = `To accept crypto deposits, Greep uses Bridge to securely connect accounts and process your payments.
+
+            Click on "Continue", to accept Bridge's <a href="https://www.bridge.xyz/legal" target="_blank">Terms of Service</a> and <a href="https://www.bridge.xyz/legal/row-user-terms/bridge-building-limited" target="_blank">Privacy Policy</a>`
+
+              modalRedirectButtonCopy.value = "Continue"
+
+              return
+            }
+
+            if (
+              bridgeKYCLink.kyc_status != "approved" &&
+              !forceSkipVerification
+            ) {
+              kycInitiaionResponse.value.tos_status = "approved"
+              showRedirectInfoModal.value = true
+              partnerName.value = "Bridge"
+              partnerLogoUrl.value =
+                "https://cdn.prod.website-files.com/66c78bffc753432b33c4f61a/676f68fb0dcc0518dabd8fdb_Co-branded-Bridge-Stripe-Vertical-Small-trans.svg"
+              modalContent.value = `To continue with crypto deposits, Please complete your account verification on Bridge.`
+
+              modalRedirectButtonCopy.value = "Complete Verification"
+
+              return
+            }
+
+            showCryptoOptions.value = true
           }
-
-          kycInitiaionResponse.value = bridgeKYCLink;
-
-          const forceSkipVerification = false;
-
-          let kycStatus =  bridgeKYCLink.tos_status;
-
-          if(import.meta.env.VITE_API_URL?.includes('dev')) {
-            kycStatus = "approved";
-          }
-
-          if (
-            kycStatus != "approved" &&
-            !forceSkipVerification
-          ) {
-            showRedirectInfoModal.value = true;
-            partnerName.value = "Bridge";
-            partnerLogoUrl.value =
-              "https://cdn.prod.website-files.com/66c78bffc753432b33c4f61a/676f68fb0dcc0518dabd8fdb_Co-branded-Bridge-Stripe-Vertical-Small-trans.svg";
-            modalContent.value = `To accept crypto deposits, Greep uses Bridge to securely connect accounts and process your payments.
-
-            Click on "Continue", to accept Bridge's <a href="https://www.bridge.xyz/legal" target="_blank">Terms of Service</a> and <a href="https://www.bridge.xyz/legal/row-user-terms/bridge-building-limited" target="_blank">Privacy Policy</a>`;
-
-            modalRedirectButtonCopy.value = "Continue";
-
-            return;
-          }
-
-          if (
-            bridgeKYCLink.kyc_status != "approved" &&
-            !forceSkipVerification
-          ) {
-            kycInitiaionResponse.value.tos_status = "approved";
-            showRedirectInfoModal.value = true;
-            partnerName.value = "Bridge";
-            partnerLogoUrl.value =
-              "https://cdn.prod.website-files.com/66c78bffc753432b33c4f61a/676f68fb0dcc0518dabd8fdb_Co-branded-Bridge-Stripe-Vertical-Small-trans.svg";
-            modalContent.value = `To continue with crypto deposits, Please complete your account verification on Bridge.`;
-
-            modalRedirectButtonCopy.value = "Complete Verification";
-
-            return;
-          }
-
-          showCryptoOptions.value = true;
         }
       }
-    };
 
-    const showCryptoOptions = ref<boolean>(false);
-
-    const redirectButtonAction = async () => {
-      showRedirectInfoModal.value = false;
-
-      const responseData: BridgeKYCInitiaionResponse =
-        kycInitiaionResponse.value;
-
-      if (responseData.tos_status != "approved") {
-        await Browser.open({ url: responseData.tos_link });
-        Browser.addListener("browserFinished", () => {
-          kycInitiaionResponse.value.tos_status = "approved";
-          showRedirectInfoModal.value = true;
-          partnerName.value = "Bridge";
-          partnerLogoUrl.value =
-            "https://cdn.prod.website-files.com/66c78bffc753432b33c4f61a/676f68fb0dcc0518dabd8fdb_Co-branded-Bridge-Stripe-Vertical-Small-trans.svg";
-          modalContent.value = `To continue with withdrawal for ${selectedCurrency.value}, Please complete your account verification on Bridge.`;
-
-          modalRedirectButtonCopy.value = "Complete Verification";
-        });
-
-        return;
+      const handleSlectedMethod = (method: PaymentMethod) => {
+        selectedMethod.value = method.key
+        continueToNext()
       }
 
-      await Browser.open({ url: responseData.kyc_link });
-      Browser.addListener("browserFinished", () => {
-        //
-      });
-    };
+      const showCryptoOptions = ref<boolean>(false)
 
-    const handleCryptoSelected = async (currencyCode: string) => {
-       showCryptoOptions.value = false;
-        const crypto = currencyCode;
-        const network = depositCryptoAndNetworkMap[currencyCode as keyof typeof depositCryptoAndNetworkMap][0].key;
+      const redirectButtonAction = async () => {
+        showRedirectInfoModal.value = false
+
+        const responseData: BridgeKYCInitiaionResponse =
+          kycInitiaionResponse.value
+
+        if (responseData.tos_status != "approved") {
+          await Browser.open({ url: responseData.tos_link })
+          Browser.addListener("browserFinished", () => {
+            kycInitiaionResponse.value.tos_status = "approved"
+            showRedirectInfoModal.value = true
+            partnerName.value = "Bridge"
+            partnerLogoUrl.value =
+              "https://cdn.prod.website-files.com/66c78bffc753432b33c4f61a/676f68fb0dcc0518dabd8fdb_Co-branded-Bridge-Stripe-Vertical-Small-trans.svg"
+            modalContent.value = `To continue with withdrawal for ${selectedCurrency.value}, Please complete your account verification on Bridge.`
+
+            modalRedirectButtonCopy.value = "Complete Verification"
+          })
+
+          return
+        }
+
+        await Browser.open({ url: responseData.kyc_link })
+        Browser.addListener("browserFinished", () => {
+          //
+        })
+      }
+
+      const handleCryptoSelected = async (currencyCode: string) => {
+        showCryptoOptions.value = false
+        const crypto = currencyCode
+        const network =
+          depositCryptoAndNetworkMap[
+            currencyCode as keyof typeof depositCryptoAndNetworkMap
+          ][0].key
 
         Logic.Common.showLoader({
           show: true,
           loading: true,
-        });
+        })
 
-        const cryptoTransferResponse = await Logic.Wallet.CreateCrpytoTransfer(crypto, network);
+        const cryptoTransferResponse = await Logic.Wallet.CreateCrpytoTransfer(
+          crypto,
+          network
+        )
 
-        localStorage.setItem('currentCryptoTransfer', JSON.stringify(cryptoTransferResponse));
-        Logic.Common.hideLoader();
+        localStorage.setItem(
+          "currentCryptoTransfer",
+          JSON.stringify(cryptoTransferResponse)
+        )
+        Logic.Common.hideLoader()
 
-        Logic.Common.GoToRoute(`/request/crypto?currency=${crypto}`);
-    };
-
-    const continueToNext = () => {
-      if (selectedMethod.value == "greep_pay") {
-        Logic.Common.GoToRoute(`/request`);
-      } else if (selectedMethod.value == "crypto_wallet") {
-        checkForUserKYCStatus();
+        Logic.Common.GoToRoute(`/request/crypto?currency=${crypto}`)
       }
-    };
 
-    return {
-      Logic,
-      selectedMethod,
-      continueToNext,
-      getBottomPadding,
-      paymentMethods,
-      showCryptoOptions,
-      availableCurrencies,
-      modalIsOpen,
-      modalRedirectButtonCopy,
-      partnerLogoUrl,
-      partnerName,
-      modalContent,
-      redirectButtonAction,
-      showRedirectInfoModal,
-      handleCryptoSelected
-    };
-  },
-});
+      const continueToNext = () => {
+        if (selectedMethod.value == "greep_pay") {
+          Logic.Common.GoToRoute(`/request`)
+        } else if (selectedMethod.value == "crypto_wallet") {
+          checkForUserKYCStatus()
+        }
+      }
+
+      return {
+        Logic,
+        selectedMethod,
+        continueToNext,
+        getBottomPadding,
+        paymentMethods,
+        showCryptoOptions,
+        availableCurrencies,
+        modalIsOpen,
+        modalRedirectButtonCopy,
+        partnerLogoUrl,
+        partnerName,
+        modalContent,
+        redirectButtonAction,
+        showRedirectInfoModal,
+        handleCryptoSelected,
+        handleSlectedMethod,
+      }
+    },
+  })
 </script>

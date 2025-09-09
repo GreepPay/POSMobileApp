@@ -1,12 +1,8 @@
 <template>
   <app-wrapper>
     <subpage-layout title="Pay with GreepPay">
-      <div
-        class="w-full flex flex-col px-4 pb-3"
-        id="qrPaymentContent"
-      >
-       <div class="w-full flex flex-col items-center pt-2 justify-center">
-           
+      <div class="w-full flex flex-col px-4 pb-3" id="qrPaymentContent">
+        <div class="w-full flex flex-col items-center pt-2 justify-center">
           <div class="!w-[70%] h-[220px] xs:h-[220px]">
             <div class="w-full h-full flex items-center justify-center py-3">
               <app-qr-code v-if="qrCodeData" :data="qrCodeData" />
@@ -44,19 +40,16 @@
         </app-image-loader>
 
         <div class="w-full flex flex-col pt-3">
+          <div
+            class="w-full px-4 !py-4 border-[1.5px] border-[#F0F3F6] rounded-[12px] items-center justify-between !flex !flex-row"
+          >
+            <app-normal-text class="!text-[#616161]"> Note </app-normal-text>
 
-          <div class="w-full px-4 !py-4 border-[1.5px] border-[#F0F3F6] rounded-[12px] items-center justify-between !flex !flex-row">
-
-            <app-normal-text class="!text-[#616161]">
-              Note
-            </app-normal-text>
-
-             <app-normal-text class="!text-[#050709] !font-semibold">
+            <app-normal-text class="!text-[#050709] !font-semibold">
               {{ narration }}
             </app-normal-text>
           </div>
         </div>
-       
       </div>
 
       <!-- Bottom button -->
@@ -71,14 +64,13 @@
             variant="secondary"
             :class="`!py-4 !border-[#E0E2E4]`"
             outlined
-            @click="downloadReceipt('image','qrPaymentContent')"
-            >
-             <div class="flex flex-row justify-center items-center">
+            @click="downloadReceipt('image', 'qrPaymentContent')"
+          >
+            <div class="flex flex-row justify-center items-center">
               <app-icon name="send-green" class="h-[20px]" />
               <span class="!text-[#17A068] pl-2 !text-sm">Share</span>
-             </div>
-            </app-button
-          >
+            </div>
+          </app-button>
         </div>
       </div>
     </subpage-layout>
@@ -102,7 +94,7 @@
   import { computed } from "vue"
   import { User } from "@greep/logic/src/gql/graphql"
   import { availableCurrencies, getBottomPadding } from "../../composable"
-import { downloadReceipt } from "../../composable/common"
+  import { downloadReceipt } from "../../composable/common"
 
   export default defineComponent({
     name: "RequestQRPage",
@@ -125,7 +117,8 @@ import { downloadReceipt } from "../../composable/common"
         const queryParams = Logic.Common.route?.query
         if (queryParams) {
           amount.value = queryParams.amount as string
-          narration.value = (queryParams.narration as string) || "Payment Request"
+          narration.value =
+            (queryParams.narration as string) || "Payment Request"
         }
       }
 
@@ -157,8 +150,6 @@ import { downloadReceipt } from "../../composable/common"
         Logic.Auth.watchProperty("AuthUser", AuthUser)
       })
 
-      
-
       return {
         amount,
         Logic,
@@ -167,7 +158,7 @@ import { downloadReceipt } from "../../composable/common"
         currentCurrency,
         getBottomPadding,
         narration,
-        downloadReceipt
+        downloadReceipt,
       }
     },
   })
