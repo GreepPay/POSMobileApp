@@ -37,7 +37,6 @@
             class="w-full flex flex-row space-x-1 px-3 py-3 border-[1.5px] rounded-[12px] items-center border-[#0A141E]"
           >
             <app-icon name="black-plus" custom-class="h-[24px]" />
-
             <app-normal-text class="!text-left"> New Account </app-normal-text>
           </div>
         </div>
@@ -56,8 +55,9 @@
             :class="`!py-4 ${!selectedAccount ? 'opacity-50' : ''}`"
             @click="continueToNext"
             :loading="loadingState"
-            >Next</app-button
           >
+            Next
+          </app-button>
         </div>
       </div>
     </subpage-layout>
@@ -65,7 +65,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from "vue";
+import { defineComponent, ref, reactive, onMounted } from "vue";
 import {
   AppButton,
   AppIcon,
@@ -73,14 +73,8 @@ import {
   AppImageLoader,
 } from "@greep/ui-components";
 import { Logic } from "@greep/logic";
-import { reactive } from "vue";
-import { ref } from "vue";
-import { onMounted } from "vue";
 import { onIonViewDidEnter } from "@ionic/vue";
-import {
-  getBottomPadding,
-  withdrawalAvailableCurrencies,
-} from "../../composable";
+import { availableCurrencies, getBottomPadding } from "../../composable";
 
 export default defineComponent({
   name: "SavedAccountsPage",
@@ -141,7 +135,7 @@ export default defineComponent({
         accountType.value = accountTypeFromRoute;
       }
 
-      const currencyCountryData = withdrawalAvailableCurrencies?.find(
+      const currencyCountryData = availableCurrencies?.find(
         (currency) => currency.code === selectedCurrency.value
       );
 
@@ -162,9 +156,13 @@ export default defineComponent({
               routing_number: string;
               swift_code: string;
               country: string;
+              bank_code: string;
             } = JSON.parse(savedAccount.meta_data || "");
 
-            if (!focusCountry || focusCountry == metadata.country) {
+            if (
+              (!focusCountry || focusCountry == metadata.country) &&
+              metadata.bank_code
+            ) {
               allAccounts.push({
                 title: `${metadata.bank_name} (${metadata.account_number})`,
                 key: savedAccount.uuid,
@@ -184,6 +182,7 @@ export default defineComponent({
               last_name: string;
               mobile_number: string;
               provider: string;
+              bank_code: string;
             } = JSON.parse(savedAccount.meta_data || "");
 
             let imageName = metadata.provider;
@@ -196,12 +195,14 @@ export default defineComponent({
               imageName = "mtn";
             }
 
-            allAccounts.push({
-              title: `${metadata.provider} (${metadata.mobile_number})`,
-              key: savedAccount.uuid,
-              logo: `/images/mobile-money/${imageName}.png`,
-              data: metadata,
-            });
+            if (metadata.bank_code) {
+              allAccounts.push({
+                title: `${metadata.provider} (${metadata.mobile_number})`,
+                key: savedAccount.uuid,
+                logo: `/images/mobile-money/${imageName}.png`,
+                data: metadata,
+              });
+            }
           });
       }
 
@@ -244,7 +245,7 @@ export default defineComponent({
     };
 
     const goToAddAccount = () => {
-      const currencyCountryCode = withdrawalAvailableCurrencies?.find(
+      const currencyCountryCode = availableCurrencies?.find(
         (currency) => currency.code === selectedCurrency.value
       )?.country_code;
       if (accountType.value == "bank_account") {
@@ -269,18 +270,6 @@ export default defineComponent({
     };
 
     const continueToNext = async () => {
-      const yellowCardCurrencies = ["NGN", "GHS", "KES", "ZAR"];
-
-      const bridgeCurrencies = [
-        "USD",
-        "USDC",
-        "XLM",
-        "EURC",
-        "USDT",
-        "BTC",
-        "ETH",
-      ];
-
       if (selectedAccount.value) {
         const currencyFromRoute =
           Logic.Common.route?.query?.currency?.toString() || "USD";
@@ -288,55 +277,21 @@ export default defineComponent({
         const amountFromRoute =
           Logic.Common.route?.query?.amount?.toString() || "0";
 
-        if (yellowCardCurrencies.includes(currencyFromRoute)) {
-          if (loadingState.value) {
-            return;
-          }
+        const selectedSavedBank = allAccounts.find(
+          (item) => item.key == selectedAccount.value
+        );
 
-          Logic.Wallet.InitiateWithdrawalForm = {
-            amount: parseFloat(amountFromRoute),
-            saved_account_uuid: selectedAccount.value,
-            withdrawal_currency: currencyFromRoute,
-          };
+        const selectedData = {
+          account_type: accountType.value,
+          saved_account_uuid: selectedAccount.value,
+          ...selectedSavedBank?.data,
+        };
 
-          loadingState.value = true;
+        localStorage.setItem("temp_payment_data", JSON.stringify(selectedData));
 
-          try {
-            Logic.Common.showLoader({ show: true, loading: true });
-            await Logic.Wallet.InitiateWithdrawal();
-            Logic.Common.hideLoader();
-            const offramp = Logic.Wallet.CurrentOfframp;
-            if (offramp) {
-              Logic.Common.GoToRoute(
-                `/withdraw/confirm?amount=${amountFromRoute}&currency=${currencyFromRoute}&channel_id=${channelId.value}&offramp_uuid=${offramp?.uuid}`
-              );
-            }
-          } catch (error) {
-            console.error("Error initiating withdrawal:", error);
-          } finally {
-            Logic.Common.hideLoader();
-            loadingState.value = false;
-          }
-        } else if (bridgeCurrencies.includes(currencyFromRoute)) {
-          const selectedSavedBank = allAccounts.find(
-            (item) => item.key == selectedAccount.value
-          );
-
-          const selectedData = {
-            account_type: accountType,
-            saved_account_uuid: selectedAccount.value,
-            ...selectedSavedBank?.data,
-          };
-
-          localStorage.setItem(
-            "temp_payment_data",
-            JSON.stringify(selectedData)
-          );
-
-          Logic.Common.GoToRoute(
-            `/withdraw/confirm?amount=${amountFromRoute}&currency=${currencyFromRoute}&channel_id=${channelId.value}&offramp_uuid=`
-          );
-        }
+        Logic.Common.GoToRoute(
+          `/withdraw/confirm?amount=${amountFromRoute}&currency=${currencyFromRoute}&channel_id=${channelId.value}&offramp_uuid=`
+        );
       }
     };
 

@@ -7,7 +7,7 @@
         <!-- Confirmation details starts -->
         <template v-if="currentPageContent == 'confirmation_info'">
           <app-image-loader
-            class="w-full h-fit rounded-[16px] flex flex-col relative justify-start items-start space-y-5 px-4 py-5 xs:!py-4 bg-[linear-gradient(359.13deg,#10BB76_25.37%,#008651_99.25%)]"
+            class="w-full h-fit rounded-[16px] flex flex-col relative justify-start items-start space-y-5 px-4 py-5 !pt-3 xs:!py-4 bg-[linear-gradient(359.13deg,#10BB76_25.37%,#008651_99.25%)]"
             :photoUrl="''"
           >
             <!-- Image bg -->
@@ -130,7 +130,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from "vue";
+import { defineComponent, watch } from "vue";
 import {
   AppButton,
   AppNormalText,
@@ -146,8 +146,8 @@ import { ref } from "vue";
 import { onMounted } from "vue";
 import { onIonViewWillEnter } from "@ionic/vue";
 import {
+  availableCurrencies,
   getBottomPadding,
-  withdrawalAvailableCurrencies,
 } from "../../composable";
 import { computed } from "vue";
 
@@ -204,7 +204,6 @@ export default defineComponent({
 
     const selectedCurrency = ref("");
 
-    const CurrentOfframp = ref(Logic.Wallet.CurrentOfframp);
 
     const confirmationDetails = reactive<
       {
@@ -222,18 +221,25 @@ export default defineComponent({
         try {
           buttonIsLoading.value = true;
           await Logic.Wallet.ConfirmWithdrawal(
-            CurrentOfframp.value?.uuid || "pre_confirm",
+            "pre_confirm",
             Logic.Common.route?.query?.currency?.toString() || "",
             parseFloat(amountFromRoute),
+            currencyData.value?.country_code || "",
             localStorage.getItem("temp_payment_data") || ""
           );
 
-          currentPageContent.value = "processing";
-          pageTitle.value = "Processing";
-          mainButtonLabel.value = "Home";
-          hideBackBtn.value = true;
+          // currentPageContent.value = "processing"
+          // pageTitle.value = "Processing"
+          // mainButtonLabel.value = "Home"
+          // hideBackBtn.value = true
 
           Logic.Auth.GetAuthUser();
+          Logic.Common.GoToRoute("/");
+          Logic.Common.showAlert({
+            message: "Payment has been sent.",
+            type: "success",
+            show: true,
+          });
         } catch (error) {
           console.error("Error confirming withdrawal:", error);
         } finally {
@@ -245,15 +251,13 @@ export default defineComponent({
     };
 
     const currencyData = computed(() => {
-      return withdrawalAvailableCurrencies.find(
+      return availableCurrencies.find(
         (currency) =>
           currency.code === Logic.Common.route?.query?.currency?.toString()
       );
     });
 
     const setDefaults = () => {
-      const yellowCardCurrencies = ["NGN", "GHS", "KES", "ZAR"];
-
       const bridgeCurrencies = [
         "USD",
         "USDC",
@@ -270,20 +274,18 @@ export default defineComponent({
       const amountFromRoute =
         Logic.Common.route?.query?.amount?.toString() || "0";
 
-      if (yellowCardCurrencies.includes(selectedCurrency.value)) {
+      if (!bridgeCurrencies.includes(selectedCurrency.value)) {
         amount.value = amountFromRoute;
         confirmationDetails.length = 0;
 
-        let fee_percentage = 0.01;
+        let transferType = "account";
 
-        let metadata = JSON.parse(CurrentOfframp.value?.extra_data || "{}");
-
-        if (metadata.account) {
-          metadata = metadata.account;
-        }
+        const metadata = JSON.parse(
+          localStorage.getItem("temp_payment_data") || "{}"
+        );
 
         if (metadata?.mobile_number) {
-          fee_percentage = 0.02;
+          transferType = "mobilemoney";
         }
 
         if (metadata?.bank_name) {
@@ -333,7 +335,7 @@ export default defineComponent({
         confirmationDetails.push({
           title: "Rate per USD",
           content: `${currencyData.value?.symbol}${Logic.Common.convertToMoney(
-            CurrentOfframp.value?.yellow_card_payment?.rate || 0,
+            CurrentGlobalExchangeRate?.value?.mid || 0,
             true,
             ""
           )}`,
@@ -341,11 +343,24 @@ export default defineComponent({
 
         confirmationDetails.push({
           title: "Fee",
-          content: `${currencyData.value?.symbol}${Logic.Common.convertToMoney(
-            parseFloat(amount.value) * fee_percentage,
-            true,
-            ""
-          )}`,
+          content: `Fetching fee...`,
+        });
+
+        Logic.Wallet.GetTransferFees(
+          parseFloat(amount.value),
+          currencyData?.value?.code || "",
+          transferType
+        ).then((response) => {
+          if (response) {
+            confirmationDetails.forEach((detail) => {
+              if (detail.title === "Fee") {
+                detail.content = `${
+                  currencyData.value?.symbol
+                }${Logic.Common.convertToMoney(response, true, "")}`;
+              }
+              return detail;
+            });
+          }
         });
       } else if (bridgeCurrencies.includes(selectedCurrency.value)) {
         amount.value = amountFromRoute;
@@ -439,12 +454,15 @@ export default defineComponent({
       setDefaults();
     });
 
+    watch(CurrentGlobalExchangeRate, () => {
+      setDefaults();
+    });
+
     onMounted(() => {
       Logic.Wallet.watchProperty(
         "CurrentGlobalExchangeRate",
         CurrentGlobalExchangeRate
       );
-      Logic.Wallet.watchProperty("CurrentOfframp", CurrentOfframp);
       setDefaults();
     });
 

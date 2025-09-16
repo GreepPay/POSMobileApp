@@ -6,7 +6,7 @@
         :parent-refs="parentRefs"
         class="w-full flex flex-col justify-start px-4 h-full pt-4"
       >
-        <div class="w-full flex flex-col pb-4">
+        <!-- <div class="w-full flex flex-col pb-4">
           <app-text-field
             :has-title="false"
             type="text"
@@ -32,6 +32,24 @@
             :rules="[FormValidations.RequiredRule]"
           >
           </app-text-field>
+        </div> -->
+
+         <div class="w-full grid grid-cols-1 gap-3 pb-4">
+          <app-select
+            :placeholder="'Select Provider'"
+            :hasTitle="false"
+            :paddings="'py-4 !px-4'"
+            :options="mobileMoneyProviders"
+            ref="provider"
+            use-floating-label
+            @OnOptionSelected="
+              (data) => {
+                formDetails.provider = data.value;
+              }
+            "
+            v-model="formDetails.network_id"
+          >
+          </app-select>
         </div>
 
         <div class="w-full grid grid-cols-12 gap-3 pb-4">
@@ -63,23 +81,7 @@
           </div>
         </div>
 
-        <div class="w-full grid grid-cols-1 gap-3">
-          <app-select
-            :placeholder="'Select Provider'"
-            :hasTitle="false"
-            :paddings="'py-4 !px-4'"
-            :options="mobileMoneyProviders"
-            ref="provider"
-            use-floating-label
-            @OnOptionSelected="
-              (data) => {
-                formDetails.provider = data.value;
-              }
-            "
-            v-model="formDetails.network_id"
-          >
-          </app-select>
-        </div>
+       
       </app-form-wrapper>
 
       <!-- Bottom button -->
@@ -129,12 +131,12 @@ export default defineComponent({
     fetchRules: [
       {
         domain: "Wallet",
-        property: "CurrentYellowCardNetworks",
-        method: "GetYellowCardNetwork",
+        property: "ManyBanksByCountry",
+        method: "GetBanksByCountry",
         params: [],
         requireAuth: true,
         ignoreProperty: true,
-        silentUpdate: true,
+        silentUpdate: false,
         useRouteQuery: true,
         queries: ["country_code"],
       },
@@ -150,12 +152,13 @@ export default defineComponent({
       country: "",
       network_id: "",
       channel_id: "",
+      bank_code: "",
     });
 
     const countryPhoneCode = ref("+234");
 
-    const CurrentYellowCardNetworks = ref(
-      Logic.Wallet.CurrentYellowCardNetworks
+    const ManyBanksByCountry = ref(
+      Logic.Wallet.ManyBanksByCountry
     );
 
     const FormValidations = Logic.Form;
@@ -183,6 +186,19 @@ export default defineComponent({
           formDetails.first_name + " " + formDetails.last_name;
 
         formDetails.mobile_number = `${countryPhoneCode.value}${formDetails.mobile_number}`;
+
+        // Remove leading '+' if exists
+        if (formDetails.mobile_number.startsWith("+")) {
+          formDetails.mobile_number = formDetails.mobile_number.slice(1);
+        }
+
+        const currentMobileMoney = mobileMoneyProviders?.find(
+          (network) => network.key == formDetails.network_id
+        );
+
+        if (currentMobileMoney) {
+          formDetails.bank_code = currentMobileMoney.key || "";
+        }
 
         Logic.Wallet.CreateSavedAccountForm = {
           unique_id: formDetails.mobile_number,
@@ -229,12 +245,12 @@ export default defineComponent({
     const setMobileMoneyOptions = () => {
       mobileMoneyProviders.length = 0;
 
-      CurrentYellowCardNetworks.value?.forEach((network) => {
-        if (network.accountNumberType == "phone") {
+      ManyBanksByCountry.value?.forEach((network) => {
+        if (network.provider_type == "mobile-money") {
           mobileMoneyProviders.push({
-            key: network.id,
+            key: network.code,
             value: network.name || "",
-            extraInfo: "",
+            extraInfo: network.id || "",
           });
         }
       });
@@ -254,8 +270,8 @@ export default defineComponent({
 
     onMounted(() => {
       Logic.Wallet.watchProperty(
-        "CurrentYellowCardNetworks",
-        CurrentYellowCardNetworks
+        "ManyBanksByCountry",
+        ManyBanksByCountry
       );
       setDefaults();
       setMobileMoneyOptions();

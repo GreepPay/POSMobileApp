@@ -9,7 +9,7 @@
         <template v-if="selectedCurrency != 'EUR'">
           <div class="w-full flex flex-col pb-5">
             <app-text-field
-              v-if="!yellowCardCurrencies.includes(selectedCurrency)"
+              v-if="selectedCurrency == 'USD'"
               :has-title="false"
               type="text"
               placeholder="Bank Name*"
@@ -26,12 +26,13 @@
                 :placeholder="'Select Bank*'"
                 :hasTitle="false"
                 :paddings="'py-4 !px-4'"
-                :options="yellowCardBanksOptions"
+                :options="banksOptions"
                 ref="bankName"
-                v-model="formDetails.network_id"
+                v-model="bankCode"
                 @OnOptionSelected="
                   (data) => {
                     formDetails.bank_name = data.value;
+                    formDetails.network_id = data.key;
                   }
                 "
                 autoComplete
@@ -40,9 +41,29 @@
             </template>
           </div>
 
+           <div class="w-full flex flex-col pb-5" v-if="bankBranchOptions.length > 0 && showBankBranch">
+            
+              <app-select
+                :placeholder="'Select Bank Branch*'"
+                :hasTitle="false"
+                :paddings="'py-4 !px-4'"
+                :options="bankBranchOptions"
+                ref="bankBranch"
+                v-model="branchCode"
+                @OnOptionSelected="
+                  (data) => {
+                    formDetails.bank_branch_code = data.key;
+                  }
+                "
+                autoComplete
+              >
+              </app-select>
+             
+          </div>
+
           <div
             class="w-full flex flex-col pb-5"
-            v-if="!yellowCardCurrencies.includes(selectedCurrency)"
+            v-if="selectedCurrency == 'USD'"
           >
             <app-text-field
               :has-title="false"
@@ -101,7 +122,7 @@
 
           <div
             class="w-full flex flex-col pb-5"
-            v-if="!yellowCardCurrencies.includes(selectedCurrency)"
+            v-if="selectedCurrency == 'USD'"
           >
             <app-text-field
               :has-title="false"
@@ -118,7 +139,7 @@
 
           <!-- Address Section -->
 
-          <template v-if="!yellowCardCurrencies.includes(selectedCurrency)">
+          <template v-if="selectedCurrency == 'USD'">
             <div class="w-full flex flex-col pb-5">
               <app-text-field
                 :has-title="false"
@@ -233,7 +254,7 @@
               ref="firstName"
               name="First Name"
               v-model="formDetails.mykobo_kyc.first_name"
-              :update-value="Logic.Auth.AuthUser.first_name"
+              :update-value="Logic.Auth.AuthUser?.first_name"
               :rules="[FormValidations.RequiredRule]"
             >
             </app-text-field>
@@ -257,7 +278,7 @@
               ref="lastName"
               name="Last Name"
               v-model="formDetails.mykobo_kyc.last_name"
-              :update-value="Logic.Auth.AuthUser.last_name"
+              :update-value="Logic.Auth.AuthUser?.last_name"
               :rules="[FormValidations.RequiredRule]"
             >
             </app-text-field>
@@ -281,7 +302,7 @@
               ref="email"
               name="Email Address"
               v-model="formDetails.mykobo_kyc.email_address"
-              :update-value="Logic.Auth.AuthUser.email"
+              :update-value="Logic.Auth.AuthUser?.email"
               :rules="[FormValidations.RequiredRule, FormValidations.EmailRule]"
             >
             </app-text-field>
@@ -606,8 +627,8 @@ export default defineComponent({
     fetchRules: [
       {
         domain: "Wallet",
-        property: "CurrentYellowCardNetworks",
-        method: "GetYellowCardNetwork",
+        property: "ManyBanksByCountry",
+        method: "GetBanksByCountry",
         params: [],
         requireAuth: true,
         ignoreProperty: true,
@@ -618,6 +639,9 @@ export default defineComponent({
     ],
   },
   setup() {
+    const bankCode = ref("");
+    const branchCode = ref("");
+    const showBankBranch = ref(false);
     const formDetails = reactive({
       bank_name: "",
       account_holder_name: "",
@@ -627,6 +651,8 @@ export default defineComponent({
       country: "",
       network_id: "",
       channel_id: "",
+      bank_code: "",
+      bank_branch_code: "",
       address: {
         street_line_1: "",
         street_line_2: "",
@@ -663,13 +689,14 @@ export default defineComponent({
 
     const FormValidations = Logic.Form;
 
-    const CurrentYellowCardNetworks = ref(
-      Logic.Wallet.CurrentYellowCardNetworks
+    const ManyBanksByCountry = ref(
+      Logic.Wallet.ManyBanksByCountry
     );
 
-    const yellowCardCurrencies = ["NGN", "GHS", "KES", "ZAR"];
+    
 
-    const yellowCardBanksOptions = reactive<SelectOption[]>([]);
+    const banksOptions = reactive<SelectOption[]>([]);
+    const bankBranchOptions = reactive<SelectOption[]>([]);
 
     const myKoboPendingFields = computed<MyKoboFields>(() => {
       return JSON.parse(
@@ -755,13 +782,13 @@ export default defineComponent({
           isResolvingNumber.value = true;
           resolvedAccountName.value = "";
 
-          Logic.Wallet.GetBankAccountDetails(
+          Logic.Wallet.ResolveBankAccountName(
             formDetails.account_number,
             formDetails.network_id
           )
             ?.then((data) => {
               if (data) {
-                resolvedAccountName.value = data;
+                resolvedAccountName.value = data.account_name || "";
 
                 resolveIsError.value = false;
                 isResolvingNumber.value = false;
@@ -813,6 +840,15 @@ export default defineComponent({
           formDetails.mykobo_kyc.mobile_number_full = `${countryPhoneCode.value}${formDetails.mykobo_kyc.mobile_number}`;
         }
 
+        const selectedBank = banksOptions.find(
+          (bank) => bank.key == bankCode.value
+        );
+
+        if (selectedBank) {
+          formDetails.bank_code = bankCode.value;
+          formDetails.bank_branch_code = branchCode.value;
+        }
+
         Logic.Wallet.CreateSavedAccountForm = {
           unique_id: formDetails.account_number,
           type: "bank_account",
@@ -838,6 +874,30 @@ export default defineComponent({
         });
       }
     };
+    
+
+    const getBankBranch = () => {
+      const selectedBank = ManyBanksByCountry.value?.find(
+        (bank) => bank.code == bankCode.value
+      );
+
+      Logic.Wallet.GetBankBranchesByBankId(selectedBank?.id || 0)?.then(
+        (response) => {
+          bankBranchOptions.length = 0;
+          if (response && response.length > 0) {
+            response.forEach((branch) => {
+              bankBranchOptions.push({
+                key: branch.branch_code || "",
+                value: branch.branch_name || "",
+                extraInfo: branch.id || "",
+              });
+            });
+
+            showBankBranch.value = true;
+          }
+        }
+      );
+    }
 
     const setDefaults = () => {
       amount.value = Logic.Common.route?.query?.amount?.toString() || "0";
@@ -850,25 +910,26 @@ export default defineComponent({
       countryCode.value =
         Logic.Common.route?.query?.country_code?.toString() || "0";
 
-      formDetails.mykobo_kyc.mobile_number = Logic.Auth.AuthUser.phone
+      formDetails.mykobo_kyc.mobile_number = Logic.Auth.AuthUser?.phone
         ? Logic.Form.getPhoneAndCode(Logic.Auth.AuthUser.phone || "").phone
         : "";
       countryPhoneCode.value = Logic.Form.getPhoneAndCode(
-        Logic.Auth.AuthUser.phone || ""
+        Logic.Auth.AuthUser?.phone || ""
       ).code
-        ? Logic.Form.getPhoneAndCode(Logic.Auth.AuthUser.phone || "").code
+        ? Logic.Form.getPhoneAndCode(Logic.Auth.AuthUser?.phone || "").code
         : "+234";
     };
 
     const setBankOptions = () => {
-      yellowCardBanksOptions.length = 0;
+      banksOptions.length = 0;
+      bankBranchOptions.length = 0;
 
-      CurrentYellowCardNetworks.value?.forEach((network) => {
-        if (network.accountNumberType == "bank") {
-          yellowCardBanksOptions.push({
-            key: network.id,
+      ManyBanksByCountry.value?.forEach((network) => {
+        if (network.provider_type == "bank") {
+          banksOptions.push({
+            key: network.code || "",
             value: network.name || "",
-            extraInfo: "",
+            extraInfo: network.id || "",
           });
         }
       });
@@ -876,8 +937,8 @@ export default defineComponent({
 
     onMounted(() => {
       Logic.Wallet.watchProperty(
-        "CurrentYellowCardNetworks",
-        CurrentYellowCardNetworks
+        "ManyBanksByCountry",
+        ManyBanksByCountry
       );
       setDefaults();
       setBankOptions();
@@ -888,6 +949,11 @@ export default defineComponent({
         resolveAccountNumber();
         setCountries();
       }
+    });
+
+    watch(bankCode, () => {
+      showBankBranch.value = false;
+      getBankBranch();
     });
 
     onIonViewWillEnter(() => {
@@ -903,9 +969,7 @@ export default defineComponent({
       FormValidations,
       formComponent,
       loadingState,
-      yellowCardCurrencies,
       selectedCurrency,
-      yellowCardBanksOptions,
       canMoveForward,
       resolveIsError,
       isResolvingNumber,
@@ -918,6 +982,11 @@ export default defineComponent({
       proofOfLiveness,
       countriesForPassport,
       getBottomPadding,
+      banksOptions,
+      bankBranchOptions,
+      bankCode,
+      branchCode,
+      showBankBranch
     };
   },
   data() {

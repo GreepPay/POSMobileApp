@@ -58,63 +58,61 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from "vue";
-import { AppButton, AppIcon, AppNormalText } from "@greep/ui-components";
-import { Logic } from "@greep/logic";
-import { reactive } from "vue";
-import { ref } from "vue";
-import { getBottomPadding } from "../../composable";
+  import { defineComponent, reactive, ref } from "vue"
+  import { AppButton, AppIcon, AppNormalText } from "@greep/ui-components"
+  import { Logic } from "@greep/logic"
+  import { getBottomPadding } from "../../composable"
 
-export default defineComponent({
-  name: "WithdrawMethodPage",
-  components: {
-    AppButton,
-    AppIcon,
-    AppNormalText,
-  },
-  setup() {
-    const selectedMethod = ref<string>("bank_account");
+  export default defineComponent({
+    name: "WithdrawMethodPage",
+    components: {
+      AppButton,
+      AppIcon,
+      AppNormalText,
+    },
+    setup() {
+      const selectedMethod = ref<string>("bank_account")
 
-    const withdrawMethods = reactive([
-      {
-        title: "Bank Transfer",
-        key: "bank_account",
-        fee: `$1`,
-      },
-      {
-        title: "Mobile Money",
-        key: "mobile_money",
-        fee: `$1`,
-      },
-      {
-        title: "Crypto Currency",
-        key: "crypto_currency",
-        fee: `$1`,
-      },
-    ]);
+      const withdrawMethods = reactive([
+        {
+          title: "Bank Transfer",
+          key: "bank_account",
+          fee: `$1`,
+        },
+        {
+          title: "Mobile Money",
+          key: "mobile_money",
+          fee: `$1`,
+        },
+        {
+          title: "Crypto Currency",
+          key: "crypto_currency",
+          fee: `$1`,
+        },
+      ])
 
-    const continueToNext = () => {
-      const amountFromRoute =
-        Logic.Common.route?.query?.amount?.toString() || "0";
-      const currencyFromRoute = Logic.Common.route?.query?.currency || "USD";
+      const continueToNext = () => {
+        const amountFromRoute =
+          Logic.Common.route?.query?.amount?.toString() || "0"
+        const currencyFromRoute = Logic.Common.route?.query?.currency || "USD"
 
-      Logic.Common.GoToRoute(
-        "/withdraw/saved-accounts?method=" +
-          selectedMethod.value +
-          "&amount=" +
-          amountFromRoute +
-          "&currency=" +
-          currencyFromRoute
-      );
-    };
+        Logic.Common.GoToRoute(
+          "/withdraw/saved-accounts?method=" +
+            selectedMethod.value +
+            "&amount=" +
+            amountFromRoute +
+            "&currency=" +
+            currencyFromRoute
+        )
+      }
 
-    return {
-      withdrawMethods,
-      Logic,
-      selectedMethod,
-      continueToNext,
-      getBottomPadding,
-    };
-  },
-});
+      return {
+        withdrawMethods,
+        Logic,
+        selectedMethod,
+        continueToNext,
+        getBottomPadding,
+      }
+    },
+  })
 </script>

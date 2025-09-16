@@ -108,7 +108,7 @@
           >{{ currencySymbol
           }}{{
             Logic.Common.convertToMoney(
-              (AuthUser?.wallet?.total_balance || 0) *
+              (Logic.Auth.GetDefaultBusiness()?.wallet?.total_balance || 0) *
                 (CurrentGlobalExchangeRate?.mid || 0),
               true,
               "",
@@ -231,7 +231,7 @@ export default defineComponent({
       return (
         parseFloat(amount.value.replace(",", "")) > 0 &&
         parseFloat(amount.value.replace(",", "")) <=
-          (AuthUser.value?.wallet?.total_balance || 0) *
+          (Logic.Auth.GetDefaultBusiness()?.wallet?.total_balance || 0) *
             (CurrentGlobalExchangeRate.value?.mid || 0) &&
         parseFloat(amount.value.replace(",", "")) >= minimumAmount.value &&
         parseFloat(amount.value.replace(",", "")) <= maximumAmountValue.value
