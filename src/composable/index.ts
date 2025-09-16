@@ -582,24 +582,24 @@ export const availableCurrencies = reactive<Currency[]>([
     allow_p2p: false,
     is_crypto: true,
   },
-  {
-    code: "BTC",
-    name: "BTC",
-    symbol: "₿",
-    loading: false,
-    icon_extension: "svg",
-    country_code: "US",
-    is_crypto: true,
-  },
-  {
-    code: "ETH",
-    name: "ETH",
-    symbol: "Ξ",
-    loading: false,
-    icon_extension: "png",
-    country_code: "US",
-    is_crypto: true,
-  },
+  // {
+  //   code: "BTC",
+  //   name: "BTC",
+  //   symbol: "₿",
+  //   loading: false,
+  //   icon_extension: "svg",
+  //   country_code: "US",
+  //   is_crypto: true,
+  // },
+  // {
+  //   code: "ETH",
+  //   name: "ETH",
+  //   symbol: "Ξ",
+  //   loading: false,
+  //   icon_extension: "png",
+  //   country_code: "US",
+  //   is_crypto: true,
+  // },
 ]);
 
 
