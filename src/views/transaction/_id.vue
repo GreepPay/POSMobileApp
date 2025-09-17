@@ -1,7 +1,7 @@
 <template>
   <app-wrapper>
     <subpage-layout title="Transaction Details">
-      <div class="w-full flex flex-col items-center justify-start px-4 h-full">
+      <div class="w-full flex flex-col items-center justify-start px-4 h-full" id="transactionReceiptContent">
         <AmountCard
           :amount="pageSetup.amount"
           :label="pageSetup.title"
@@ -61,7 +61,10 @@
         `"
       >
         <div class="w-full flex flex-col">
-          <app-button variant="secondary" outlined class="!py-4"
+          <app-button 
+          variant="secondary" 
+          outlined class="!py-4"
+          @click="downloadReceipt('image', 'transactionReceiptContent')"
             >Share Receipt</app-button
           >
         </div>
@@ -86,6 +89,7 @@ import { availableCurrencies, getBottomPadding } from "../../composable";
 import { onIonViewWillEnter } from "@ionic/vue";
 import { watch } from "vue";
 import { capitalize } from "vue";
+import { downloadReceipt } from "../../composable/common"; 
 
 export default defineComponent({
   name: "PaymentIdPage",
@@ -318,6 +322,7 @@ export default defineComponent({
       pageSetup,
       currencySymbol,
       getBottomPadding,
+      downloadReceipt,
     };
   },
 });
