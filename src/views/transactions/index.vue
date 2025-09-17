@@ -128,7 +128,7 @@
               :data="transaction"
               @click="
                 Logic.Common.GoToRoute(
-                  '/transaction/' +
+                  '/transactions/' +
                     transaction.id +
                     `?group=${transaction.transaction_group}`
                 )

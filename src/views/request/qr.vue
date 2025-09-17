@@ -39,15 +39,31 @@
           </div>
         </app-image-loader>
 
-        <div class="w-full flex flex-col pt-3">
+        <div class="w-full flex flex-col pt-3 gap-4 truncate">
           <div
-            class="w-full px-4 !py-4 border-[1.5px] border-[#F0F3F6] rounded-[12px] items-center justify-between !flex !flex-row"
+            class="w-full p-4 border-[1.5px] border rounded-lg flex items-center justify-between truncate"
           >
             <app-normal-text class="!text-[#616161]"> Note </app-normal-text>
 
             <app-normal-text class="!text-[#050709] !font-semibold">
               {{ narration }}
             </app-normal-text>
+          </div>
+
+          <div
+            class="w-full border-[1.5px] border rounded-lg flex items-center justify-between truncate"
+          >
+            <app-normal-text class="!text-[#616161] truncate p-4 !border-r">
+              {{ qrCodeUrl }}
+            </app-normal-text>
+
+            <app-link-text
+              text="Copy Link"
+              suffixIcon="copy"
+              prefixIcon="add-green"
+              custom-class="!font-semibold !text-black "
+              @click="Logic.Common.copytext(qrCodeUrl)"
+            />
           </div>
         </div>
       </div>
@@ -86,6 +102,7 @@
     AppButton,
     AppImageLoader,
     AppIcon,
+    AppLinkText,
   } from "@greep/ui-components"
   import { ref } from "vue"
   import { Logic } from "@greep/logic"
@@ -105,6 +122,7 @@
       AppButton,
       AppImageLoader,
       AppIcon,
+      AppLinkText,
     },
     setup() {
       const amount = ref("0")
@@ -131,15 +149,10 @@
       })
 
       const qrCodeUrl = computed(() => {
-        console.log(
-          "(import.meta as any).env.NODE_ENV ",
-          (import.meta as any).env.NODE_ENV
-        )
-
         const baseUrl =
-          (import.meta as any).env.NODE_ENV === "production"
-            ? "https://greep-merchant.web.app"
-            : "http://localhost:3000" // adjust port if needed
+          process.env.NODE_ENV === "production"
+            ? process.env.VITE_GREEP_APP_URL
+            : "http://localhost:5173"
 
         const params = new URLSearchParams({
           amount: amount.value,
@@ -147,16 +160,10 @@
           uuid: AuthUser.value?.uuid || "",
         })
 
-        const finalUrl = `${baseUrl}/request/qr?${params.toString()}`
-
-        console.log(finalUrl)
+        const finalUrl = `${baseUrl}/request?${params.toString()}`
+        console.log("finalUrl", finalUrl)
 
         return finalUrl
-        // return JSON.stringify({
-        //   amount: amount.value,
-        //   currency: AuthUser.value?.businesses[0]?.default_currency || "TRY",
-        //   uuid: AuthUser.value?.uuid || "",
-        // })
       })
 
       const currentCurrency = computed(() => {
