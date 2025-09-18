@@ -13,7 +13,7 @@
         />
 
         <!-- Mark as read button -->
-        <div class="w-full flex flex-col pb-4">
+        <div v-if="false" class="w-full flex flex-col pb-4">
           <app-button
             class="w-full !py-4 !text-sm"
             outlined
@@ -24,7 +24,7 @@
         </div>
 
         <!-- Notifications -->
-        <div class="flex flex-col">
+        <div class="flex flex-col pt-2">
           <div v-if="!notifications.length" class="mt-10">
             <app-empty-state
               icon="info-circle-gray"
@@ -52,7 +52,7 @@
   import {
     AppButton,
     AppNotification,
-    AppTabs,
+    // AppTabs,
     AppEmptyState,
   } from "@greep/ui-components"
   import { Logic } from "@greep/logic"
@@ -60,13 +60,14 @@
   import { notificationsTabs } from "../../db/index"
   import { MappedNotification } from "../../composable/types"
   import { mapNotificationsToUI } from "../../composable/notification"
+  import { buildNotificationWhereQuery } from "../../utils/formatter/index"
 
   export default defineComponent({
     name: "NotificationsPage",
     components: {
       AppButton,
       AppNotification,
-      AppTabs,
+      // AppTabs,
       AppEmptyState,
     },
     middlewares: {
@@ -75,7 +76,7 @@
           domain: "Notification",
           property: "ManyNotifications",
           method: "GetNotifications",
-          params: ["email", 1, 10],
+          params: [1, 10],
           requireAuth: true,
           ignoreProperty: true,
           silentUpdate: false,
@@ -85,12 +86,14 @@
     setup() {
       const notifications = ref<MappedNotification[]>([])
       const ManyNotifications = ref(Logic.Wallet.ManyTransactions)
+      const activeTab = ref("all")
 
       const setDefaults = () => {
-        ManyNotifications.value?.data?.forEach((notification) => {
-          if (!notification) return []
-          notifications.value.push(mapNotificationsToUI(notification))
-        })
+        if (!ManyNotifications.value?.data) return (notifications.value = [])
+
+        notifications.value = ManyNotifications.value.data
+          .filter((n) => !!n) // filter out nulls just in case
+          .map((notification) => mapNotificationsToUI(notification))
       }
 
       onIonViewWillEnter(() => {
@@ -106,6 +109,8 @@
         Logic,
         notifications,
         notificationsTabs,
+        activeTab,
+        buildNotificationWhereQuery,
       }
     },
   })

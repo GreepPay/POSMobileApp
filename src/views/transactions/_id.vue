@@ -1,7 +1,10 @@
 <template>
   <app-wrapper>
     <subpage-layout title="Transaction Details">
-      <div class="w-full flex flex-col items-center justify-start px-4 h-full" id="transactionReceiptContent">
+      <div
+        class="w-full flex flex-col items-center justify-start px-4 h-full"
+        id="transactionReceiptContent"
+      >
         <AmountCard
           :amount="pageSetup.amount"
           :label="pageSetup.title"
@@ -61,10 +64,11 @@
         `"
       >
         <div class="w-full flex flex-col">
-          <app-button 
-          variant="secondary" 
-          outlined class="!py-4"
-          @click="downloadReceipt('image', 'transactionReceiptContent')"
+          <app-button
+            variant="secondary"
+            outlined
+            class="!py-4"
+            @click="downloadReceipt('image', 'transactionReceiptContent')"
             >Share Receipt</app-button
           >
         </div>
@@ -74,256 +78,258 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from "vue";
-import { AppButton, AppIcon, AppNormalText } from "@greep/ui-components";
-import { Logic } from "@greep/logic";
-import { reactive } from "vue";
-import AmountCard from "@/components/Common/AmountCard.vue";
-import { ref } from "vue";
-import { onMounted } from "vue";
-import {
-  getPointTransaction,
-  getTransaction,
-} from "../../composable/financials";
-import { availableCurrencies, getBottomPadding } from "../../composable";
-import { onIonViewWillEnter } from "@ionic/vue";
-import { watch } from "vue";
-import { capitalize } from "vue";
-import { downloadReceipt } from "../../composable/common"; 
+  import { defineComponent } from "vue"
+  import { AppButton, AppIcon, AppNormalText } from "@greep/ui-components"
+  import { Logic } from "@greep/logic"
+  import { reactive } from "vue"
+  import AmountCard from "@/components/Common/AmountCard.vue"
+  import { ref } from "vue"
+  import { onMounted } from "vue"
+  import {
+    getPointTransaction,
+    getTransaction,
+  } from "../../composable/financials"
+  import { availableCurrencies, getBottomPadding } from "../../composable"
+  import { onIonViewWillEnter } from "@ionic/vue"
+  import { watch } from "vue"
+  import { capitalize } from "vue"
+  import { downloadReceipt } from "../../composable/common"
 
-export default defineComponent({
-  name: "PaymentIdPage",
-  components: {
-    AppButton,
-    AppIcon,
-    AppNormalText,
-    AmountCard,
-  },
-  middlewares: {
-    fetchRules: [
-      {
-        domain: "Wallet",
-        property: "SingleTransaction",
-        method: "GetSingleTransaction",
-        params: [],
-        requireAuth: true,
-        ignoreProperty: true,
-        useRouteId: true,
-        condition: {
-          routeSearchItem: "fullPath",
-          searchQuery: "normal",
+  export default defineComponent({
+    name: "PaymentIdPage",
+    components: {
+      AppButton,
+      AppIcon,
+      AppNormalText,
+      AmountCard,
+    },
+    middlewares: {
+      fetchRules: [
+        {
+          domain: "Wallet",
+          property: "SingleTransaction",
+          method: "GetSingleTransaction",
+          params: [],
+          requireAuth: true,
+          ignoreProperty: true,
+          useRouteId: true,
+          condition: {
+            routeSearchItem: "fullPath",
+            searchQuery: "normal",
+          },
         },
-      },
-      {
-        domain: "Wallet",
-        property: "SinglePointTransaction",
-        method: "GetSinglePointTransaction",
-        params: [],
-        requireAuth: true,
-        ignoreProperty: true,
-        useRouteId: true,
-        condition: {
-          routeSearchItem: "fullPath",
-          searchQuery: "point",
+        {
+          domain: "Wallet",
+          property: "SinglePointTransaction",
+          method: "GetSinglePointTransaction",
+          params: [],
+          requireAuth: true,
+          ignoreProperty: true,
+          useRouteId: true,
+          condition: {
+            routeSearchItem: "fullPath",
+            searchQuery: "point",
+          },
         },
-      },
-    ],
-  },
-  setup() {
-    const SingleTransaction = ref(Logic.Wallet.SingleTransaction);
-    const SinglePointTransaction = ref(Logic.Wallet.SinglePointTransaction);
+      ],
+    },
+    setup() {
+      const SingleTransaction = ref(Logic.Wallet.SingleTransaction)
+      const SinglePointTransaction = ref(Logic.Wallet.SinglePointTransaction)
 
-    const transactionGroup = ref<"normal" | "point">("normal");
+      const transactionGroup = ref<"normal" | "point">("normal")
 
-    const selectedCurrency = ref(
-      Logic.Auth.AuthUser?.businesses[0]?.default_currency
-    );
+      const selectedCurrency = ref(
+        Logic.Auth.AuthUser?.businesses[0]?.default_currency
+      )
 
-    const pageSetup = reactive({
-      amount: 0,
-      title: "Amount Received",
-      has_grp: false,
-      grp_amount: 0,
-    });
+      const pageSetup = reactive({
+        amount: 0,
+        title: "Amount Received",
+        has_grp: false,
+        grp_amount: 0,
+      })
 
-    const transactionDetails = reactive<
-      {
-        title: string;
-        value: string;
-      }[]
-    >([
-      {
-        title: "Sender",
-        value: "Raymond Akinola",
-      },
-      {
-        title: "Bank",
-        value: "GTBank (201***6671)",
-      },
-      {
-        title: "Type",
-        value: "Transfer",
-      },
-      {
-        title: "Amount",
-        value: "₦33,000 ($22)",
-      },
-      {
-        title: "Time",
-        value: "13:55 - Feb 20, 2025",
-      },
-    ]);
+      const transactionDetails = reactive<
+        {
+          title: string
+          value: string
+        }[]
+      >([
+        {
+          title: "Sender",
+          value: "Raymond Akinola",
+        },
+        {
+          title: "Bank",
+          value: "GTBank (201***6671)",
+        },
+        {
+          title: "Type",
+          value: "Transfer",
+        },
+        {
+          title: "Amount",
+          value: "₦33,000 ($22)",
+        },
+        {
+          title: "Time",
+          value: "13:55 - Feb 20, 2025",
+        },
+      ])
 
-    const currencySymbol = ref(
-      availableCurrencies.find(
-        (currency) => currency.code === selectedCurrency.value
-      )?.symbol
-    );
+      const currencySymbol = ref(
+        availableCurrencies.find(
+          (currency) => currency.code === selectedCurrency.value
+        )?.symbol
+      )
 
-    const setupPageContent = () => {
-      // Set group from query params
+      const setupPageContent = () => {
+        // Set group from query params
 
-      transactionGroup.value = Logic.Common.route?.query?.group?.toString() as
-        | "normal"
-        | "point";
+        transactionGroup.value =
+          Logic.Common.route?.query?.group?.toString() as "normal" | "point"
 
-      if (transactionGroup.value === "point") {
-        pageSetup.amount = SinglePointTransaction.value?.amount || 0;
-        pageSetup.has_grp = false;
+        if (transactionGroup.value === "point") {
+          pageSetup.amount = SinglePointTransaction.value?.amount || 0
+          pageSetup.has_grp = false
 
-        if (SinglePointTransaction.value) {
-          const transactionType =
-            SinglePointTransaction.value?.dr_or_cr == "credit"
-              ? "Reward"
-              : "Redemption";
+          if (SinglePointTransaction.value) {
+            const transactionType =
+              SinglePointTransaction.value?.dr_or_cr == "credit"
+                ? "Reward"
+                : "Redemption"
 
-          const transactionInfo = getPointTransaction(
-            SinglePointTransaction.value,
-            currencySymbol.value || ""
-          );
+            const transactionInfo = getPointTransaction(
+              SinglePointTransaction.value,
+              currencySymbol.value || ""
+            )
 
-          transactionDetails.push({
-            title: "Summary",
-            value: SinglePointTransaction.value?.description || "",
-          });
-          transactionDetails.push({
-            title: "Type",
-            value: transactionType,
-          });
-          transactionDetails.push({
-            title: "Status",
-            value: SinglePointTransaction.value?.status || "Pending",
-          });
-          transactionDetails.push({
-            title: "Reference",
-            value: SinglePointTransaction.value?.reference || "",
-          });
-          transactionDetails.push({
-            title: "Amount",
-            value: `${
-              transactionInfo.currencySymbol
-            } ${Logic.Common.convertToMoney(
-              transactionInfo.amount,
-              true,
-              ""
-            )} (${transactionInfo.subAmount})`,
-          });
-          transactionDetails.push({
-            title: "Time",
-            value: Logic.Common.fomartDate(
-              SingleTransaction.value?.created_at,
-              "HH:mm - MMM DD, YYYY"
-            ),
-          });
-        }
-      } else {
-        pageSetup.amount = SingleTransaction.value?.amount || 0;
-        pageSetup.has_grp = true;
-        pageSetup.grp_amount =
-          SingleTransaction.value?.point_transaction?.amount || 0;
-
-        const transactionType =
-          SingleTransaction.value?.dr_or_cr == "credit"
-            ? "Payment"
-            : "Withdrawal";
-
-        transactionDetails.length = 0;
-
-        if (SingleTransaction.value) {
-          const transactionInfo = getTransaction(
-            SingleTransaction.value,
-            selectedCurrency.value,
-            currencySymbol.value || ""
-          );
-
-          transactionDetails.push({
-            title: "Summary",
-            value: SingleTransaction.value?.description || "",
-          });
-          transactionDetails.push({
-            title: "Type",
-            value: transactionType,
-          });
-          transactionDetails.push({
-            title: "Status",
-            value: capitalize(SingleTransaction.value?.status || "Pending"),
-          });
-          transactionDetails.push({
-            title: "Reference",
-            value: SingleTransaction.value?.reference || "",
-          });
-          transactionDetails.push({
-            title: "Amount",
-            value: `${
-              transactionInfo.currencySymbol
-            } ${Logic.Common.convertToMoney(
-              transactionInfo.amount,
-              true,
-              ""
-            )} (${transactionInfo.subAmount})`,
-          });
-          transactionDetails.push({
-            title: "Time",
-            value: Logic.Common.fomartDate(
-              SingleTransaction.value?.created_at,
-              "HH:mm - MMM DD, YYYY"
-            ),
-          });
-        }
-
-        if (SingleTransaction.value?.dr_or_cr == "credit") {
-          pageSetup.title = "Amount Received";
+            transactionDetails.push({
+              title: "Summary",
+              value: SinglePointTransaction.value?.description || "",
+            })
+            transactionDetails.push({
+              title: "Type",
+              value: transactionType,
+            })
+            transactionDetails.push({
+              title: "Status",
+              value: SinglePointTransaction.value?.status || "Pending",
+            })
+            transactionDetails.push({
+              title: "Reference",
+              value: SinglePointTransaction.value?.reference || "",
+            })
+            transactionDetails.push({
+              title: "Amount",
+              value: `${
+                transactionInfo.currencySymbol
+              } ${Logic.Common.convertToMoney(
+                transactionInfo.amount,
+                true,
+                ""
+              )} (${transactionInfo.subAmount})`,
+            })
+            transactionDetails.push({
+              title: "Time",
+              value: Logic.Common.fomartDate(
+                SingleTransaction.value?.created_at,
+                "HH:mm - MMM DD, YYYY"
+              ),
+            })
+          }
         } else {
-          pageSetup.title = "Amount Sent";
+          pageSetup.amount = SingleTransaction.value?.amount || 0
+          pageSetup.has_grp = true
+          pageSetup.grp_amount =
+            SingleTransaction.value?.point_transaction?.amount || 0
+
+          const transactionType =
+            SingleTransaction.value?.dr_or_cr == "credit"
+              ? "Payment"
+              : "Withdrawal"
+
+          transactionDetails.length = 0
+
+          if (SingleTransaction.value) {
+            const transactionInfo = getTransaction(
+              SingleTransaction.value,
+              selectedCurrency.value,
+              currencySymbol.value || ""
+            )
+
+            transactionDetails.push({
+              title: "Summary",
+              value: SingleTransaction.value?.description || "",
+            })
+            transactionDetails.push({
+              title: "Type",
+              value: transactionType,
+            })
+            transactionDetails.push({
+              title: "Status",
+              value: capitalize(SingleTransaction.value?.status || "Pending"),
+            })
+            transactionDetails.push({
+              title: "Reference",
+              value: SingleTransaction.value?.reference || "",
+            })
+            transactionDetails.push({
+              title: "Amount",
+              value: `${
+                transactionInfo.currencySymbol
+              } ${Logic.Common.convertToMoney(
+                transactionInfo.amount,
+                true,
+                ""
+              )} (${transactionInfo.subAmount})`,
+            })
+            transactionDetails.push({
+              title: "Time",
+              value: Logic.Common.fomartDate(
+                SingleTransaction.value?.created_at,
+                "HH:mm - MMM DD, YYYY"
+              ),
+            })
+          }
+
+          if (SingleTransaction.value?.dr_or_cr == "credit") {
+            pageSetup.title = "Amount Received"
+          } else {
+            pageSetup.title = "Amount Sent"
+          }
         }
       }
-    };
 
-    watch([SingleTransaction, SinglePointTransaction, transactionGroup], () => {
-      setupPageContent();
-    });
+      watch(
+        [SingleTransaction, SinglePointTransaction, transactionGroup],
+        () => {
+          setupPageContent()
+        }
+      )
 
-    onIonViewWillEnter(() => {
-      setupPageContent();
-    });
+      onIonViewWillEnter(() => {
+        setupPageContent()
+      })
 
-    onMounted(() => {
-      Logic.Wallet.watchProperty("SingleTransaction", SingleTransaction);
-      Logic.Wallet.watchProperty(
-        "SinglePointTransaction",
-        SinglePointTransaction
-      );
-      setupPageContent();
-    });
+      onMounted(() => {
+        Logic.Wallet.watchProperty("SingleTransaction", SingleTransaction)
+        Logic.Wallet.watchProperty(
+          "SinglePointTransaction",
+          SinglePointTransaction
+        )
+        setupPageContent()
+      })
 
-    return {
-      Logic,
-      transactionDetails,
-      pageSetup,
-      currencySymbol,
-      getBottomPadding,
-      downloadReceipt,
-    };
-  },
-});
+      return {
+        Logic,
+        transactionDetails,
+        pageSetup,
+        currencySymbol,
+        getBottomPadding,
+        downloadReceipt,
+      }
+    },
+  })
 </script>
