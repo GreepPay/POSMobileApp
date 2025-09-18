@@ -2,6 +2,16 @@
   <app-wrapper>
     <subpage-layout title="Notifications" :hasBottomButton="false">
       <div class="w-full flex flex-col justify-start px-4 h-full pt-1">
+        <app-tabs
+          v-if="false"
+          :tabs="notificationsTabs"
+          v-model:activeTab="activeTab"
+          tabsClass="!w-full flex border  rounded-full"
+          tabClass="!flex-1 text-center border-none !mr-0 py-3"
+          customClass="!overflow-x-hidden"
+          type="badge"
+        />
+
         <!-- Mark as read button -->
         <div class="w-full flex flex-col pb-4">
           <app-button
@@ -15,71 +25,88 @@
 
         <!-- Notifications -->
         <div class="flex flex-col">
-          <app-notification
-            v-for="(notification, index) in notifications"
-            :key="index"
-            :notification="notification"
-          />
-        </div>
+          <div v-if="!notifications.length" class="mt-10">
+            <app-empty-state
+              icon="info-circle-gray"
+              title="No Notifications"
+              description="You're all caught up! Nothing new to see here."
+              custonClass="border-none"
+            />
+          </div>
 
-        
+          <template v-else>
+            <app-notification
+              v-for="(notification, index) in notifications"
+              :key="index"
+              :notification="notification"
+            />
+          </template>
+        </div>
       </div>
     </subpage-layout>
   </app-wrapper>
 </template>
 
 <script lang="ts">
-import { defineComponent } from "vue";
-import { AppButton, AppNotification } from "@greep/ui-components";
-import { Logic } from "@greep/logic";
-import { reactive } from "vue";
-
-export default defineComponent({
-  name: "NotificationsPage",
-  components: {
+  import { defineComponent, ref, onMounted } from "vue"
+  import {
     AppButton,
     AppNotification,
-  },
-  setup() {
-    const notifications = reactive([
-      {
-        logo: "notify-info",
-        title: "Reward Milestone",
-        contents: [
-          "Congratulations! You have earned 1000 GRP Tokens. Redeem now!",
-        ],
-        date: "Today",
-      },
-      {
-        logo: "notify-success",
-        title: "Payment Successful",
-        contents: ["₦33,000", "Raymond Akintola"],
-        date: "Today",
-      },
-      {
-        logo: "notify-success",
-        title: "Conversion Successful",
-        contents: ["₺25", "GRP Token"],
-        date: "Today",
-      },
-      {
-        logo: "notify-error",
-        title: "Payment Failed",
-        contents: ["₺200", "Payment Request"],
-        date: "Today",
-      },
-      {
-        logo: "notify-success",
-        title: "Withdrawal Successful",
-        contents: ["₺966", "Timmy Salami"],
-        date: "Today",
-      },
-    ]);
+    AppTabs,
+    AppEmptyState,
+  } from "@greep/ui-components"
+  import { Logic } from "@greep/logic"
+  import { onIonViewWillEnter } from "@ionic/vue"
+  import { notificationsTabs } from "../../db/index"
+  import { MappedNotification } from "../../composable/types"
+  import { mapNotificationsToUI } from "../../composable/notification"
 
-    return {
-      Logic,
-      notifications,
-    };
-  },
-});
+  export default defineComponent({
+    name: "NotificationsPage",
+    components: {
+      AppButton,
+      AppNotification,
+      AppTabs,
+      AppEmptyState,
+    },
+    middlewares: {
+      fetchRules: [
+        {
+          domain: "Notification",
+          property: "ManyNotifications",
+          method: "GetNotifications",
+          params: ["email", 1, 10],
+          requireAuth: true,
+          ignoreProperty: true,
+          silentUpdate: false,
+        },
+      ],
+    },
+    setup() {
+      const notifications = ref<MappedNotification[]>([])
+      const ManyNotifications = ref(Logic.Wallet.ManyTransactions)
+
+      const setDefaults = () => {
+        ManyNotifications.value?.data?.forEach((notification) => {
+          if (!notification) return []
+          notifications.value.push(mapNotificationsToUI(notification))
+        })
+      }
+
+      onIonViewWillEnter(() => {
+        setDefaults()
+      })
+
+      onMounted(() => {
+        Logic.Notification.watchProperty("ManyNotifications", ManyNotifications)
+        setDefaults()
+      })
+
+      return {
+        Logic,
+        notifications,
+        notificationsTabs,
+      }
+    },
+  })
 </script>
