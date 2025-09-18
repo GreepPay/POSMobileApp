@@ -70,7 +70,7 @@ import { Logic } from "@greep/logic";
 import { MutationSignInArgs } from "@greep/logic/src/gql/graphql";
 
 export default defineComponent({
-  name: "NewPassWordpage",
+  name: "SetPassWordpage",
   components: {
     AppNormalText,
     AppFormWrapper,
