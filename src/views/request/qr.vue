@@ -29,7 +29,7 @@
             <app-header-text
               class="text-center !text-white !text-3xl !font-[50] pt-1"
             >
-              {{ currentCurrency }}
+              {{ currencySymbol }}
               {{
                 !Number.isNaN(parseFloat(amount))
                   ? Logic.Common.convertToMoney(amount, false, "", false)
@@ -60,7 +60,6 @@
             <app-link-text
               text="Copy Link"
               suffixIcon="copy"
-              prefixIcon="add-green"
               custom-class="!font-semibold !text-black "
               @click="Logic.Common.copytext(qrCodeUrl)"
             />
@@ -129,24 +128,32 @@
 
       const AuthUser = ref<User>(Logic.Auth.AuthUser)
       const narration = ref("")
+      const currentCurrency = ref("TRY")
+
+      const currencySymbol = computed(() => {
+        return availableCurrencies.filter(
+          (item) => item.code == currentCurrency.value
+        )[0]?.symbol
+      })
 
       const setAmount = () => {
         //  Get amount from query params
         const queryParams = Logic.Common.route?.query
         if (queryParams) {
           amount.value = queryParams.amount as string
+          currentCurrency.value = (queryParams.currency as string) || "TRY"
           narration.value =
             (queryParams.narration as string) || "Payment Request"
         }
       }
 
-      const qrCodeData = computed(() => {
-        return JSON.stringify({
-          amount: amount.value,
-          currency: AuthUser.value?.businesses[0]?.default_currency || "TRY",
-          uuid: AuthUser.value?.uuid || "",
-        })
-      })
+      // const qrCodeData = computed(() => {
+      //   return JSON.stringify({
+      //     amount: amount.value,
+      //     currency: currentCurrency.value,
+      //     uuid: AuthUser.value?.uuid || "",
+      //   })
+      // })
 
       const qrCodeUrl = computed(() => {
         const baseUrl =
@@ -156,20 +163,12 @@
 
         const params = new URLSearchParams({
           amount: amount.value,
-          currency: AuthUser.value?.businesses[0]?.default_currency || "TRY",
+          currency: currentCurrency.value,
           uuid: AuthUser.value?.uuid || "",
         })
 
         const finalUrl = `${baseUrl}/request?${params.toString()}`
-        console.log("finalUrl", finalUrl)
-
         return finalUrl
-      })
-
-      const currentCurrency = computed(() => {
-        return availableCurrencies.filter(
-          (item) => item.code == AuthUser.value?.businesses[0]?.default_currency
-        )[0]?.symbol
       })
 
       const continueToNext = () => {
@@ -189,13 +188,14 @@
       return {
         amount,
         Logic,
-        qrCodeData,
+        // qrCodeData,
         continueToNext,
         currentCurrency,
         getBottomPadding,
         narration,
         downloadReceipt,
         qrCodeUrl,
+        currencySymbol,
       }
     },
   })
