@@ -62,6 +62,7 @@
           </template>
         </app-virtual-scroller>
       </div>
+      
       <div
         class="w-full h-full flex flex-col items-center justify-center"
         v-if="Notifications?.data?.length == 0"
