@@ -105,6 +105,11 @@ export default defineComponent({
           }
 
           loadingState.value = true;
+          
+          Logic.Common.showLoader({
+            show: true,
+            loading: true,
+          });
 
           // Send the reset password request
           await Logic.Auth.ResetPassword({

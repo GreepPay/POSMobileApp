@@ -31,6 +31,13 @@ export default defineComponent({
     const isEmailVerified = ref(false);
     const verifyEmailRef = ref<any>(null);
     const uuid = localStorage.getItem("reset_password_uuid");
+    
+    const resetOtp = () => {
+      otpCode.value = ""; 
+      if (verifyEmailRef.value && typeof verifyEmailRef.value.resetOtp === 'function') {
+        verifyEmailRef.value.resetOtp();
+      }
+    };
 
     const handleFormFilled = (code: string) => {
       otpCode.value = code;
@@ -45,6 +52,10 @@ export default defineComponent({
 
     const handleApiCall = async () => {
       loadingState.value = true;
+      Logic.Common.showLoader({
+        show: true,
+        loading: true,
+      });
 
       try {
         Logic.Auth.VerifyUserOTPForm = {
@@ -57,9 +68,11 @@ export default defineComponent({
         if (isVerified) {
           // Only navigate if verification was successful
           loadingState.value = false;
+           resetOtp();
           Logic.Common.GoToRoute("/auth/new-password");
         } else {
           loadingState.value = false;
+           resetOtp();
           // Handle failed verification (even if no error was thrown)
           Logic.Common.showAlert({
             show: true,
@@ -69,9 +82,12 @@ export default defineComponent({
         }
       } catch (error) {
         loadingState.value = false;
+         resetOtp();
         // The error is already handled in the VerifyUserOTP method
         // No need to show it again here unless you want different handling
         console.error("Verification process error:", error);
+      }finally {
+        Logic.Common.hideLoader();
       }
     };
 
@@ -82,6 +98,7 @@ export default defineComponent({
       verifyEmailRef,
       handleNext,
       handleFormFilled,
+       resetOtp,
     };
   },
 });
