@@ -18,7 +18,7 @@
           <div v-if="!ManyNotifications.data.length" class="mt-10">
             <app-empty-state
               icon="info-circle-gray"
-              title="No ManyNotifications"
+              title="No Notifications"
               description="You're all caught up! Nothing new to see here."
               custonClass="border-none"
             />
@@ -66,9 +66,7 @@
     AppVirtualScroller,
   } from "@greep/ui-components"
   import { Logic } from "@greep/logic"
-  import { onIonViewWillEnter } from "@ionic/vue"
   import { notificationsTabs } from "../../db/index"
-  import { MappedNotification } from "../../composable/types"
   import { mapNotificationsToUI } from "../../composable/notification"
   import { buildNotificationWhereQuery } from "../../utils/formatter/index"
 
@@ -98,16 +96,7 @@
     },
     setup() {
       const ManyNotifications = ref(Logic.Notification.ManyNotifications)
-      const notifications = ref<MappedNotification[]>([])
-      const activeTab = ref("all")
-
-      const setDefaults = () => {
-        if (!ManyNotifications.value?.data) return (notifications.value = [])
-
-        notifications.value = ManyNotifications.value.data
-          .filter((n) => !!n) // filter out nulls just in case
-          .map((notification) => mapNotificationsToUI(notification))
-      }
+      // const activeTab = ref("all")
 
       const fetchMoreNotifications = (nextPage: number) => {
         console.log("nextPage", nextPage)
@@ -128,20 +117,14 @@
           .catch(() => false)
       }
 
-      onIonViewWillEnter(() => {
-        setDefaults()
-      })
-
       onMounted(() => {
         Logic.Notification.watchProperty("ManyNotifications", ManyNotifications)
-        setDefaults()
       })
 
       return {
         Logic,
-        notifications,
         notificationsTabs,
-        activeTab,
+        // activeTab,
         buildNotificationWhereQuery,
         fetchMoreNotifications,
         ManyNotifications,
