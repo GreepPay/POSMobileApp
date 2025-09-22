@@ -7,7 +7,10 @@ export interface Notification {
 }
 
 export interface MappedNotification {
+  id: number
+  type: string
   icon: string
+  is_read: boolean
   title: string
   contents: string[]
   date: string

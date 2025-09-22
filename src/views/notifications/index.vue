@@ -1,16 +1,30 @@
 <template>
   <app-wrapper>
-    <subpage-layout title="ManyNotifications" :hasBottomButton="false">
-      <div class="w-full flex flex-col justify-start px-4 h-full pt-1">
+    <subpage-layout title="Notifications" :hasBottomButton="false">
+      <div
+        class="w-full flex flex-col justify-start px-4 h-screen pt-1 relative"
+      >
         <!-- Mark as read button -->
-        <div v-if="false" class="w-full flex flex-col pb-4">
-          <app-button
-            class="w-full !py-4 !text-sm"
-            outlined
-            variant="secondary"
-          >
-            Mark all as Read
-          </app-button>
+        <div class="flex flex-col pb-2 stic ky !top-2 0 bg-wh ite">
+          <app-tabs
+            :tabs="notificationsTabs"
+            v-model:activeTab="activeTab"
+            tabsClass="!w-full     !border-veryLightGray rounded-full gap-3 "
+            tabClass="!flex-1 text-center border !mr-0 py-3 !px-4"
+            type="badge"
+          />
+
+          <div class="w-full mt-4" v-if="ManyNotifications.data.length">
+            <app-button
+              class="w-full !py-3 !text-sm"
+              outlined
+              :disabled="isMarkingAsRead"
+              variant="secondary"
+              @click="markNotificationAsRead"
+            >
+              Mark all as Read
+            </app-button>
+          </div>
         </div>
 
         <!-- ManyNotifications -->
@@ -57,17 +71,20 @@
 </template>
 
 <script lang="ts">
-  import { defineComponent, ref, onMounted } from "vue"
+  import { defineComponent, ref, onMounted, watch } from "vue"
   import {
     AppButton,
     AppNotification,
-    // AppTabs,
+    AppTabs,
     AppEmptyState,
     AppVirtualScroller,
   } from "@greep/ui-components"
   import { Logic } from "@greep/logic"
   import { notificationsTabs } from "../../db/index"
-  import { mapNotificationsToUI } from "../../composable/notification"
+  import {
+    mapNotificationsToUI,
+    isIdInArray,
+  } from "../../composable/notification"
   import { buildNotificationWhereQuery } from "../../utils/formatter/index"
 
   const itemsPerPage = 10
@@ -77,7 +94,7 @@
     components: {
       AppButton,
       AppNotification,
-      // AppTabs,
+      AppTabs,
       AppEmptyState,
       AppVirtualScroller,
     },
@@ -96,10 +113,10 @@
     },
     setup() {
       const ManyNotifications = ref(Logic.Notification.ManyNotifications)
-      // const activeTab = ref("all")
+      const isMarkingAsRead = ref(false)
+      const activeTab = ref("all")
 
       const fetchMoreNotifications = (nextPage: number) => {
-        console.log("nextPage", nextPage)
         return Logic.Notification.GetNotifications(nextPage, itemsPerPage)
           .then((response) => {
             if (response) {
@@ -117,6 +134,38 @@
           .catch(() => false)
       }
 
+      const markNotificationAsRead = async () => {
+        const ids: number[] = ManyNotifications.value.data
+          .filter((n) => !n.is_read)
+          .map((n) => Number(n.id))
+
+        isMarkingAsRead.value = true
+        await Logic.Notification.MarkNotificationsAsRead(ids)
+        isMarkingAsRead.value = false
+      }
+
+      const fetchNotifications = async () => {
+        const whereQuery = `{ 
+            column: CATEGORY
+            operator: EQ
+            value: "${activeTab.value}" 
+          }`
+
+        Logic.Common.showLoader({ loading: true, show: true })
+        await Logic.Notification.GetNotifications(
+          1,
+          10,
+          "CREATED_AT",
+          "DESC",
+          activeTab.value !== "all" ? whereQuery : ""
+        )
+        Logic.Common.hideLoader()
+      }
+
+      watch(activeTab, (newValue, oldValue) => {
+        if (newValue !== oldValue) fetchNotifications()
+      })
+
       onMounted(() => {
         Logic.Notification.watchProperty("ManyNotifications", ManyNotifications)
       })
@@ -124,11 +173,14 @@
       return {
         Logic,
         notificationsTabs,
-        // activeTab,
+        activeTab,
         buildNotificationWhereQuery,
         fetchMoreNotifications,
         ManyNotifications,
         mapNotificationsToUI,
+        isIdInArray,
+        markNotificationAsRead,
+        isMarkingAsRead,
       }
     },
   })

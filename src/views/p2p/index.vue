@@ -25,6 +25,7 @@
             />
           </div>
         </template>
+        
         <template v-else>
           <div class="flex flex-col w-full px-4 pt-2 !pb-[100px]">
             <div

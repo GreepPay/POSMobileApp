@@ -17,7 +17,8 @@
             <div class="w-full flex flex-col space-y-[1px] z-1">
               <app-normal-text
                 class="!text-white font-semibold !text-left !text-base"
-                > {{ AuthUser.first_name }}
+              >
+                {{ AuthUser.first_name }}
                 {{ AuthUser.last_name }}</app-normal-text
               >
               <app-normal-text class="font-light !text-left !text-white">{{
@@ -32,13 +33,15 @@
                   <div class="flex flex-row space-x-1 items-center">
                     <app-icon name="grp-logo-white" custom-class="!h-[24px]" />
 
-                    <app-normal-text class="!text-white font-[500] !text-sm">{{
-                      Logic.Common.convertToMoney(
-                        AuthUser.wallet?.point_balance,
-                        true,
-                        ""
-                      )
-                    }} </app-normal-text>
+                    <app-normal-text class="!text-white font-[500] !text-sm"
+                      >{{
+                        Logic.Common.convertToMoney(
+                          AuthUser.wallet?.point_balance,
+                          true,
+                          ""
+                        )
+                      }}
+                    </app-normal-text>
                   </div>
 
                   <app-icon name="arrow-right-white" custom-class="!h-[20px]" />
@@ -57,9 +60,9 @@
             @click="Logic.Common.GoToRoute(item.route)"
           >
             <app-icon :name="item.logo" :custom-class="`${item.logo_size}`" />
-            <app-normal-text class="!text-black !text-sm">{{
-              item.title
-            }}</app-normal-text>
+            <app-normal-text class="!text-black !text-sm">
+              {{ item.title }}
+            </app-normal-text>
           </div>
         </div>
       </div>
@@ -75,31 +78,32 @@
           <app-button
             variant="secondary"
             :class="`!py-4 border-1 border-secondary !w-full`"
-             
             @click="Logic.Auth.SignOut()"
-            >Log Out</app-button
           >
+            Log Out
+          </app-button>
         </div>
 
         <div class="w-full flex items-center justify-center">
-            <app-button
-              variant="danger"
-              :customClass="`!py-4 !w-full`"
-              outlined
-              @click="showDeleteAccountModal = true"
-              >Delete Account</app-button
-            >
-          </div>
+          <app-button
+            variant="danger"
+            :customClass="`!py-4 !w-full`"
+            outlined
+            @click="showDeleteAccountModal = true"
+          >
+            Delete Account
+          </app-button>
+        </div>
       </div>
     </subpage-layout>
 
-     <!-- Delete account modal -->
+    <!-- Delete account modal -->
     <app-modal
       v-if="showDeleteAccountModal"
       can-close
       :close="
         () => {
-          showDeleteAccountModal = false;
+          showDeleteAccountModal = false
         }
       "
       :innerClass="'!px-0 !pt-0'"
@@ -122,7 +126,7 @@
           </app-normal-text>
 
           <div
-            class="w-full flex flex-col items-center justify-center  space-y-1 !text-xs pt-3"
+            class="w-full flex flex-col items-center justify-center space-y-1 !text-xs pt-3"
           >
             <div class="w-full flex items-center justify-center">
               <app-button
@@ -138,8 +142,9 @@
                 :customClass="`!py-4 !w-full`"
                 outlined
                 @click="Logic.Auth.DeleteUser()"
-                >Yes</app-button
               >
+                Yes
+              </app-button>
             </div>
           </div>
 
@@ -152,86 +157,86 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, reactive } from "vue";
-import {
-  AppButton,
-  AppImageLoader,
-  AppNormalText,
-  AppIcon,
-  AppModal,
-  AppHeaderText
-} from "@greep/ui-components";
-import { Logic } from "@greep/logic";
-import AmountCard from "../../components/Common/AmountCard.vue";
-import { User } from "@greep/logic/src/gql/graphql";
-import { ref } from "vue";
-import { onMounted } from "vue";
-import { getBottomPadding } from "../../composable";
-
-export default defineComponent({
-  name: "ProfilePage",
-  components: {
+  import { defineComponent, reactive } from "vue"
+  import {
     AppButton,
-    AmountCard,
     AppImageLoader,
     AppNormalText,
     AppIcon,
     AppModal,
-    AppHeaderText
-  },
-  setup() {
-    const AuthUser = ref<User>(Logic.Auth.AuthUser); 
-    const showDeleteAccountModal = ref(false);
-    const profileItems = reactive([
-      {
-        title: "Personal Info",
-        logo: "personal-info",
-        logo_size: "!h-[22px]",
-        route: "/profile/info",
-      },
-      {
-        title: "Business Info",
-        logo: "business-info",
-        logo_size: "!h-[22px]",
-        route: "/profile/business-info",
-      },
-      {
-        title: "Store Locations",
-        logo: "event/location",
-        logo_size: "!h-[22px]",
-        route: "/profile/store-locations",
-      },
-      {
-        title: "Default Currency",
-        logo: "default-currency",
-        logo_size: "!h-[22px]",
-        route: "/profile/currency",
-      },
-      {
-        title: "Withdrawal Accounts",
-        logo: "withdrawal-accounts",
-        logo_size: "!h-[20px]",
-        route: "/profile/accounts",
-      },
-      {
-        title: "Login Settings",
-        logo: "settings",
-        logo_size: "!h-[22px]",
-        route: "/profile/settings",
-      },
-    ]);
+    AppHeaderText,
+  } from "@greep/ui-components"
+  import { Logic } from "@greep/logic"
+  import AmountCard from "../../components/Common/AmountCard.vue"
+  import { User } from "@greep/logic/src/gql/graphql"
+  import { ref } from "vue"
+  import { onMounted } from "vue"
+  import { getBottomPadding } from "../../composable"
 
-    onMounted(() => {
-      Logic.Auth.watchProperty("AuthUser", AuthUser);
-    });
+  export default defineComponent({
+    name: "ProfilePage",
+    components: {
+      AppButton,
+      AmountCard,
+      AppImageLoader,
+      AppNormalText,
+      AppIcon,
+      AppModal,
+      AppHeaderText,
+    },
+    setup() {
+      const AuthUser = ref<User>(Logic.Auth.AuthUser)
+      const showDeleteAccountModal = ref(false)
+      const profileItems = reactive([
+        {
+          title: "Personal Info",
+          logo: "personal-info",
+          logo_size: "!h-[22px]",
+          route: "/profile/info",
+        },
+        {
+          title: "Business Info",
+          logo: "business-info",
+          logo_size: "!h-[22px]",
+          route: "/profile/business-info",
+        },
+        {
+          title: "Store Locations",
+          logo: "event/location",
+          logo_size: "!h-[22px]",
+          route: "/profile/store-locations",
+        },
+        {
+          title: "Default Currency",
+          logo: "default-currency",
+          logo_size: "!h-[22px]",
+          route: "/profile/currency",
+        },
+        {
+          title: "Withdrawal Accounts",
+          logo: "withdrawal-accounts",
+          logo_size: "!h-[20px]",
+          route: "/profile/accounts",
+        },
+        {
+          title: "Login Settings",
+          logo: "settings",
+          logo_size: "!h-[22px]",
+          route: "/profile/settings",
+        },
+      ])
 
-    return {
-      Logic,
-      profileItems,
-      AuthUser,
-      getBottomPadding,
-      showDeleteAccountModal
-    };
-  },
-});
+      onMounted(() => {
+        Logic.Auth.watchProperty("AuthUser", AuthUser)
+      })
+
+      return {
+        Logic,
+        profileItems,
+        AuthUser,
+        getBottomPadding,
+        showDeleteAccountModal,
+      }
+    },
+  })
 </script>

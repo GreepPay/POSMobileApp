@@ -5,26 +5,34 @@ import { MappedNotification } from "./types"
 const mapNotificationsToUI = (
   notification: Notification
 ): MappedNotification => {
-  let icon = "notify-info"
+  let icon = "notify/info"
+  const { delivery_status, id, type, title, content, created_at, is_read } =
+    notification
 
-  if (
-    notification.delivery_status === "delivered" ||
-    notification.delivery_status === "sent"
-  ) {
-    icon = "notify-success"
-  } else if (notification.delivery_status === "failed") {
-    icon = "notify-error"
+  {
+    if (delivery_status === "delivered" || delivery_status === "sent") {
+      icon = "notify/success"
+    } else if (delivery_status === "failed") {
+      icon = "notify/error"
+    }
+
+    if (is_read) icon = `${icon}-read`
   }
 
   return {
+    id,
+    type,
     icon,
-    title: notification.title,
-    contents: [notification.content],
-    date:
-      Logic.Common.fomartDate(notification.created_at, "DD MMMM YYYY") ||
-      "Today",
+    is_read,
+    title: title,
+    contents: [content],
+    date: Logic.Common.fomartDate(created_at, "DD MMMM YYYY") || "Today",
   }
 }
 
+const isIdInArray = (id: number, ids: number[]): boolean => {
+  return ids.includes(id)
+}
+
 //
-export { mapNotificationsToUI }
+export { mapNotificationsToUI, isIdInArray }
