@@ -81,11 +81,7 @@
   } from "@greep/ui-components"
   import { Logic } from "@greep/logic"
   import { notificationsTabs } from "../../db/index"
-  import {
-    mapNotificationsToUI,
-    isIdInArray,
-  } from "../../composable/notification"
-  import { buildNotificationWhereQuery } from "../../utils/formatter/index"
+  import { mapNotificationsToUI } from "../../composable/notification"
 
   const itemsPerPage = 10
 
@@ -174,11 +170,9 @@
         Logic,
         notificationsTabs,
         activeTab,
-        buildNotificationWhereQuery,
         fetchMoreNotifications,
         ManyNotifications,
         mapNotificationsToUI,
-        isIdInArray,
         markNotificationAsRead,
         isMarkingAsRead,
       }
