@@ -15,10 +15,11 @@
 
         <!-- OTP input -->
         <app-otp-input
+          ref="otpInputRef"
           v-model="otpCode"
+          :should-reset-o-t-p="shouldReset"
           type="tel"
           :number-of-input="numberOfInput"
-          :should-reset-o-t-p="true"
           :onChangeOTP="handleOTPChange"
         />
 
@@ -37,9 +38,9 @@
             <app-countdown-timer
               v-else
               :duration="countdownDuration"
-             custom-class="!bg-transparent"
+              custom-class="!bg-transparent"
               custom-text="Resend code in"
-              @expired="canResend = true"
+              @expired="handleOtpExpired"
             />
           </app-normal-text>
         </div>
@@ -50,7 +51,7 @@
 
 <script lang="ts">
   import { Logic } from "@greep/logic"
-  import { defineComponent, watch, ref } from "vue"
+  import { defineComponent, watch, ref, nextTick } from "vue"
   import {
     AppFormWrapper,
     AppNormalText,
@@ -62,33 +63,61 @@
     components: {
       AppFormWrapper,
       AppNormalText,
-       AppCountdownTimer,
+      AppCountdownTimer,
       AppOtpInput,
     },
     name: "AuthSetupVerifyEmail",
     emits: ["filled"],
-    setup(_, { emit }) {
+    setup(_, { emit, expose }) {
       const FormValidations = Logic.Form
       const numberOfInput = 4
       const otpCode = ref("")
-      const canResend = ref(false) // Controls when resend is available
-      const countdownDuration = ref(60) // 60 seconds countdown
+      const shouldReset = ref(false)
+      const canResend = ref(false)
+      const countdownDuration = ref(60)
+      const otpInputRef = ref<any>(null)
+      
+      const resetOtp = async () => {
+        // Toggle the shouldReset prop to trigger the built-in reset
+        shouldReset.value = true
+        otpCode.value = ""
+        
+        // Wait for the reset to complete and DOM to update
+        await nextTick()
+        
+        // Focus the first input field using the OTP component's method
+        if (otpInputRef.value && typeof otpInputRef.value.focusInputByRef === 'function') {
+          // Get the uniqueKey from the OTP component and focus the first input (index 0)
+          const firstInputId = otpInputRef.value.uniqueKey + "0"
+          otpInputRef.value.focusInputByRef(firstInputId)
+        }
+        
+        // Reset the flag after a short delay so it can be used again
+        setTimeout(() => {
+          shouldReset.value = false
+        }, 100)
+      }
+      
+      const handleOtpExpired = () => {
+        canResend.value = true
+        resetOtp()
+      }
 
       const handleCompleteOtp = () => emit("filled", otpCode.value)
+      
       const handleOTPChange = () => {
         /* formData.otp_code = value */
       }
 
       const resentVerifyEmail = () => {
-         canResend.value = false; // Reset the resend flag
-         countdownDuration.value = 60; // Reset the timer duration
+        canResend.value = false
+        countdownDuration.value = 60
         const email = localStorage.getItem("auth_email") || ""
         if (email) {
           Logic.Auth.ResendEmailOTP(email)
           Logic.Common.showAlert({
             show: true,
-            message:
-              "A new verification email has been sent to your email address.",
+            message: "A new verification email has been sent to your email address.",
             type: "success",
           })
         } else {
@@ -97,7 +126,6 @@
             message: "Can't find email",
             type: "error",
           })
-
           Logic.Common.GoToRoute("/auth/signup")
         }
       }
@@ -108,8 +136,17 @@
         } else return
       }
 
+      // Watch for OTP changes to emit when complete
       watch(otpCode, (newVal) => {
-        if (newVal.length === numberOfInput) handleCompleteOtp()
+        if (newVal.length === numberOfInput) {
+          handleCompleteOtp()
+        }
+      })
+
+      // Expose methods to parent
+      expose({
+        resetOtp,
+        continueWithForm
       })
 
       return {
@@ -119,8 +156,12 @@
         handleOTPChange,
         resentVerifyEmail,
         continueWithForm,
-         canResend,
-      countdownDuration,
+        canResend,
+        countdownDuration,
+        handleOtpExpired,
+        resetOtp,
+        shouldReset,
+        otpInputRef,
       }
     },
     data() {
