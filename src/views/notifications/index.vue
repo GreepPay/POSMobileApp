@@ -135,8 +135,11 @@
           .filter((n) => !n.is_read)
           .map((n) => Number(n.id))
 
+        if (!ids.length) return
+
         isMarkingAsRead.value = true
         await Logic.Notification.MarkNotificationsAsRead(ids)
+        fetchNotifications()
         isMarkingAsRead.value = false
       }
 
