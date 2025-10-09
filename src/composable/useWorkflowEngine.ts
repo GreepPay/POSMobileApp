@@ -81,7 +81,7 @@ export const useWorkflowEngine = (options: WorkflowEngineOptions) => {
   const currentWorkflow = ref<any>(null);
   const isBusinessUser = ref(false);
   const businessJoined = ref(false);
-  const businessUserInfo = ref<any>(null); // ✅ NEW: Store business user data for message sender resolution
+  const businessUserInfo = ref<any>(null);
   const directMessagingEnabled = ref(options.enableDirectMessaging || false);
   const manualModalOverride = ref<string | null>(null);
 
@@ -152,7 +152,6 @@ export const useWorkflowEngine = (options: WorkflowEngineOptions) => {
     // Check if content is a number (withdrawal amount)
     const amount = parseFloat(content.replace(/,/g, ""));
     if (!isNaN(amount) && amount > 0) {
-      // Get exchange ad data for proper currency and rate handling
       const conversationData = Logic.Messaging.SingleConversation;
       const exchangeAd = conversationData?.exchangeAd;
       const exchangeRate = exchangeAd?.rate || 10;
@@ -287,104 +286,94 @@ export const useWorkflowEngine = (options: WorkflowEngineOptions) => {
       messageMetadata.is_system_message ||
       (!backendMessage.sender && backendMessage.user_id === 0); // Only if both conditions are true
 
-    // Get user info for the message
-    const userUuid = isAIMessage
-      ? "greep_ai"
-      : backendMessage.sender?.uuid ||
-        backendMessage.user_uuid ||
-        // ✅ NEW: Try to get UUID from business user info if this matches their user_id
-        (businessUserInfo.value &&
-        (businessUserInfo.value.id === backendMessage.user_id ||
-          businessUserInfo.value.user_id === backendMessage.user_id)
-          ? businessUserInfo.value.uuid
-          : null) ||
-        Logic.Auth.AuthUser?.uuid ||
-        "user";
-
-    // ✅ FIXED: Better sender name detection
+    // ✅ ENHANCED: Better sender detection using WebSocket message data first
     let userName = "User";
+    let userUuid = "user";
+    let isUserMessage = false; // Whether this message is from the current user
 
     if (isAIMessage) {
       userName = "GreepPay AI";
+      userUuid = "greep_ai";
+      isUserMessage = false;
     } else {
-      // For real user messages, try to get the actual sender name
+      // For real user messages, prioritize WebSocket message data over auth user
       const currentUserId = parseInt(Logic.Auth.AuthUser?.id || "0");
       const messageUserId = backendMessage.user_id;
 
+      // First, try to get user info directly from the WebSocket message
+      if (backendMessage.sender) {
+        userName =
+          backendMessage.sender.name ||
+          `${backendMessage.sender.first_name || ""} ${
+            backendMessage.sender.last_name || ""
+          }`.trim();
+        userUuid =
+          backendMessage.sender.uuid || backendMessage.user_uuid || "user";
+
+        if (!userName || userName.trim() === "") {
+          userName = backendMessage.user_name || "User";
+        }
+      } else if (
+        backendMessage.user_name &&
+        backendMessage.user_name !== "GreepPay AI"
+      ) {
+        userName = backendMessage.user_name;
+        userUuid = backendMessage.user_uuid || "user";
+      }
+
+      // ✅ PRIORITY: Check metadata for sender info first (most reliable for WebSocket messages)
+      if (metadata.sender_name && metadata.sender_name !== "GreepPay AI") {
+        userName = metadata.sender_name;
+        userUuid = metadata.sender_uuid || userUuid;
+      }
+
+      // ✅ CRITICAL: Determine if this is current user's message
       if (messageUserId === currentUserId) {
         // This is current user's message
-        userName = Logic.Auth.AuthUser?.first_name || "You";
+        isUserMessage = true;
+        if (!userName || userName === "User") {
+          userName = Logic.Auth.AuthUser?.first_name || "You";
+          userUuid = Logic.Auth.AuthUser?.uuid || "user";
+        }
       } else if (messageUserId && messageUserId !== 0) {
-        // This is from another user - try to find their name from participants
-        const conversation = Logic.Messaging?.SingleConversation;
-        if (conversation?.participants) {
-          const sender = conversation.participants.find(
-            (p: any) => p.user_id === messageUserId
-          );
-          if (sender) {
-            userName =
-              (sender as any).name ||
-              `${(sender as any).first_name || ""} ${
-                (sender as any).last_name || ""
-              }`.trim() ||
-              "Other User";
-          } else {
-            // ✅ NEW: Try to get name from WebSocket user data (business users who recently joined)
-            // Check if this matches a business user that recently joined
-            const joinedBusinessUser = businessUserInfo.value;
-
-            if (
-              joinedBusinessUser &&
-              (joinedBusinessUser.id === messageUserId ||
-                joinedBusinessUser.user_id === messageUserId)
-            ) {
+        // This is from another user (business partner)
+        isUserMessage = false;
+        if (!userName || userName === "User") {
+          const conversation = Logic.Messaging?.SingleConversation;
+          if (conversation?.participants) {
+            const sender = conversation.participants.find(
+              (p: any) => p.user_id === messageUserId
+            );
+            if (sender) {
               userName =
-                joinedBusinessUser.first_name && joinedBusinessUser.last_name
-                  ? `${joinedBusinessUser.first_name} ${joinedBusinessUser.last_name}`
-                  : joinedBusinessUser.name ||
-                    joinedBusinessUser.user_name ||
-                    "Business User";
+                (sender as any).name ||
+                `${(sender as any).first_name || ""} ${
+                  (sender as any).last_name || ""
+                }`.trim() ||
+                "Other User";
+              userUuid = (sender as any).uuid || "other_user";
             } else {
-              // Fallback: try to get name from message sender data
-              if (backendMessage.sender?.name) {
-                userName = backendMessage.sender.name;
-              } else if (
-                backendMessage.sender?.first_name ||
-                backendMessage.sender?.last_name
+              // Check business user info from recent joins
+              const joinedBusinessUser = businessUserInfo.value;
+              if (
+                joinedBusinessUser &&
+                (joinedBusinessUser.id === messageUserId ||
+                  joinedBusinessUser.user_id === messageUserId)
               ) {
-                userName = `${backendMessage.sender.first_name || ""} ${
-                  backendMessage.sender.last_name || ""
-                }`.trim();
-              } else if (
-                backendMessage.user_name &&
-                backendMessage.user_name !== "GreepPay AI"
-              ) {
-                userName = backendMessage.user_name;
-              } else {
-                userName = "Other User";
+                userName =
+                  joinedBusinessUser.first_name && joinedBusinessUser.last_name
+                    ? `${joinedBusinessUser.first_name} ${joinedBusinessUser.last_name}`
+                    : joinedBusinessUser.name ||
+                      joinedBusinessUser.user_name ||
+                      "Business User";
+                userUuid = joinedBusinessUser.uuid || "business_user";
               }
             }
           }
-        } else {
-          // No participants data available, try message sender info
-          if (backendMessage.sender?.name) {
-            userName = backendMessage.sender.name;
-          } else if (
-            backendMessage.sender?.first_name ||
-            backendMessage.sender?.last_name
-          ) {
-            userName = `${backendMessage.sender.first_name || ""} ${
-              backendMessage.sender.last_name || ""
-            }`.trim();
-          } else if (
-            backendMessage.user_name &&
-            backendMessage.user_name !== "GreepPay AI"
-          ) {
-            userName = backendMessage.user_name;
-          } else {
-            userName = "Other User";
-          }
         }
+      } else {
+        // No user_id or user_id is 0 - likely a template message, treat as not current user
+        isUserMessage = false;
       }
     }
 
@@ -392,6 +381,7 @@ export const useWorkflowEngine = (options: WorkflowEngineOptions) => {
       messageUserId: backendMessage.user_id,
       currentUserId: Logic.Auth.AuthUser?.id,
       isAIMessage,
+      isUserMessage,
       resolvedUserName: userName,
       senderData: backendMessage.sender,
     });
@@ -399,6 +389,14 @@ export const useWorkflowEngine = (options: WorkflowEngineOptions) => {
     // Determine message type - ChatMessage component only supports "text" and "info"
     // Backend might send "options" type, but we should use "text" for messages with actions
     let messageType = metadata?.type || "text";
+
+    // Convert backend message types to component-compatible types
+    if (
+      messageType === "chat_message" ||
+      messageType === "structured_response"
+    ) {
+      messageType = "text"; // Regular chat messages should be rendered as text
+    }
     if (messageType === "options" || actions.length > 0) {
       messageType = "text"; // ChatMessage component handles actions within text messages
     }
@@ -430,17 +428,16 @@ export const useWorkflowEngine = (options: WorkflowEngineOptions) => {
       user_name: userName,
       type: messageType,
       info_icon: metadata?.extras?.info_icon || metadata?.info_icon || "",
-      isUser: !isAIMessage,
+      isUser: isUserMessage, // ✅ Use the correctly calculated isUserMessage
       timestamp: new Date(backendMessage.createdAt || Date.now()),
       metadata,
       actions,
       isOrderSummary,
       orderSummary: orderSummaryData,
-      sender:
-        backendMessage.sender ||
-        (isAIMessage
-          ? { uuid: "greep_ai", name: "GreepPay AI" }
-          : { uuid: userUuid, name: userName }),
+      sender: {
+        uuid: userUuid,
+        name: userName,
+      },
     };
   };
 
@@ -457,10 +454,19 @@ export const useWorkflowEngine = (options: WorkflowEngineOptions) => {
     // Prevent duplicates
     const existingIndex = messages.findIndex((m) => m.id === displayMessage.id);
     if (existingIndex >= 0) {
+      console.log("🔄 Updating existing message:", displayMessage.id);
       messages[existingIndex] = displayMessage;
     } else {
+      console.log("➕ Adding new message:", {
+        id: displayMessage.id,
+        content: displayMessage.content,
+        isUser: displayMessage.isUser,
+        user_name: displayMessage.user_name,
+      });
       messages.push(displayMessage);
     }
+
+    console.log("📊 Total messages after add:", messages.length);
   };
 
   // Business user detection and management
@@ -504,7 +510,7 @@ export const useWorkflowEngine = (options: WorkflowEngineOptions) => {
   };
 
   // Handle business user joining conversation
-  const handleBusinessJoined = (businessUserData: any) => {
+  const handleBusinessJoined = async (businessUserData: any) => {
     console.log("🎉 BUSINESS JOINED EVENT:", businessUserData);
 
     // ✅ NEW: Store business user data for later use in message sender resolution
@@ -554,20 +560,140 @@ export const useWorkflowEngine = (options: WorkflowEngineOptions) => {
       messages.length
     );
 
-    // ✅ NEW: If current user is business, show only summary instead of all messages (like backup)
-    if (isBusinessUser.value) {
+    // ✅ ENHANCED: Add order summary message for business user to see the order details
+    try {
+      // Try to get order data from conversation metadata first
+      const conversationData = Logic.Messaging.SingleConversation;
+      const conversationMetadata = conversationData?.metadata
+        ? typeof conversationData.metadata === "string"
+          ? JSON.parse(conversationData.metadata)
+          : conversationData.metadata
+        : {};
+
       console.log(
-        "🎯 Business user joined - showing summary instead of all messages"
+        "🔍 Looking for order data in conversation metadata:",
+        conversationMetadata
       );
 
-      // Clear any existing messages (except the business joined message we just added)
-      const businessJoinedMessageId = businessJoinedMessage.id;
-      messages.length = 0;
+      // Check if we have order data directly in the metadata
+      if (conversationMetadata.amount && conversationData?.exchangeAd) {
+        const amount = conversationMetadata.amount;
+        const exchangeAd = conversationData.exchangeAd;
+        const method =
+          conversationMetadata.method === "cash"
+            ? "cash_pickup"
+            : conversationMetadata.method;
 
-      // Re-add the business joined message
-      messages.push(businessJoinedMessage);
+        console.log("📋 Found order data in metadata:", {
+          amount,
+          method,
+          businessName: exchangeAd.business?.business_name,
+          rate: exchangeAd.rate,
+        });
 
-      // Create order summary message for business user (like backup)
+        // Try to get the pickup address from URL parameters (passed from order acceptance)
+        let pickupAddress = "Pickup location to be confirmed";
+        try {
+          const urlParams = new URLSearchParams(window.location.search);
+          const pickupParam = urlParams.get("pickup_address");
+          if (pickupParam) {
+            pickupAddress = decodeURIComponent(pickupParam);
+            console.log(
+              "📍 Found pickup address from URL params:",
+              pickupAddress
+            );
+          } else {
+            // Fallback: try to get from conversation metadata
+            if (conversationMetadata.pickup_location_address) {
+              pickupAddress = conversationMetadata.pickup_location_address;
+              console.log(
+                "📍 Found pickup address from metadata:",
+                pickupAddress
+              );
+            } else if (conversationMetadata.pickup_location_name) {
+              pickupAddress = conversationMetadata.pickup_location_name;
+              console.log("📍 Found pickup name from metadata:", pickupAddress);
+            }
+          }
+        } catch (error) {
+          console.log("⚠️ Could not get pickup address:", error);
+        }
+
+        // Create order summary with metadata data
+        const deliveryFee = method === "cash_delivery" ? 3 : 0;
+        const totalAmount = amount + deliveryFee;
+        const sellAmount = amount * (exchangeAd.rate || 10);
+
+        const orderSummary = {
+          youSell: `${amount} USDC`,
+          youGet: `₺${sellAmount.toFixed(2)}`,
+          fee: "0 USDC",
+          deliveryFee: `${deliveryFee} USDC`,
+          youPay: `${totalAmount} USDC`,
+          paymentType: "USDC",
+          payoutOption:
+            method === "cash_pickup"
+              ? "Pickup"
+              : method === "cash_delivery"
+              ? "Delivery"
+              : "Cash",
+          deliveryAddress:
+            method === "cash_pickup"
+              ? pickupAddress
+              : "Delivery address to be confirmed",
+        };
+
+        console.log(
+          "📋 Creating business order summary message with metadata data and pickup address"
+        );
+        const businessSummaryMessage: WorkflowMessage = {
+          id: `business_order_summary_${Date.now()}`,
+          content: "Order Summary",
+          text_content: "Order Summary",
+          user_uuid: "greep_ai",
+          user_name: "GreepPay AI",
+          type: "text" as const,
+          isUser: false,
+          timestamp: new Date(),
+          sender: {
+            uuid: "greep_ai",
+            name: "GreepPay AI",
+          },
+          isOrderSummary: true,
+          orderSummary: orderSummary,
+          metadata: {
+            type: "text",
+            extras: {
+              order_summary: orderSummary,
+              is_business_summary: true,
+            },
+          },
+        };
+
+        messages.push(businessSummaryMessage);
+        console.log(
+          "✅ Business order summary message added with metadata data and pickup address"
+        );
+      } else {
+        console.log("⚠️ No order data found in conversation metadata");
+      }
+    } catch (error) {
+      console.log("❌ Error creating business order summary:", error);
+    }
+
+    // ✅ Business user joined - enable direct messaging without clearing chat
+    if (isBusinessUser.value) {
+      console.log(
+        "🎯 Business user joined - enabling direct messaging, keeping chat history"
+      );
+
+      // ✅ Enable direct messaging instead of clearing messages
+      directMessagingEnabled.value = true;
+
+      // Add business joined notification
+      addMessage(businessJoinedMessage);
+
+      // Create order summary message for business user context
       const orderSummary = extractOrderSummary();
       if (orderSummary) {
         const businessSummaryMessage: WorkflowMessage = {
@@ -671,6 +797,9 @@ export const useWorkflowEngine = (options: WorkflowEngineOptions) => {
       const tempId = `temp_${Date.now()}_${Math.random()
         .toString(36)
         .substr(2, 9)}`;
+
+      // ✅ Create user message that will be replaced by WebSocket message
+      // Use minimal user data since WebSocket will provide the real message
       const userMessage: WorkflowMessage = {
         id: tempId,
         content,
@@ -685,6 +814,7 @@ export const useWorkflowEngine = (options: WorkflowEngineOptions) => {
           name: Logic.Auth.AuthUser?.first_name || "You",
         },
       };
+
       addMessage(userMessage);
 
       // Send as regular chat message with chat_message metadata type
@@ -716,10 +846,19 @@ export const useWorkflowEngine = (options: WorkflowEngineOptions) => {
   };
 
   // Extract order summary from conversation context
-  const extractOrderSummary = () => {
+  const extractOrderSummary = async () => {
+    console.log("🔍 Starting extractOrderSummary for business user...");
+
     // Get exchange ad data for order details
     const conversationData = Logic.Messaging.SingleConversation;
     const exchangeAd = conversationData?.exchangeAd;
+
+    console.log("🔍 Conversation data:", {
+      uuid: conversationData?.uuid,
+      id: conversationData?.id,
+      exchangeAd: exchangeAd ? "Present" : "Missing",
+      metadata: conversationData?.metadata ? "Present" : "Missing",
+    });
 
     const summary: any = {
       amount: null,
@@ -733,6 +872,95 @@ export const useWorkflowEngine = (options: WorkflowEngineOptions) => {
       status: "pending",
     };
 
+    // ✅ BUSINESS FIX: Try to get the actual order from conversation metadata
+    try {
+      const conversationMetadata = conversationData?.metadata
+        ? typeof conversationData.metadata === "string"
+          ? JSON.parse(conversationData.metadata)
+          : conversationData.metadata
+        : {};
+
+      console.log("🔍 Parsed conversation metadata:", conversationMetadata);
+
+      // Check if there's order_uuid in metadata and fetch the actual order
+      if (conversationMetadata.order_uuid) {
+        console.log(
+          "🔍 Found order_uuid in metadata:",
+          conversationMetadata.order_uuid
+        );
+
+        try {
+          // Fetch the actual order data
+          const orderData = await Logic.Wallet.GetP2pOrder(
+            conversationMetadata.order_uuid
+          );
+          console.log("📋 Fetched order data:", orderData);
+
+          if (orderData) {
+            summary.amount = orderData.amount;
+            summary.method = orderData.payment_type;
+            summary.address = "Address to be confirmed";
+            summary.pickup_location = "Location to be confirmed";
+            summary.currency = orderData.ad?.from_currency || "USDC";
+            summary.sell_rate = orderData.ad?.rate || 10;
+            summary.business_name =
+              orderData.ad?.business?.business_name || "GreepPay";
+
+            // Calculate the sell amount (what user gets in local currency)
+            const sellAmount = orderData.amount * (orderData.ad?.rate || 10);
+            summary.sell_amount = sellAmount;
+
+            console.log("✅ Successfully extracted order data from API:", {
+              amount: summary.amount,
+              method: summary.method,
+              currency: summary.currency,
+              sellAmount: summary.sell_amount,
+            });
+
+            return summary;
+          }
+        } catch (orderError) {
+          console.log("❌ Failed to fetch order data:", orderError);
+        }
+      }
+
+      // Check if there's order data directly in metadata
+      if (conversationMetadata.order_data) {
+        const orderData = conversationMetadata.order_data;
+        summary.amount = orderData.amount;
+        summary.method = orderData.payment_type;
+        summary.address = orderData.delivery_address;
+        summary.pickup_location = orderData.delivery_address;
+        console.log("📋 Found order data in conversation metadata:", orderData);
+      }
+    } catch (e) {
+      console.log(
+        "⚠️ Could not parse conversation metadata for order data:",
+        e
+      );
+    }
+
+    // ✅ NEW: Try to get order data from URL parameters
+    try {
+      const urlParams = new URLSearchParams(window.location.search);
+      const methodParam = urlParams.get("method");
+      if (methodParam && !summary.method) {
+        if (methodParam === "cash") {
+          summary.method = "cash_pickup";
+        } else {
+          summary.method = methodParam;
+        }
+        console.log(
+          "🔍 Found method from URL:",
+          methodParam,
+          "->",
+          summary.method
+        );
+      }
+    } catch (e) {
+      console.log("⚠️ Could not parse URL parameters");
+    }
+
     // ✅ BETTER: Look for amount in conversation metadata first
     let incomingAmount = null;
     try {
@@ -741,6 +969,7 @@ export const useWorkflowEngine = (options: WorkflowEngineOptions) => {
       const amountParam = urlParams.get("amount");
       if (amountParam) {
         incomingAmount = parseFloat(amountParam);
+        console.log("🔍 Found amount from URL:", incomingAmount);
       }
     } catch (e) {
       // Ignore URL parsing errors
@@ -748,9 +977,15 @@ export const useWorkflowEngine = (options: WorkflowEngineOptions) => {
 
     if (incomingAmount && incomingAmount > 0) {
       summary.amount = incomingAmount;
-    } else {
+    } else if (!summary.amount) {
       // ✅ FALLBACK: Only look for simple numeric user messages (avoiding metadata numbers)
       const userMessages = messages.filter((m) => m.isUser);
+      console.log(
+        "🔍 Searching for amount in",
+        userMessages.length,
+        "user messages"
+      );
+
       for (const msg of userMessages) {
         // Only consider short numeric messages (likely amount inputs)
         if (
@@ -773,38 +1008,47 @@ export const useWorkflowEngine = (options: WorkflowEngineOptions) => {
       summary.sell_amount = (summary.amount * summary.sell_rate).toFixed(2);
     }
 
-    // ✅ BETTER: Extract method from the last method selection
-    const userMessages = messages.filter((m) => m.isUser);
-    userMessages.reverse(); // Check latest messages first
+    // ✅ BETTER: Extract method from the last method selection or metadata
+    if (!summary.method) {
+      const userMessages = messages.filter((m) => m.isUser);
+      userMessages.reverse(); // Check latest messages first
 
-    userMessages.forEach((msg) => {
-      const content = msg.content.toLowerCase();
-      if (content.includes("pickup") || content === "cash") {
-        summary.method = "cash_pickup";
-      } else if (content.includes("delivery")) {
-        summary.method = "cash_delivery";
-      } else if (content.includes("bank")) {
-        summary.method = "bank_transfer";
-      }
-    });
+      userMessages.forEach((msg) => {
+        const content = msg.content.toLowerCase();
+        if (content.includes("pickup") || content === "cash") {
+          summary.method = "cash_pickup";
+        } else if (content.includes("delivery")) {
+          summary.method = "cash_delivery";
+        } else if (content.includes("bank")) {
+          summary.method = "bank_transfer";
+        }
+      });
+    }
+
+    // Extract other details from messages if not in metadata
+    const userMessages = messages.filter((m) => m.isUser);
 
     // Extract address for delivery
-    userMessages.forEach((msg) => {
-      if (
-        msg.content.length > 20 &&
-        (msg.content.includes(",") ||
-          msg.content.toLowerCase().includes("street"))
-      ) {
-        summary.address = msg.content;
-      }
-    });
+    if (!summary.address) {
+      userMessages.forEach((msg) => {
+        if (
+          msg.content.length > 20 &&
+          (msg.content.includes(",") ||
+            msg.content.toLowerCase().includes("street"))
+        ) {
+          summary.address = msg.content;
+        }
+      });
+    }
 
     // Extract pickup location
-    userMessages.forEach((msg) => {
-      if (msg.content.toLowerCase().includes("pickup:")) {
-        summary.pickup_location = msg.content.replace(/pickup:\s*/i, "");
-      }
-    });
+    if (!summary.pickup_location) {
+      userMessages.forEach((msg) => {
+        if (msg.content.toLowerCase().includes("pickup:")) {
+          summary.pickup_location = msg.content.replace(/pickup:\s*/i, "");
+        }
+      });
+    }
 
     // ✅ Extract bank account details
     userMessages.forEach((msg) => {
@@ -814,14 +1058,22 @@ export const useWorkflowEngine = (options: WorkflowEngineOptions) => {
     });
 
     // ✅ Return the exact format ChatMessage component expects
-    if (summary.amount && summary.method) {
+    console.log("🔍 Final summary data:", {
+      amount: summary.amount,
+      method: summary.method,
+      sell_amount: summary.sell_amount,
+      business_name: summary.business_name,
+    });
+
+    if (summary.amount || summary.method) {
+      // ✅ More lenient - show summary if we have either amount OR method
       // ✅ FIX: Calculate delivery fee based on method
       const deliveryFee = summary.method === "cash_delivery" ? 3 : 0;
-      const totalAmount = summary.amount + deliveryFee;
+      const totalAmount = (summary.amount || 0) + deliveryFee;
 
-      return {
-        youSell: `${summary.amount} USDC`,
-        youGet: `${summary.currency_symbol}${summary.sell_amount}`,
+      const orderSummary = {
+        youSell: `${summary.amount || "0"} USDC`,
+        youGet: `${summary.currency_symbol}${summary.sell_amount || "0.00"}`,
         fee: "0 USDC",
         deliveryFee: `${deliveryFee} USDC`,
         youPay: `${totalAmount} USDC`,
@@ -831,16 +1083,22 @@ export const useWorkflowEngine = (options: WorkflowEngineOptions) => {
             ? "Pickup"
             : summary.method === "cash_delivery"
             ? "Delivery"
-            : "Bank Transfer",
+            : summary.method === "bank_transfer"
+            ? "Bank Transfer"
+            : "Cash", // Default fallback
         deliveryAddress:
           summary.method === "cash_pickup"
-            ? summary.pickup_location
+            ? summary.pickup_location || "Pickup location to be confirmed"
             : summary.method === "cash_delivery"
-            ? summary.address
-            : summary.bank_account || "Bank account details",
+            ? summary.address || "Delivery address to be confirmed"
+            : summary.bank_account || "Payment details to be confirmed",
       };
+
+      console.log("✅ Generated order summary:", orderSummary);
+      return orderSummary;
     }
 
+    console.log("❌ Could not generate order summary - missing critical data");
     return null;
   };
 
@@ -902,13 +1160,6 @@ export const useWorkflowEngine = (options: WorkflowEngineOptions) => {
     forceDirect = false
   ): Promise<boolean> => {
     if (!content.trim() || isProcessing.value) return false;
-
-    console.log("🔧 sendMessage called with:", {
-      content,
-      directMessagingEnabled: directMessagingEnabled.value,
-      businessJoined: businessJoined.value,
-      forceDirect,
-    });
 
     // ✅ NEW: If business has joined, use regular chat messaging
     if (businessJoined.value || directMessagingEnabled.value || forceDirect) {
@@ -988,11 +1239,7 @@ export const useWorkflowEngine = (options: WorkflowEngineOptions) => {
           conversation_id: conversationId.value,
           content: content,
           type: "text",
-          sender_id: parseInt(
-            Logic.Auth.AuthUser?.id ||
-              Logic.Auth.AuthUser?.business_user_id ||
-              "0"
-          ),
+          sender_id: parseInt(Logic.Auth.AuthUser?.id || "0"),
           metadata: JSON.stringify(fullMetadata),
         },
       };
@@ -1011,22 +1258,61 @@ export const useWorkflowEngine = (options: WorkflowEngineOptions) => {
   const handleIncomingMessage = (messageData: any) => {
     console.log("📨 Workflow engine received message:", messageData);
 
-    // ✅ BACKUP LOGIC: Duplicate detection like backup
-    const messageId = messageData.id || messageData.uuid;
-    const existingMessageById = messages.find(
-      (m) => m.id === messageId?.toString()
-    );
-    if (existingMessageById) {
-      console.log("⏭️ Message with same ID already exists, skipping");
-      return;
-    }
-
-    // ✅ BACKUP LOGIC: Skip system/trigger messages
+    // ✅ DEBUG: Log the metadata to understand what type of message this is
     const metadata =
       typeof messageData.metadata === "string"
         ? JSON.parse(messageData.metadata)
         : messageData.metadata || {};
 
+    console.log("🔧 DEBUG: Message metadata:", metadata);
+    console.log("🔧 DEBUG: Message type from metadata:", metadata.type);
+    console.log("🔧 DEBUG: Is regular chat:", metadata.is_regular_chat);
+
+    // ✅ IMPROVED: Better duplicate detection using multiple methods
+    const messageId = messageData.uuid || messageData.id;
+    const messageContent = messageData.content || messageData.text_content;
+    const messageTimestamp = messageData.createdAt || messageData.created_at;
+
+    // Check for exact UUID match first
+    if (messageId) {
+      const existingMessageById = messages.find(
+        (m) => m.id === messageId?.toString()
+      );
+      if (existingMessageById) {
+        console.log(
+          "⏭️ Message with UUID already exists, skipping:",
+          messageId
+        );
+        return;
+      }
+    }
+
+    // ✅ NEW: Check for content + sender duplicates (for temp message replacement)
+    if (messageContent && messageData.user_id) {
+      const currentUserId = parseInt(Logic.Auth.AuthUser?.id || "0");
+      const recentTimeWindow = 5000; // 5 seconds
+
+      // For messages from current user, replace any recent temp messages with same content
+      if (messageData.user_id === currentUserId) {
+        const tempMessageIndex = messages.findIndex(
+          (m) =>
+            m.content === messageContent &&
+            m.id.startsWith("temp_") &&
+            Date.now() - m.timestamp.getTime() < recentTimeWindow
+        );
+
+        if (tempMessageIndex >= 0) {
+          console.log(
+            "🔄 Replacing temp message with WebSocket message:",
+            messageContent
+          );
+          // Remove the temp message
+          messages.splice(tempMessageIndex, 1);
+        }
+      }
+    }
+
+    // ✅ BACKUP LOGIC: Skip system/trigger messages
     if (metadata.trigger_conversation || metadata.is_system_message) {
       console.log("⏭️ Skipping system message");
       return;
@@ -1037,9 +1323,7 @@ export const useWorkflowEngine = (options: WorkflowEngineOptions) => {
       orderCreated.value &&
       messageData.content?.toLowerCase().includes("order canceled")
     ) {
-      console.log(
-        "⏭️ Skipping order cancellation message - order already created"
-      );
+      console.log("⏭️ Skipping order cancellation - order already created");
       return;
     }
 
@@ -1057,7 +1341,7 @@ export const useWorkflowEngine = (options: WorkflowEngineOptions) => {
       return;
     }
 
-    // ✅ NEW: Handle conversation participant changes (from backup)
+    // ✅ NEW: Handle conversation participant changes
     if (
       messageData.type === "conversation_updated" ||
       messageData.event === "conversation.participant.added"
@@ -1086,14 +1370,21 @@ export const useWorkflowEngine = (options: WorkflowEngineOptions) => {
     // Handle regular messages
     if (messageData.text_content || messageData.content) {
       try {
+        console.log("🔧 Processing regular message:", {
+          content: messageData.content,
+          user_id: messageData.user_id,
+          uuid: messageData.uuid,
+        });
+
         const displayMessage = convertToDisplayMessage(messageData);
+        console.log("🔧 Converted message:", {
+          id: displayMessage.id,
+          content: displayMessage.content,
+          isUser: displayMessage.isUser,
+          user_name: displayMessage.user_name,
+        });
 
         // Check if this is from a business user
-        const metadata =
-          typeof messageData.metadata === "string"
-            ? JSON.parse(messageData.metadata)
-            : messageData.metadata || {};
-
         const isFromBusiness =
           metadata.sender_type === "business" ||
           messageData.sender_type === "business" ||
@@ -1121,13 +1412,14 @@ export const useWorkflowEngine = (options: WorkflowEngineOptions) => {
           }
         }
 
+        console.log("🔧 Adding message to array...");
         addMessage(displayMessage);
+        console.log("🔧 Messages array length after adding:", messages.length);
 
-        // ✅ NEW: Check for different modal types based on message content
+        // Modal triggers (keeping existing logic)
         if (!displayMessage.isUser && displayMessage.content) {
           const content = displayMessage.content.toLowerCase();
 
-          // Pickup location modal (Cash)
           if (
             content.includes("pickup location") &&
             content.includes("branches")
@@ -1136,65 +1428,29 @@ export const useWorkflowEngine = (options: WorkflowEngineOptions) => {
             setTimeout(() => {
               manualModalOverride.value = "cash_pickup";
             }, 500);
-          }
-
-          // Address input modal (Cash Delivery)
-          else if (
+          } else if (
             content.includes("address") &&
             content.includes("delivery")
           ) {
             setTimeout(() => {
               manualModalOverride.value = "address";
             }, 500);
-          }
-
-          // Bank transfer modal (Bank Transfer)
-          else if (content.includes("bank") && content.includes("account")) {
+          } else if (content.includes("bank") && content.includes("account")) {
             setTimeout(() => {
               manualModalOverride.value = "bank_transfer";
             }, 500);
           }
         }
-
-        // ✅ NEW: Check for auto-amount sending after adding the message
-        // Only check for AI messages asking for amount
-        if (!displayMessage.isUser && displayMessage.content) {
-          const content = displayMessage.content.toLowerCase();
-          if (content.includes("how much") && content.includes("usdc")) {
-            const conversationData = Logic.Messaging.SingleConversation;
-            const conversationMetadata = conversationData?.metadata
-              ? typeof conversationData.metadata === "string"
-                ? JSON.parse(conversationData.metadata)
-                : conversationData.metadata
-              : {};
-
-            const amountToSend =
-              getAmountFromConversation(conversationMetadata);
-
-            if (amountToSend) {
-              const balance = parseFloat(
-                Logic.Auth.AuthUser?.wallet?.total_balance || "0"
-              );
-              if (amountToSend <= balance) {
-                setTimeout(() => {
-                  sendWorkflowMessage(amountToSend.toString());
-                }, 1000);
-              } else {
-                console.log(
-                  "🔧 AUTO-AMOUNT: Insufficient balance for auto-send from incoming message"
-                );
-              }
-            }
-          }
-        }
       } catch (error) {
         console.error("❌ Error handling incoming message:", error);
       }
+    } else {
+      console.log("⏭️ No content in message, skipping:", messageData);
     }
   };
 
   // Initialize with existing conversation messages
-  const initializeFromConversation = (conversation: any) => {
+  const initializeFromConversation = async (conversation: any) => {
     if (!conversation) return;
 
     isBusinessUser.value = detectBusinessUser(conversation);
@@ -1210,46 +1466,142 @@ export const useWorkflowEngine = (options: WorkflowEngineOptions) => {
       businessJoined.value = false;
       directMessagingEnabled.value = false;
     }
+
+    // Clear existing messages array first
     messages.splice(0, messages.length);
 
-    // Add existing messages if available
-    if (conversation.messages) {
-      conversation.messages.forEach((msg: any) => {
-        const displayMessage = convertToDisplayMessage(msg);
-        addMessage(displayMessage);
-      });
-    }
+    // ✅ For business users, show only order summary (like after order creation)
+    if (isBusinessUser.value) {
+      console.log(
+        "🔧 Business user - clearing all messages and showing only summary"
+      );
 
-    // If business user AND there are existing messages, show summary instead of full workflow
-    if (isBusinessUser.value && businessJoined.value && messages.length > 0) {
-      const orderSummary = extractOrderSummary();
-      if (orderSummary) {
-        messages.splice(0, messages.length);
+      // Force enable business mode for existing conversations
+      businessJoined.value = true;
+      directMessagingEnabled.value = true;
 
-        const summaryMessage: WorkflowMessage = {
-          id: `order_summary_${Date.now()}`,
-          content:
-            "📋 **Order Summary**\n\n" + formatOrderSummary(orderSummary),
-          text_content:
-            "📋 **Order Summary**\n\n" + formatOrderSummary(orderSummary),
-          user_uuid: "greep_ai",
-          user_name: "GreepPay AI",
-          type: "text" as const,
-          isUser: false,
-          timestamp: new Date(),
-          sender: {
-            uuid: "greep_ai",
-            name: "Greep AI",
-          },
-          metadata: {
-            type: "text", // ✅ FIX: Change to "text" since this displays content, not an info icon
-            extras: {
-              order_summary: orderSummary,
-              is_business_summary: true,
+      // Get order data from conversation metadata
+      try {
+        const conversationData = Logic.Messaging.SingleConversation;
+        const conversationMetadata = conversationData?.metadata
+          ? typeof conversationData.metadata === "string"
+            ? JSON.parse(conversationData.metadata)
+            : conversationData.metadata
+          : {};
+
+        console.log(
+          "🔍 Looking for order data in conversation metadata:",
+          conversationMetadata
+        );
+
+        // Check if we have order data directly in the metadata
+        if (conversationMetadata.amount && conversationData?.exchangeAd) {
+          const amount = conversationMetadata.amount;
+          const exchangeAd = conversationData.exchangeAd;
+          const method =
+            conversationMetadata.method === "cash"
+              ? "cash_pickup"
+              : conversationMetadata.method;
+
+          console.log("📋 Found order data in metadata:", {
+            amount,
+            method,
+            businessName: exchangeAd.business?.business_name,
+            rate: exchangeAd.rate,
+          });
+
+          // Try to get the pickup address from URL parameters (passed from order acceptance)
+          let pickupAddress = "Pickup location to be confirmed";
+          try {
+            const urlParams = new URLSearchParams(window.location.search);
+            const pickupParam = urlParams.get("pickup_address");
+            if (pickupParam) {
+              pickupAddress = decodeURIComponent(pickupParam);
+              console.log(
+                "📍 Found pickup address from URL params:",
+                pickupAddress
+              );
+            } else {
+              // Fallback: try to get from conversation metadata
+              if (conversationMetadata.pickup_location_address) {
+                pickupAddress = conversationMetadata.pickup_location_address;
+                console.log(
+                  "📍 Found pickup address from metadata:",
+                  pickupAddress
+                );
+              } else if (conversationMetadata.pickup_location_name) {
+                pickupAddress = conversationMetadata.pickup_location_name;
+                console.log(
+                  "📍 Found pickup name from metadata:",
+                  pickupAddress
+                );
+              }
+            }
+          } catch (error) {
+            console.log("⚠️ Could not get pickup address:", error);
+          }
+
+          // Create order summary with metadata data
+          const deliveryFee = method === "cash_delivery" ? 3 : 0;
+          const totalAmount = amount + deliveryFee;
+          const sellAmount = amount * (exchangeAd.rate || 10);
+
+          const orderSummary = {
+            youSell: `${amount} USDC`,
+            youGet: `₺${sellAmount.toFixed(2)}`,
+            fee: "0 USDC",
+            deliveryFee: `${deliveryFee} USDC`,
+            youPay: `${totalAmount} USDC`,
+            paymentType: "USDC",
+            payoutOption:
+              method === "cash_pickup"
+                ? "Pickup"
+                : method === "cash_delivery"
+                ? "Delivery"
+                : "Cash",
+            deliveryAddress:
+              method === "cash_pickup"
+                ? pickupAddress
+                : "Delivery address to be confirmed",
+          };
+
+          // Create order summary message only
+          const summaryMessage: WorkflowMessage = {
+            id: `order_summary_${Date.now()}`,
+            content: "Order Summary",
+            text_content: "Order Summary",
+            user_uuid: "greep_ai",
+            user_name: "GreepPay AI",
+            type: "text" as const,
+            isUser: false,
+            timestamp: new Date(),
+            sender: {
+              uuid: "greep_ai",
+              name: "GreepPay AI",
             },
-          },
-        };
-        addMessage(summaryMessage);
+            isOrderSummary: true,
+            orderSummary: orderSummary,
+          };
+          addMessage(summaryMessage);
+          console.log(
+            "✅ Added order summary for business user with metadata data and pickup address"
+          );
+        } else {
+          console.log("⚠️ No order data found in conversation metadata");
+        }
+      } catch (error) {
+        console.log("❌ Error fetching order data for business user:", error);
+      }
+      return; // Skip normal message loading for business users
+    } else {
+      // ✅ For regular users, load existing messages
+      console.log("🔧 Regular user - loading existing messages");
+
+      if (conversation.messages) {
+        conversation.messages.forEach((msg: any) => {
+          const displayMessage = convertToDisplayMessage(msg);
+          addMessage(displayMessage);
+        });
       }
     }
 
@@ -1273,101 +1625,6 @@ export const useWorkflowEngine = (options: WorkflowEngineOptions) => {
     }
   };
 
-  const getAmountFromConversation = (conversationMetadata?: any) => {
-    if (conversationMetadata?.amount) {
-      const amount = parseFloat(conversationMetadata.amount);
-      if (!isNaN(amount) && amount > 0 && amount < 10000) {
-        return amount;
-      }
-    }
-
-    // Second priority: Check Logic.Messaging.SingleConversation metadata
-    const singleConversation = Logic.Messaging.SingleConversation;
-    if (singleConversation?.metadata) {
-      try {
-        const metadata =
-          typeof singleConversation.metadata === "string"
-            ? JSON.parse(singleConversation.metadata)
-            : singleConversation.metadata;
-
-        if (metadata?.amount) {
-          const amount = parseFloat(metadata.amount);
-          if (!isNaN(amount) && amount > 0 && amount < 10000) {
-            return amount;
-          }
-        }
-      } catch (error) {
-        console.error("❌ Error parsing SingleConversation metadata:", error);
-      }
-    }
-
-    const exchangeAd = singleConversation?.exchangeAd;
-    if (exchangeAd?.min_amount) {
-      return exchangeAd.min_amount;
-    }
-    return null;
-  };
-
-  // Setup auto-amount sending functionality (from backup)
-  const setupAutoAmountSending = (conversationMetadata?: any) => {
-    const amountToSend = getAmountFromConversation(conversationMetadata);
-
-    if (!amountToSend) {
-      return;
-    }
-
-    // Monitor for AI messages asking for amount
-    const checkForAmountQuestion = () => {
-      const lastAIMessage = messages.filter((msg) => !msg.isUser).pop();
-
-      if (lastAIMessage?.content) {
-        const content = lastAIMessage.content.toLowerCase();
-
-        if (content.includes("how much") && content.includes("usdc")) {
-          const balance = parseFloat(
-            Logic.Auth.AuthUser?.wallet?.total_balance || "0"
-          );
-          if (amountToSend <= balance) {
-            setTimeout(() => {
-              sendWorkflowMessage(amountToSend.toString());
-            }, 1000);
-            return true;
-          } else {
-            console.log("🔧 AUTO-AMOUNT: Insufficient balance for auto-send");
-          }
-        }
-      }
-
-      return false; // Continue monitoring
-    };
-
-    // Check immediately for existing messages
-    if (checkForAmountQuestion()) {
-      return;
-    }
-    let messageCount = messages.length;
-    let checkCount = 0;
-    const maxChecks = 60; // Check for 30 seconds (60 * 500ms)
-
-    const messageWatcher = setInterval(() => {
-      checkCount++;
-
-      if (messages.length > messageCount) {
-        messageCount = messages.length;
-
-        if (checkForAmountQuestion()) {
-          clearInterval(messageWatcher);
-          return;
-        }
-      }
-
-      // Stop monitoring after max checks to prevent memory leaks
-      if (checkCount >= maxChecks) {
-        clearInterval(messageWatcher);
-      }
-    }, 500);
-  };
-
   // Initialize workflow conversation if needed
   const initializeWorkflow = async (conversationMetadata?: any) => {
     // Only initialize if we're in workflow mode and have no messages
@@ -1375,13 +1632,7 @@ export const useWorkflowEngine = (options: WorkflowEngineOptions) => {
       return;
     }
 
-    console.log("🚀 Starting workflow initialization...", {
-      conversationMetadata,
-      hasAmount: !!conversationMetadata?.amount,
-    });
-
     try {
-      // Add welcome message
       const welcomeMessage = {
         id: `msg-${Date.now()}`,
         conversation_id: conversationId,
@@ -1400,12 +1651,6 @@ export const useWorkflowEngine = (options: WorkflowEngineOptions) => {
 
       addMessage(welcomeMessage);
 
-      // Setup auto-amount sending if amount is available
-      if (conversationMetadata?.amount) {
-        setupAutoAmountSending(conversationMetadata);
-      }
-
-      // Trigger backend conversation start after short delay
       setTimeout(async () => {
         try {
           // Get wallet balance like the backup did
@@ -1431,10 +1676,8 @@ export const useWorkflowEngine = (options: WorkflowEngineOptions) => {
                 trigger_conversation: true,
                 structured_response: {},
                 conversation_metadata: conversationMetadata || {},
-                // ✅ CRITICAL: Include exchange ad directly (like backup)
                 exchangeAd:
                   Logic.Messaging.SingleConversation?.exchangeAd || null,
-                // ✅ CRITICAL: Include customer information (like backup)
                 customer_name:
                   `${Logic.Auth.AuthUser?.first_name} ${Logic.Auth.AuthUser?.last_name}`.trim(),
                 user_name:
@@ -1482,14 +1725,12 @@ export const useWorkflowEngine = (options: WorkflowEngineOptions) => {
     try {
       // Prevent multiple clicks during processing
       if (isProcessing.value) {
-        console.log("⏭️ Action click ignored - already processing");
         return false;
       }
 
       // Create P2P Order when confirm is clicked
       if (action.value === "confirm") {
         await createP2POrder();
-        // Don't send additional message after order creation
         return true;
       }
 
@@ -1506,34 +1747,23 @@ export const useWorkflowEngine = (options: WorkflowEngineOptions) => {
   // Create P2P Order function
   const createP2POrder = async () => {
     try {
-      // Prevent duplicate order creation
       if (isProcessing.value || orderCreated.value) {
-        console.log(
-          "⏭️ Order creation skipped - already processing or created"
-        );
         return null;
       }
-
       isProcessing.value = true;
-      console.log("🚀 Creating P2P Order via GraphQL...");
 
       // Get required data from conversation
       const conversationData = Logic.Messaging.SingleConversation;
-      const exchangeAd = conversationData?.exchangeAd;
       const conversationUuid = conversationData?.uuid;
+      const exchangeAd = conversationData?.exchangeAd;
 
-      if (!exchangeAd?.uuid || !conversationUuid) {
-        throw new Error("Missing required data for P2P order creation");
-      }
-
-      // ✅ Get conversation metadata properly (like backup)
       const conversationMetadata = conversationData?.metadata
         ? typeof conversationData.metadata === "string"
           ? JSON.parse(conversationData.metadata)
           : conversationData.metadata
         : {};
 
-      // ✅ Extract pickup location data from conversation metadata (like backup)
+      // ✅ Extract pickup location data from conversation metadata
       const isCashPickupOrder = conversationMetadata.pickup_location
         ? true
         : false;
@@ -1545,7 +1775,6 @@ export const useWorkflowEngine = (options: WorkflowEngineOptions) => {
       const pickupLocationCountry =
         conversationMetadata.pickup_location_country;
 
-      // Extract order details from messages
       const orderSummary = extractOrderSummary();
       if (!orderSummary) {
         throw new Error(
@@ -1553,12 +1782,12 @@ export const useWorkflowEngine = (options: WorkflowEngineOptions) => {
         );
       }
 
-      // ✅ Determine correct payment type and payout option (like backup)
+      // ✅ Determine correct payment type and payout option
       let paymentType = "cash";
       let payoutOption = "cash_delivery";
       let deliveryAddress = "";
-      let city = exchangeAd.business?.city || "Lagos";
-      let country = exchangeAd.business?.country || "Nigeria";
+      let city = "Lagos";
+      let country = "Nigeria";
 
       const userMessages = messages.filter((m) => m.isUser);
       const hasBankTransfer = userMessages.some((m) =>
@@ -1566,20 +1795,19 @@ export const useWorkflowEngine = (options: WorkflowEngineOptions) => {
       );
 
       if (isCashPickupOrder) {
-        // ✅ Cash pickup order (like backup)
+        // ✅ Cash pickup order
         paymentType = "cash_pickup";
         payoutOption = "pickup";
         deliveryAddress =
           pickupLocation ||
           `Pickup: ${pickupLocationName} - ${pickupLocationAddress}, ${pickupLocationCity}, ${pickupLocationCountry}`;
-        city = pickupLocationCity || exchangeAd.business?.city || "Lagos";
-        country =
-          pickupLocationCountry || exchangeAd.business?.country || "Nigeria";
+        city = pickupLocationCity || "Lagos";
+        country = pickupLocationCountry || "Nigeria";
       } else if (
         hasBankTransfer ||
         conversationMetadata.method === "transfer"
       ) {
-        // ✅ Bank transfer method (like backup)
+        // ✅ Bank transfer method
         paymentType = "transfer";
         payoutOption = "bank_transfer";
 
@@ -1590,11 +1818,10 @@ export const useWorkflowEngine = (options: WorkflowEngineOptions) => {
         if (bankMessage) {
           deliveryAddress = bankMessage.content.replace(/bank:\s*/i, "");
         }
-        // Keep business location for bank transfers
-        city = exchangeAd.business?.city || "Lagos";
-        country = exchangeAd.business?.country || "Nigeria";
+        city = "Lagos"; // Default for delivery
+        country = "Nigeria"; // Default for delivery
       } else {
-        // ✅ Cash delivery method - extract address and location (like backup)
+        // ✅ Cash delivery method - extract address and location
         const addressMessage = userMessages.find(
           (m) =>
             m.content.length > 20 &&
@@ -1622,29 +1849,28 @@ export const useWorkflowEngine = (options: WorkflowEngineOptions) => {
         throw new Error("Invalid amount for P2P order creation");
       }
 
-      // ✅ Prepare order data like backup
+      // ✅ Prepare order data
       const orderData = {
-        exchange_ad_uuid: exchangeAd.uuid,
+        exchange_ad_uuid: exchangeAd?.uuid || "", // Ensure it's never undefined
         amount: amount,
         delivery_address: deliveryAddress,
         city: city,
         country: country,
         payment_type: paymentType,
         payout_option: payoutOption,
-        conversation_uuid: conversationUuid,
+        conversation_uuid: conversationUuid || "", // Ensure it's never undefined
         metadata: JSON.stringify({
           conversation_id: conversationData?.id,
           user_id: Logic.Auth.AuthUser?.id,
           user_uuid: Logic.Auth.AuthUser?.uuid,
-          business_name: exchangeAd.business?.business_name,
-          business_uuid: exchangeAd.business?.uuid,
+          business_name: exchangeAd?.business?.business_name,
+          business_uuid: exchangeAd?.business?.uuid,
           created_at: new Date().toISOString(),
-          // Add location context if available
           location_context: {
             city: city,
             country: country,
           },
-          // ✅ Include pickup location details for pickup orders (like backup)
+          // ✅ Include pickup location details for pickup orders
           ...(isCashPickupOrder && {
             pickup_location: pickupLocation,
             pickup_location_name: pickupLocationName,
@@ -1658,13 +1884,10 @@ export const useWorkflowEngine = (options: WorkflowEngineOptions) => {
       console.log("🔧 Creating P2P order with data:", orderData);
 
       try {
-        // Call the GraphQL mutation with error handling
         const createdOrder = await Logic.Wallet.CreateP2pOrder(orderData);
 
         if (createdOrder) {
-          console.log("✅ P2P Order created successfully:", createdOrder);
-
-          // ✅ Save order_uuid to conversation metadata (like backup)
+          // ✅ Save order_uuid to conversation metadata
           if (createdOrder.uuid) {
             try {
               const conversationData = Logic.Messaging.SingleConversation;
@@ -1675,67 +1898,75 @@ export const useWorkflowEngine = (options: WorkflowEngineOptions) => {
                 currentMetadata.order_uuid = createdOrder.uuid;
                 currentMetadata.order_data = orderData;
                 conversationData.metadata = JSON.stringify(currentMetadata);
-                console.log(
-                  "✅ Stored order UUID in conversation metadata:",
-                  createdOrder.uuid
-                );
               }
             } catch (error) {
               console.error("❌ Error storing order UUID in metadata:", error);
             }
           }
 
+          console.log("✅ P2P Order created successfully:", createdOrder);
+
           // ✅ Set order created flag
           orderCreated.value = true;
 
-          // ✅ Clear chat and show order summary for customer (like backup)
-          if (!isBusinessUser.value) {
-            console.log(
-              "🎯 Customer confirmed order - clearing chat and showing summary"
-            );
+          // ✅ Enable direct messaging for everyone
+          directMessagingEnabled.value = true;
 
-            // Clear all existing messages
-            messages.length = 0;
+          console.log("🔧 DEBUG: About to clear messages and show summary");
+          console.log(
+            "🔧 DEBUG: Messages length before clearing:",
+            messages.length
+          );
 
-            // Create order summary message for customer
-            const userSummaryMessage: WorkflowMessage = {
-              id: `user_summary_${Date.now()}`,
-              content:
-                "✅ Order confirmed! Your P2P trade has been created successfully.",
+          // ✅ CLEAR ALL MESSAGES and show only order summary (like before)
+          messages.length = 0; // Clear all existing messages
+
+          console.log(
+            "🔧 DEBUG: Messages length after clearing:",
+            messages.length
+          );
+
+          // Create order summary message only
+          const orderSummaryMessage: WorkflowMessage = {
+            id: `order_summary_${Date.now()}`,
+            content: "Order Summary",
+            text_content: "Order Summary",
+            user_uuid: "greep_ai",
+            user_name: "GreepPay AI",
+            type: "text" as const,
+            isUser: false,
+            timestamp: new Date(),
+            sender: { uuid: "greep_ai", name: "GreepPay AI" },
+            isOrderSummary: true,
+            orderSummary: orderSummary,
+          };
+
+          addMessage(orderSummaryMessage);
+
+          console.log(
+            "🔧 DEBUG: Messages length after adding summary:",
+            messages.length
+          );
+
+          // ✅ Start countdown timer
+          setTimeout(() => {
+            startCountdown("waiting_business", 600); // 10 minutes
+
+            // Add countdown message
+            const countdownMessage: WorkflowMessage = {
+              id: `countdown_${Date.now()}`,
+              content: "⏰ Order created! Waiting for business to accept...",
               text_content:
-                "✅ Order confirmed! Your P2P trade has been created successfully.",
+                "⏰ Order created! Waiting for business to accept...",
               user_uuid: "greep_ai",
               user_name: "GreepPay AI",
               type: "text" as const,
               isUser: false,
               timestamp: new Date(),
               sender: { uuid: "greep_ai", name: "GreepPay AI" },
-              isOrderSummary: true,
-              orderSummary: orderSummary,
             };
-
-            addMessage(userSummaryMessage);
-
-            // ✅ Start countdown timer (like backup)
-            setTimeout(() => {
-              startCountdown("waiting_business", 600); // 10 minutes
-
-              // Add countdown message
-              const countdownMessage: WorkflowMessage = {
-                id: `countdown_${Date.now()}`,
-                content: "⏰ Order created! Waiting for business to accept...",
-                text_content:
-                  "⏰ Order created! Waiting for business to accept...",
-                user_uuid: "greep_ai",
-                user_name: "GreepPay AI",
-                type: "text" as const,
-                isUser: false,
-                timestamp: new Date(),
-                sender: { uuid: "greep_ai", name: "GreepPay AI" },
-              };
-              addMessage(countdownMessage);
-            }, 1000);
-          }
+            addMessage(countdownMessage);
+          }, 1000);
 
           return createdOrder;
         }
@@ -1745,61 +1976,31 @@ export const useWorkflowEngine = (options: WorkflowEngineOptions) => {
           graphQLErrors: graphqlError.graphQLErrors,
           networkError: graphqlError.networkError,
         });
-
-        // ✅ FALLBACK: If GraphQL fails, still enable direct messaging
-        console.log(
-          "🔧 GraphQL failed, but enabling direct messaging anyway..."
-        );
         directMessagingEnabled.value = true;
 
         // Add informational message about order creation failure but chat enabled
-        const fallbackMessage: WorkflowMessage = {
-          id: `order_fallback_${Date.now()}`,
-          content: `⚠️ Order processing encountered an issue, but you can now chat directly with the business partner to complete your transaction.\n\nAmount: ${orderSummary.youSell}\nMethod: ${orderSummary.payoutOption}`,
-          text_content: `⚠️ Order processing encountered an issue, but you can now chat directly with the business partner to complete your transaction.\n\nAmount: ${orderSummary.youSell}\nMethod: ${orderSummary.payoutOption}`,
-          user_uuid: "greep_ai",
-          user_name: "GreepPay AI",
-          type: "text" as const,
-          isUser: false,
-          timestamp: new Date(),
-          sender: {
-            uuid: "greep_ai",
-            name: "GreepPay AI",
-          },
-        };
+        // const fallbackMessage: WorkflowMessage = {
+        //   id: `order_fallback_${Date.now()}`,
+        //   content: `⚠️ Order processing encountered an issue, but you can now chat directly with the business partner to complete your transaction.\n\nAmount: ${orderSummary.youSell}\nMethod: ${orderSummary.payoutOption}`,
+        //   text_content: `⚠️ Order processing encountered an issue, but you can now chat directly with the business partner to complete your transaction.\n\nAmount: ${orderSummary.youSell}\nMethod: ${orderSummary.payoutOption}`,
+        //   user_uuid: "greep_ai",
+        //   user_name: "GreepPay AI",
+        //   type: "text" as const,
+        //   isUser: false,
+        //   timestamp: new Date(),
+        //   sender: {
+        //     uuid: "greep_ai",
+        //     name: "GreepPay AI",
+        //   },
+        // };
 
-        addMessage(fallbackMessage);
-
-        // Don't throw the error, allow the workflow to continue
+        // addMessage(fallbackMessage);
         return null;
       }
     } catch (error) {
       console.error("❌ Error creating P2P order:", error);
 
-      // ✅ FALLBACK: Even if order creation fails, enable direct messaging
       directMessagingEnabled.value = true;
-
-      // Add error message but still allow chat
-      const errorMessage: WorkflowMessage = {
-        id: `order_error_${Date.now()}`,
-        content:
-          "⚠️ Unable to process order automatically, but you can now chat directly with the business partner to complete your transaction manually.",
-        text_content:
-          "⚠️ Unable to process order automatically, but you can now chat directly with the business partner to complete your transaction manually.",
-        user_uuid: "greep_ai",
-        user_name: "GreepPay AI",
-        type: "text" as const,
-        isUser: false,
-        timestamp: new Date(),
-        sender: {
-          uuid: "greep_ai",
-          name: "GreepPay AI",
-        },
-      };
-
-      addMessage(errorMessage);
-
-      // Don't throw the error to prevent breaking the workflow
       return null;
     } finally {
       isProcessing.value = false;
@@ -1835,8 +2036,6 @@ export const useWorkflowEngine = (options: WorkflowEngineOptions) => {
     detectBusinessUser,
     extractOrderSummary,
     formatOrderSummary,
-    getAmountFromConversation,
-    setupAutoAmountSending,
     handleActionClick,
     createP2POrder,
     startCountdown,

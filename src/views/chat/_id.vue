@@ -1,6 +1,6 @@
 <template>
-  <workflow-chat v-if="conversationId" :conversation-id="conversationId" workflow-type="p2p_withdrawal"
-    :initial-messages="initialMessages" :conversation="SingleConversation" />
+  <workflow-chat v-if="conversationId && conversationData" :conversation-id="conversationId"
+    workflow-type="p2p_withdrawal" :initial-messages="initialMessages" :conversation="conversationData" />
 </template>
 
 <script lang="ts">
@@ -34,6 +34,12 @@ export default defineComponent({
     // Get conversation ID from route or conversation data
     const conversationId = computed(() => {
       return SingleConversation.value?.id || 0;
+    });
+
+    const conversationData = computed(() => {
+      const conv = SingleConversation.value;
+      if (!conv) return null;
+      return conv;
     });
 
     // Transform existing messages to workflow format if needed
@@ -81,6 +87,7 @@ export default defineComponent({
     return {
       conversationId,
       initialMessages,
+      conversationData,
       SingleConversation,
       AuthUser
     };
