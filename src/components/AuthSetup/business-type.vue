@@ -121,7 +121,7 @@ export default defineComponent({
         description:
           "Get tasks to deliver items, and earn on your schedule — with a bike provided for you.",
         icon: "delivery",
-        soon: true,
+        soon: false,
       },
     ]);
 
