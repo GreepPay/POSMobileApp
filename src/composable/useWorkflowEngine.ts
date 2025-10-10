@@ -410,7 +410,7 @@ export const useWorkflowEngine = (options: WorkflowEngineOptions) => {
     // Handle {order_summary_text} template - create order summary object
     if (processedContent.includes("{order_summary_text}")) {
       isOrderSummary = true;
-      orderSummaryData = extractOrderSummary();
+      orderSummaryData = null; // Will be populated by the UI component when needed
 
       // Set a simple placeholder content since the ChatMessage will render the order summary UI
       processedContent = "Order Summary";
@@ -694,7 +694,7 @@ export const useWorkflowEngine = (options: WorkflowEngineOptions) => {
       addMessage(businessJoinedMessage);
 
       // Create order summary message for business user context
-      const orderSummary = extractOrderSummary();
+      const orderSummary = await extractOrderSummary();
       if (orderSummary) {
         const businessSummaryMessage: WorkflowMessage = {
           id: `business_summary_${Date.now()}`,
@@ -847,258 +847,44 @@ export const useWorkflowEngine = (options: WorkflowEngineOptions) => {
 
   // Extract order summary from conversation context
   const extractOrderSummary = async () => {
-    console.log("🔍 Starting extractOrderSummary for business user...");
-
-    // Get exchange ad data for order details
     const conversationData = Logic.Messaging.SingleConversation;
-    const exchangeAd = conversationData?.exchangeAd;
+    const conversationMetadata = conversationData?.metadata
+      ? typeof conversationData.metadata === "string"
+        ? JSON.parse(conversationData.metadata)
+        : conversationData.metadata
+      : {};
 
-    console.log("🔍 Conversation data:", {
-      uuid: conversationData?.uuid,
-      id: conversationData?.id,
-      exchangeAd: exchangeAd ? "Present" : "Missing",
-      metadata: conversationData?.metadata ? "Present" : "Missing",
-    });
-
-    const summary: any = {
-      amount: null,
-      currency: "USDC",
-      currency_symbol: "₺",
-      method: null,
-      address: null,
-      pickup_location: null,
-      business_name: exchangeAd?.business?.business_name || "GreepPay",
-      sell_rate: exchangeAd?.rate || 10,
-      status: "pending",
-    };
-
-    // ✅ BUSINESS FIX: Try to get the actual order from conversation metadata
-    try {
-      const conversationMetadata = conversationData?.metadata
-        ? typeof conversationData.metadata === "string"
-          ? JSON.parse(conversationData.metadata)
-          : conversationData.metadata
-        : {};
-
-      console.log("🔍 Parsed conversation metadata:", conversationMetadata);
-
-      // Check if there's order_uuid in metadata and fetch the actual order
-      if (conversationMetadata.order_uuid) {
-        console.log(
-          "🔍 Found order_uuid in metadata:",
-          conversationMetadata.order_uuid
-        );
-
-        try {
-          // Fetch the actual order data
-          const orderData = await Logic.Wallet.GetP2pOrder(
-            conversationMetadata.order_uuid
-          );
-          console.log("📋 Fetched order data:", orderData);
-
-          if (orderData) {
-            summary.amount = orderData.amount;
-            summary.method = orderData.payment_type;
-            summary.address = "Address to be confirmed";
-            summary.pickup_location = "Location to be confirmed";
-            summary.currency = orderData.ad?.from_currency || "USDC";
-            summary.sell_rate = orderData.ad?.rate || 10;
-            summary.business_name =
-              orderData.ad?.business?.business_name || "GreepPay";
-
-            // Calculate the sell amount (what user gets in local currency)
-            const sellAmount = orderData.amount * (orderData.ad?.rate || 10);
-            summary.sell_amount = sellAmount;
-
-            console.log("✅ Successfully extracted order data from API:", {
-              amount: summary.amount,
-              method: summary.method,
-              currency: summary.currency,
-              sellAmount: summary.sell_amount,
-            });
-
-            return summary;
-          }
-        } catch (orderError) {
-          console.log("❌ Failed to fetch order data:", orderError);
-        }
-      }
-
-      // Check if there's order data directly in metadata
-      if (conversationMetadata.order_data) {
-        const orderData = conversationMetadata.order_data;
-        summary.amount = orderData.amount;
-        summary.method = orderData.payment_type;
-        summary.address = orderData.delivery_address;
-        summary.pickup_location = orderData.delivery_address;
-        console.log("📋 Found order data in conversation metadata:", orderData);
-      }
-    } catch (e) {
-      console.log(
-        "⚠️ Could not parse conversation metadata for order data:",
-        e
+    // If we have order_uuid, fetch the actual order
+    if (conversationMetadata.order_uuid) {
+      const orderData = await Logic.Wallet.GetP2pOrder(
+        conversationMetadata.order_uuid
       );
-    }
+      if (orderData) {
+        const deliveryFee = orderData.payment_type === "cash_delivery" ? 3 : 0;
+        const totalAmount = orderData.amount + deliveryFee;
+        const sellAmount = orderData.amount * (orderData.ad?.rate || 10);
 
-    // ✅ NEW: Try to get order data from URL parameters
-    try {
-      const urlParams = new URLSearchParams(window.location.search);
-      const methodParam = urlParams.get("method");
-      if (methodParam && !summary.method) {
-        if (methodParam === "cash") {
-          summary.method = "cash_pickup";
-        } else {
-          summary.method = methodParam;
-        }
-        console.log(
-          "🔍 Found method from URL:",
-          methodParam,
-          "->",
-          summary.method
-        );
-      }
-    } catch (e) {
-      console.log("⚠️ Could not parse URL parameters");
-    }
+        const orderSummary = {
+          youSell: `${orderData.amount} USDC`,
+          youGet: `₺${sellAmount.toFixed(2)}`,
+          fee: "0 USDC",
+          deliveryFee: `${deliveryFee} USDC`,
+          youPay: `${totalAmount} USDC`,
+          paymentType: "USDC",
+          payoutOption:
+            orderData.payment_type === "cash_pickup"
+              ? "Pickup"
+              : orderData.payment_type === "cash_delivery"
+              ? "Delivery"
+              : "Bank Transfer",
+          deliveryAddress:
+            orderData.pickup_location_address_line || "Address to be confirmed",
+        };
 
-    // ✅ BETTER: Look for amount in conversation metadata first
-    let incomingAmount = null;
-    try {
-      // Check if amount is in conversation metadata or URL params
-      const urlParams = new URLSearchParams(window.location.search);
-      const amountParam = urlParams.get("amount");
-      if (amountParam) {
-        incomingAmount = parseFloat(amountParam);
-        console.log("🔍 Found amount from URL:", incomingAmount);
-      }
-    } catch (e) {
-      // Ignore URL parsing errors
-    }
-
-    if (incomingAmount && incomingAmount > 0) {
-      summary.amount = incomingAmount;
-    } else if (!summary.amount) {
-      // ✅ FALLBACK: Only look for simple numeric user messages (avoiding metadata numbers)
-      const userMessages = messages.filter((m) => m.isUser);
-      console.log(
-        "🔍 Searching for amount in",
-        userMessages.length,
-        "user messages"
-      );
-
-      for (const msg of userMessages) {
-        // Only consider short numeric messages (likely amount inputs)
-        if (
-          msg.content.length <= 10 &&
-          /^\d+(\.\d+)?$/.test(msg.content.trim())
-        ) {
-          const amount = parseFloat(msg.content.trim());
-          if (amount > 0 && amount < 10000) {
-            // Reasonable amount range
-            summary.amount = amount;
-            console.log("🔍 Found amount from user message:", amount);
-            break;
-          }
-        }
+        return orderSummary;
       }
     }
 
-    // Calculate sell amount
-    if (summary.amount) {
-      summary.sell_amount = (summary.amount * summary.sell_rate).toFixed(2);
-    }
-
-    // ✅ BETTER: Extract method from the last method selection or metadata
-    if (!summary.method) {
-      const userMessages = messages.filter((m) => m.isUser);
-      userMessages.reverse(); // Check latest messages first
-
-      userMessages.forEach((msg) => {
-        const content = msg.content.toLowerCase();
-        if (content.includes("pickup") || content === "cash") {
-          summary.method = "cash_pickup";
-        } else if (content.includes("delivery")) {
-          summary.method = "cash_delivery";
-        } else if (content.includes("bank")) {
-          summary.method = "bank_transfer";
-        }
-      });
-    }
-
-    // Extract other details from messages if not in metadata
-    const userMessages = messages.filter((m) => m.isUser);
-
-    // Extract address for delivery
-    if (!summary.address) {
-      userMessages.forEach((msg) => {
-        if (
-          msg.content.length > 20 &&
-          (msg.content.includes(",") ||
-            msg.content.toLowerCase().includes("street"))
-        ) {
-          summary.address = msg.content;
-        }
-      });
-    }
-
-    // Extract pickup location
-    if (!summary.pickup_location) {
-      userMessages.forEach((msg) => {
-        if (msg.content.toLowerCase().includes("pickup:")) {
-          summary.pickup_location = msg.content.replace(/pickup:\s*/i, "");
-        }
-      });
-    }
-
-    // ✅ Extract bank account details
-    userMessages.forEach((msg) => {
-      if (msg.content.toLowerCase().includes("bank:")) {
-        summary.bank_account = msg.content.replace(/bank:\s*/i, "");
-      }
-    });
-
-    // ✅ Return the exact format ChatMessage component expects
-    console.log("🔍 Final summary data:", {
-      amount: summary.amount,
-      method: summary.method,
-      sell_amount: summary.sell_amount,
-      business_name: summary.business_name,
-    });
-
-    if (summary.amount || summary.method) {
-      // ✅ More lenient - show summary if we have either amount OR method
-      // ✅ FIX: Calculate delivery fee based on method
-      const deliveryFee = summary.method === "cash_delivery" ? 3 : 0;
-      const totalAmount = (summary.amount || 0) + deliveryFee;
-
-      const orderSummary = {
-        youSell: `${summary.amount || "0"} USDC`,
-        youGet: `${summary.currency_symbol}${summary.sell_amount || "0.00"}`,
-        fee: "0 USDC",
-        deliveryFee: `${deliveryFee} USDC`,
-        youPay: `${totalAmount} USDC`,
-        paymentType: "USDC",
-        payoutOption:
-          summary.method === "cash_pickup"
-            ? "Pickup"
-            : summary.method === "cash_delivery"
-            ? "Delivery"
-            : summary.method === "bank_transfer"
-            ? "Bank Transfer"
-            : "Cash", // Default fallback
-        deliveryAddress:
-          summary.method === "cash_pickup"
-            ? summary.pickup_location || "Pickup location to be confirmed"
-            : summary.method === "cash_delivery"
-            ? summary.address || "Delivery address to be confirmed"
-            : summary.bank_account || "Payment details to be confirmed",
-      };
-
-      console.log("✅ Generated order summary:", orderSummary);
-      return orderSummary;
-    }
-
-    console.log("❌ Could not generate order summary - missing critical data");
     return null;
   };
 
@@ -1172,7 +958,6 @@ export const useWorkflowEngine = (options: WorkflowEngineOptions) => {
     return sendWorkflowMessage(content, metadata);
   };
 
-  // Original workflow message sending (renamed)
   const sendWorkflowMessage = async (
     content: string,
     metadata?: any
@@ -1470,7 +1255,7 @@ export const useWorkflowEngine = (options: WorkflowEngineOptions) => {
     // Clear existing messages array first
     messages.splice(0, messages.length);
 
-    // ✅ For business users, show only order summary (like after order creation)
+    // ✅ For business users, show only order summary (using database data)
     if (isBusinessUser.value) {
       console.log(
         "🔧 Business user - clearing all messages and showing only summary"
@@ -1480,92 +1265,12 @@ export const useWorkflowEngine = (options: WorkflowEngineOptions) => {
       businessJoined.value = true;
       directMessagingEnabled.value = true;
 
-      // Get order data from conversation metadata
+      // ✅ Use extractOrderSummary to get fresh data from database
       try {
-        const conversationData = Logic.Messaging.SingleConversation;
-        const conversationMetadata = conversationData?.metadata
-          ? typeof conversationData.metadata === "string"
-            ? JSON.parse(conversationData.metadata)
-            : conversationData.metadata
-          : {};
+        const orderSummary = await extractOrderSummary();
 
-        console.log(
-          "🔍 Looking for order data in conversation metadata:",
-          conversationMetadata
-        );
-
-        // Check if we have order data directly in the metadata
-        if (conversationMetadata.amount && conversationData?.exchangeAd) {
-          const amount = conversationMetadata.amount;
-          const exchangeAd = conversationData.exchangeAd;
-          const method =
-            conversationMetadata.method === "cash"
-              ? "cash_pickup"
-              : conversationMetadata.method;
-
-          console.log("📋 Found order data in metadata:", {
-            amount,
-            method,
-            businessName: exchangeAd.business?.business_name,
-            rate: exchangeAd.rate,
-          });
-
-          // Try to get the pickup address from URL parameters (passed from order acceptance)
-          let pickupAddress = "Pickup location to be confirmed";
-          try {
-            const urlParams = new URLSearchParams(window.location.search);
-            const pickupParam = urlParams.get("pickup_address");
-            if (pickupParam) {
-              pickupAddress = decodeURIComponent(pickupParam);
-              console.log(
-                "📍 Found pickup address from URL params:",
-                pickupAddress
-              );
-            } else {
-              // Fallback: try to get from conversation metadata
-              if (conversationMetadata.pickup_location_address) {
-                pickupAddress = conversationMetadata.pickup_location_address;
-                console.log(
-                  "📍 Found pickup address from metadata:",
-                  pickupAddress
-                );
-              } else if (conversationMetadata.pickup_location_name) {
-                pickupAddress = conversationMetadata.pickup_location_name;
-                console.log(
-                  "📍 Found pickup name from metadata:",
-                  pickupAddress
-                );
-              }
-            }
-          } catch (error) {
-            console.log("⚠️ Could not get pickup address:", error);
-          }
-
-          // Create order summary with metadata data
-          const deliveryFee = method === "cash_delivery" ? 3 : 0;
-          const totalAmount = amount + deliveryFee;
-          const sellAmount = amount * (exchangeAd.rate || 10);
-
-          const orderSummary = {
-            youSell: `${amount} USDC`,
-            youGet: `₺${sellAmount.toFixed(2)}`,
-            fee: "0 USDC",
-            deliveryFee: `${deliveryFee} USDC`,
-            youPay: `${totalAmount} USDC`,
-            paymentType: "USDC",
-            payoutOption:
-              method === "cash_pickup"
-                ? "Pickup"
-                : method === "cash_delivery"
-                ? "Delivery"
-                : "Cash",
-            deliveryAddress:
-              method === "cash_pickup"
-                ? pickupAddress
-                : "Delivery address to be confirmed",
-          };
-
-          // Create order summary message only
+        if (orderSummary) {
+          // Create order summary message with database data
           const summaryMessage: WorkflowMessage = {
             id: `order_summary_${Date.now()}`,
             content: "Order Summary",
@@ -1584,13 +1289,13 @@ export const useWorkflowEngine = (options: WorkflowEngineOptions) => {
           };
           addMessage(summaryMessage);
           console.log(
-            "✅ Added order summary for business user with metadata data and pickup address"
+            "✅ Added order summary for business user with database data"
           );
         } else {
-          console.log("⚠️ No order data found in conversation metadata");
+          console.log("⚠️ No order data found in database");
         }
       } catch (error) {
-        console.log("❌ Error fetching order data for business user:", error);
+        console.log("❌ Error fetching order data from database:", error);
       }
       return; // Skip normal message loading for business users
     } else {
@@ -1775,7 +1480,7 @@ export const useWorkflowEngine = (options: WorkflowEngineOptions) => {
       const pickupLocationCountry =
         conversationMetadata.pickup_location_country;
 
-      const orderSummary = extractOrderSummary();
+      const orderSummary = await extractOrderSummary();
       if (!orderSummary) {
         throw new Error(
           "Could not extract order summary for P2P order creation"
