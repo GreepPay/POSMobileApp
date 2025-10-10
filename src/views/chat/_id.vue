@@ -1,18 +1,18 @@
 <template>
-  <workflow-chat v-if="conversationId && conversationData" :conversation-id="conversationId"
+  <simple-workflow-chat v-if="conversationId && conversationData" :conversation-id="conversationId"
     workflow-type="p2p_withdrawal" :initial-messages="initialMessages" :conversation="conversationData" />
 </template>
 
 <script lang="ts">
 import { defineComponent, ref, computed, onMounted } from 'vue';
 import { Logic } from '@greep/logic';
-import WorkflowChat from '../../components/Chat/WorkflowChat.vue';
+import SimpleWorkflowChat from '../../components/Chat/SimpleWorkflowChat.vue';
 import { onIonViewWillEnter, onIonViewWillLeave } from '@ionic/vue';
 
 export default defineComponent({
   name: 'ChatConversationPage',
   components: {
-    WorkflowChat
+    SimpleWorkflowChat
   },
   middlewares: {
     fetchRules: [
@@ -72,7 +72,7 @@ export default defineComponent({
 
     // Lifecycle hooks
     onIonViewWillEnter(() => {
-      console.log('🚀 P2P Chat page entered - using WorkflowChat');
+      console.log('🚀 Simple P2P Chat page entered - using SimpleWorkflowChat');
       initializeWatchers();
     });
 

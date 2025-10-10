@@ -66,7 +66,7 @@
 
 <script lang="ts">
 import { defineComponent, ref, computed, onMounted, nextTick, watch, onUnmounted } from 'vue';
-import { useWorkflowEngine } from '../../composable/useWorkflowEngine';
+import { useSimpleWorkflowEngine } from '../../composable/useSimpleWorkflowEngine';
 import { useWorkflowInput } from '../../composable/useWorkflowInput';
 import { useWebSocket } from '../../composable/useWebSocket';
 import { Logic } from '@greep/logic';
@@ -113,31 +113,30 @@ export default defineComponent({
     }
   },
   setup(props) {
-    // Workflow engine with business user support
-    const workflowEngine = useWorkflowEngine({
+    // Simple workflow engine
+    const workflowEngine = useSimpleWorkflowEngine({
       conversationId: props.conversationId,
-      workflowType: props.workflowType,
-      enableDirectMessaging: true
+      workflowType: props.workflowType
     });
 
     const {
       messages,
       isProcessing,
-      activeModal: computedActiveModal,
+      businessJoined,
+      showProofUpload,
+      orderSummary,
       sendMessage: engineSendMessage,
-      sendDirectMessage,
-      addMessage,
       handleIncomingMessage,
-      initializeFromConversation,
+      initialize,
+      handleBusinessJoined,
+      handleProofUpload,
+      handleProofUploadComplete,
+      addMessage,
       getLastAIMessage,
       isBusinessUser,
-      businessJoined,
       directMessagingEnabled,
-      handleBusinessJoined,
-      manualModalOverride,
-      countdownType,
-      countdownTime,
-      stopCountdown
+      activeModal,
+      manualModalOverride
     } = workflowEngine;
 
     // ✅ NEW: Use the input handling composable
@@ -168,44 +167,15 @@ export default defineComponent({
       handleProofCancel
     } = workflowInput;
 
-    // ✅ Countdown visibility logic
-    const isCountdownActive = computed(() => {
-      return countdownTime.value > 0 && countdownType.value !== null && !businessJoined.value;
-    });
+    // ✅ Countdown visibility logic (simplified - no countdown in simple workflow)
+    const isCountdownActive = computed(() => false);
 
-    // ✅ Countdown text
-    const countdownText = computed(() => {
-      if (countdownType.value === 'waiting_business') {
-        return '⏰ Waiting for business to join';
-      }
-      return '⏰ Countdown';
-    });
+    // ✅ Countdown text (simplified)
+    const countdownText = computed(() => '⏰ Processing');
 
-    // ✅ Handle countdown expiration
+    // ✅ Handle countdown expiration (simplified)
     const handleCountdownExpired = () => {
-      console.log('⏰ Countdown expired for type:', countdownType.value);
-
-      if (countdownType.value === 'waiting_business') {
-        const timeoutMessage = {
-          id: `timeout_${Date.now()}`,
-          type: "text" as const,
-          content: "⚠️ Business join timeout reached. This transaction may be cancelled.",
-          text_content: "⚠️ Business join timeout reached. This transaction may be cancelled.",
-          user_uuid: "greep_ai",
-          user_name: "GreepPay AI",
-          isUser: false,
-          timestamp: new Date(),
-          info_icon: "",
-          actions: [],
-          orderSummary: null,
-          isOrderSummary: false
-        };
-
-        messages.push(timeoutMessage);
-        scrollToBottom();
-      }
-
-      stopCountdown();
+      console.log('⏰ Simple workflow - no countdown needed');
     };
 
     // WebSocket integration
@@ -403,15 +373,15 @@ export default defineComponent({
     };
 
     const handleDeliveryComplete = async () => {
-      try {
-        const success = await sendDirectMessage("Delivery has been completed successfully. Item has been delivered to the specified address.");
-        if (success) {
-          await sendDirectMessage("🚚 **DELIVERY COMPLETED** - Item delivered by business partner");
-          await scrollToBottom();
-        }
-      } catch (error) {
-        console.error("❌ Error marking delivery complete:", error);
-      }
+      // try {
+      //   const success = await sendDirectMessage("Delivery has been completed successfully. Item has been delivered to the specified address.");
+      //   if (success) {
+      //     await sendDirectMessage("🚚 **DELIVERY COMPLETED** - Item delivered by business partner");
+      //     await scrollToBottom();
+      //   }
+      // } catch (error) {
+      //   console.error("❌ Error marking delivery complete:", error);
+      // }
     };
 
     const handleSendReceipt = async () => {
