@@ -105,15 +105,7 @@ export default defineComponent({
         description:
           "Sell currency like USDC, in exchange for local cash or bank transfer.",
         icon: "exchanger",
-        soon: true,
-      },
-      {
-        title: "Vendor",
-        key: "vendor",
-        description:
-          "Sell your products on the Greep online market, and reach buyers across country.",
-        icon: "vendor",
-        soon: true,
+        soon: false,
       },
       {
         title: "Delivery Rider",
@@ -121,6 +113,14 @@ export default defineComponent({
         description:
           "Get tasks to deliver items, and earn on your schedule — with a bike provided for you.",
         icon: "delivery",
+        soon: false,
+      },
+      {
+        title: "Vendor",
+        key: "vendor",
+        description:
+          "Sell your products on the Greep online market, and reach buyers across country.",
+        icon: "vendor",
         soon: true,
       },
     ]);

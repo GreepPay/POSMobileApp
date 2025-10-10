@@ -800,7 +800,7 @@ export const withdrawalAvailableCurrencies = reactive<Currency[]>([
     loading: false,
     icon_extension: "svg",
     country_code: "NG",
-    allow_p2p: false,
+    allow_p2p: true,
     payout_fees: [
       {
         type: "fixed",
@@ -826,7 +826,7 @@ export const withdrawalAvailableCurrencies = reactive<Currency[]>([
     loading: false,
     icon_extension: "png",
     country_code: "KE",
-    allow_p2p: false,
+    allow_p2p: true,
     payout_fees: [
       {
         type: "fixed",
@@ -848,7 +848,7 @@ export const withdrawalAvailableCurrencies = reactive<Currency[]>([
     symbol: "USh",
     country_code: "UG",
     loading: false,
-    allow_p2p: false,
+    allow_p2p: true,
     payout_fees: [
       {
         type: "percentage",
@@ -871,7 +871,7 @@ export const withdrawalAvailableCurrencies = reactive<Currency[]>([
     loading: false,
     icon_extension: "svg",
     country_code: "ZA",
-    allow_p2p: false,
+    allow_p2p: true,
     payout_fees: [
       {
         type: "percentage",
@@ -888,7 +888,7 @@ export const withdrawalAvailableCurrencies = reactive<Currency[]>([
     country_code: "RW",
     loading: false,
     icon_extension: "png",
-    allow_p2p: false,
+    allow_p2p: true,
     payout_fees: [
       {
         type: "percentage",
@@ -904,7 +904,7 @@ export const withdrawalAvailableCurrencies = reactive<Currency[]>([
     symbol: "ZK",
     country_code: "ZM",
     loading: false,
-    allow_p2p: false,
+    allow_p2p: true,
     payout_fees: [
       {
         type: "percentage",
@@ -927,7 +927,7 @@ export const withdrawalAvailableCurrencies = reactive<Currency[]>([
     country_code: "BW",
     loading: false,
     icon_extension: "png",
-    allow_p2p: false,
+    allow_p2p: true,
     payout_fees: [
       {
         type: "percentage",
@@ -950,7 +950,7 @@ export const withdrawalAvailableCurrencies = reactive<Currency[]>([
     country_code: "CM",
     loading: false,
     icon_extension: "png",
-    allow_p2p: false,
+    allow_p2p: true,
     payout_fees: [
       {
         type: "percentage",
@@ -967,7 +967,7 @@ export const withdrawalAvailableCurrencies = reactive<Currency[]>([
     country_code: "MW",
     loading: false,
     icon_extension: "png",
-    allow_p2p: false,
+    allow_p2p: true,
     payout_fees: [
       {
         type: "percentage",
@@ -991,7 +991,7 @@ export const withdrawalAvailableCurrencies = reactive<Currency[]>([
     loading: false,
     icon_extension: "png",
     use_country_code: true,
-    allow_p2p: false,
+    allow_p2p: true,
     payout_fees: [
       {
         type: "percentage",
@@ -1009,7 +1009,7 @@ export const withdrawalAvailableCurrencies = reactive<Currency[]>([
     loading: false,
     icon_extension: "png",
     use_country_code: true,
-    allow_p2p: false,
+    allow_p2p: true,
     payout_fees: [
       {
         type: "percentage",

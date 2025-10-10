@@ -7,24 +7,18 @@
         <div class="w-full flex flex-col space-y-2 pt-2">
           <div class="w-full flex flex-col px-4">
             <app-image-loader
-              class="w-full h-fit rounded-[24px] flex flex-col overflow-x-hidden overflow-y-hidden justify-center items-center px-4 py-5 !bg-[linear-gradient(to_bottom,#10BB76,#00683F)] relative"
+              class="w-full h-fit rounded-[16px] flex flex-col overflow-x-hidden overflow-y-hidden justify-center items-center px-4 py-5 !bg-[linear-gradient(269.64deg,_#0D965E_0.31%,_#00683F_89.75%)] relative"
               photo-url="">
               <img class="absolute top-0 left-0 w-full" src="/images/greep-transparent-logo.svg" />
 
-              <div class="w-full flex flex-row items-center justify-center z-10">
-                <app-currency-switch :default_currency="defaultCurrency" v-model="selectedCurrency"
-                  v-model:model-symbol="currencySymbol" :availableCurrencies="availableCurrencies"
-                  v-model:model-country="selectedCountry" />
-              </div>
-
-              <div class="w-full flex flex-col space-y-[2px] justify-center items-center pt-4 z-10">
-                <app-normal-text class="text-center !text-white">
+            
+              <div class="w-full flex flex-col space-y-[2px] justify-center items-center pt-2 z-10">
+                <app-normal-text class="text-center !text-[#E0E2E4]">
                   Total Balance
                 </app-normal-text>
 
-                <app-header-text class="text-center !text-white !text-3xl !font-normal">
-                  {{ currencySymbol }}
-                  {{
+                <app-header-text class="text-center !text-white !text-[27px] !font-normal pb-2">
+                  {{ "$" }}{{
                     Logic.Common.convertToMoney(
                       currentWalletBalance || 0,
                       true,
@@ -136,7 +130,6 @@ import {
   AppNormalText,
   AppHeaderText,
   AppTransaction,
-  AppCurrencySwitch,
   AppIcon,
   AppEmptyState,
   DefaultPageLayout,
@@ -167,7 +160,6 @@ export default defineComponent({
     AppNormalText,
     AppHeaderText,
     AppTransaction,
-    AppCurrencySwitch,
     AppEmptyState,
     AppIcon,
     DefaultPageLayout,
@@ -333,14 +325,13 @@ export default defineComponent({
     })
 
     const setCurrentWalletBalance = () => {
-      let midRate = CurrentGlobalExchangeRate.value?.mid || 0;
+      // let midRate = CurrentGlobalExchangeRate.value?.mid || 0;
 
-      if (selectedCurrency.value == 'USD') {
-        midRate = 1;
-      }
+      // if (selectedCurrency.value == 'USD') {
+      //   midRate = 1;
+      // }
       currentWalletBalance.value =
-        Logic.Auth.GetDefaultBusiness()?.wallet?.total_balance *
-        midRate
+        Logic.Auth.GetDefaultBusiness()?.wallet?.total_balance
     }
 
     const setTransactionData = () => {

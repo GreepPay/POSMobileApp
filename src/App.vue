@@ -1,54 +1,31 @@
 <template>
   <ion-app class="font-poppins">
     <ion-router-outlet />
-    <app-bottom-bar
-      :tabs="bottomBar"
-      :tab-is-active="tabIsActive"
-      v-if="showBottomNav && bottomBar.length > 1"
-    />
+    <app-bottom-bar :tabs="bottomBar" :tab-is-active="tabIsActive" v-if="showBottomNav && bottomBar.length > 1" />
     <app-alert v-if="alertSetup.show" :setup="alertSetup" />
     <app-loader v-if="loaderSetup.show" :setup="loaderSetup" />
 
     <!-- Update App  modal -->
-    <app-modal
-      v-if="showUpdateAppModal"
-      :close="
-        () => {
-          showUpdateAppModal = false
-        }
-      "
-      :contentClass="'!px-0'"
-    >
-      <div
-        class="w-full flex flex-col items-center pt-4"
-        :style="`
+    <app-modal v-if="showUpdateAppModal" :close="() => {
+      showUpdateAppModal = false;
+    }
+      " :contentClass="'!px-0'">
+      <div class="w-full flex flex-col items-center pt-4" :style="`
           ${getBottomPadding}
-        `"
-      >
+        `">
         <img :src="'/images/update-app.svg'" class="!h-[70px]" />
 
-        <div
-          class="w-full flex flex-col pt-4 pb-6 px-5 items-center justify-center"
-        >
-          <app-normal-text
-            class="text-center w-full !text-lg !font-semibold pb-2"
-          >
+        <div class="w-full flex flex-col pt-4 pb-6 px-5 items-center justify-center">
+          <app-normal-text class="text-center w-full !text-lg !font-semibold pb-2">
             New Update Available
           </app-normal-text>
 
-          <app-normal-text
-            is-html
-            class="text-center !text-sm !text-gray-two w-full !prose !prose-sm"
-            :html-content="`A new version of the app is available. Please update to the latest version for the best experience.`"
-          >
+          <app-normal-text is-html class="text-center !text-sm !text-gray-two w-full !prose !prose-sm"
+            :html-content="`A new version of the app is available. Please update to the latest version for the best experience.`">
           </app-normal-text>
         </div>
 
-        <app-button
-          :custom-class="`!bg-secondary !w-full !py-4 !px-8 !text-sm`"
-          variant="secondary"
-          @click="updateApp"
-        >
+        <app-button :custom-class="`!bg-secondary !w-full !py-4 !px-8 !text-sm`" variant="secondary" @click="updateApp">
           Update Now
         </app-button>
       </div>
@@ -103,6 +80,7 @@
 
       // Set routers
       Logic.Common.SetRouter(router)
+      // @ts-ignore
       Logic.Common.SetRoute(route)
 
       // Set UI frontend logic
@@ -155,59 +133,97 @@
             )
           }
 
-          if (business?.business_type == "event_host") {
-            bottomBar.push(
-              ...[
-                {
-                  path: "/events",
-                  icon: "events",
-                  routeTag: "events",
-                  name: "Events",
-                },
-                {
-                  path: "/orders",
-                  icon: "order",
-                  routeTag: "orders",
-                  name: "Orders",
-                },
-              ]
-            )
-          }
+        if (business?.business_type == "event_host") {
+          bottomBar.push(
+            ...[
+              {
+                path: "/events",
+                icon: "events",
+                routeTag: "events",
+                name: "Events",
+              },
+              {
+                path: "/orders",
+                icon: "order",
+                routeTag: "orders",
+                name: "Orders",
+              },
+            ]
+          );
+        }
+
+        if (business?.business_type == "delivery") {
+          bottomBar.push(
+            ...[
+              {
+                path: "/delivery",
+                icon: "order",
+                routeTag: "delivery",
+                name: "Deliveries",
+              },
+            ]
+          );
         }
       }
+    };
 
-      Logic.Common.SetApiUrl(
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-ignore
-        (import.meta as any).env.VITE_API_URL ?? "http://localhost:3000/graphql" 
-      )
-
-      const handleMountActions = () => {
-        const authToken = Logic.Auth.AccessToken
-
-        // If user is authenticated
-        if (authToken) {
-          Logic.Common.initiateWebSocket({
-            pusherKey: import.meta.env.VITE_PUSHER_APP_KEY,
-            pusherHost: import.meta.env.VITE_PUSHER_HOST,
-            pusherPort: import.meta.env.VITE_PUSHER_PORT,
-            pusherCluster: import.meta.env.VITE_PUSHER_APP_CLUSTER,
-            socketAuthUrl: import.meta.env.VITE_SOCKET_AUTH_URL,
+    const connectSocketChannels = () => {
+      if (Logic.Common.laravelEcho && Logic.Auth.AuthUser?.id) {
+        console.log("Test 1", Logic.Auth.AuthUser?.id);
+        Logic.Common.laravelEcho
+          .private(`user.${Logic.Auth.AuthUser.id}`)
+          .subscribed(() => {
+            console.log('User joined the channel');
           })
-          Logic.Auth.GetAuthUser()
+          .listen(
+            ".transaction.created",
+            (data: { event: string; payload: any }) => {
+              console.log("transaction created", "data", data);
+              if (data.event == ".transaction.created") {
+                console.log(data.event, data.payload);
+                Logic.Wallet.GetGlobalExchangeRate();
+              }
+            }
+          );
+      }
+    };
 
-          const pathContainsIsForceReload =
-            window.location.search.includes("isForceReload")
+    Logic.Common.SetApiUrl(
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      // (import.meta as any).env.VITE_API_URL ?? "http://localhost:3000/graphql"
+      (import.meta as any).env.VITE_API_URL ??
+      "https://api-pos-dev.greep.io/graphql"
+    );
 
-          if (!AuthUser.value?.first_name) {
-            Logic.Common.GoToRoute("/auth/setup-account")
-            return
-          }
+    const handleMountActions = () => {
+      const authToken = Logic.Auth.AccessToken;
 
-          if ((AuthUser.value?.businesses?.length || 0) == 0) {
-            Logic.Common.GoToRoute("/auth/setup")
-            return
-          }
+      // If user is authenticated
+      if (authToken) {
+        Logic.Common.initiateWebSocket({
+          pusherKey: import.meta.env.VITE_PUSHER_APP_KEY,
+          pusherHost: import.meta.env.VITE_PUSHER_HOST,
+          pusherPort: import.meta.env.VITE_PUSHER_PORT,
+          pusherCluster: import.meta.env.VITE_PUSHER_APP_CLUSTER,
+          socketAuthUrl: import.meta.env.VITE_SOCKET_AUTH_URL,
+        });
+        Logic.Auth.GetAuthUser();
+
+        connectSocketChannels();
+
+        const pathContainsIsForceReload =
+          window.location.search.includes("isForceReload");
+
+        if (!AuthUser.value?.first_name) {
+          Logic.Common.GoToRoute("/auth/setup-account");
+          return;
+        }
+
+        if ((AuthUser.value?.businesses?.length || 0) == 0) {
+          Logic.Common.GoToRoute("/auth/setup");
+          return;
+        }
 
           if (
             localStorage.getItem("auth_passcode") &&
@@ -249,7 +265,7 @@
       const updateApp = () => {
         showUpdateAppModal.value = false
         updateSW(true) // activates new SW
-        window.location.reload()
+        // window.location.reload()
       }
 
       watch(AuthUser, () => {
