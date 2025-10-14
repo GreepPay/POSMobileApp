@@ -1,6 +1,6 @@
 <template>
   <app-wrapper mobilePadding="!pt-0">
-    <default-page-layout :title="'Orders'" :photoUrl="AuthUser?.profile?.business?.logo || '/images/profile-image.svg'
+    <default-page-layout :title="'Orders'" :photoUrl="Logic.Auth.GetDefaultBusiness()?.logo || '/images/profile-image.svg'
       ">
       <template #extra-top-section>
         <div class="w-full flex flex-col pt-4">

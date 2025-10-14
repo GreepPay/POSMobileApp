@@ -18,8 +18,8 @@
           :key="index"
           :class="`w-full flex flex-col px-3 py-3  ${
             item.key == selectedType
-              ? 'border-primary !border-[1.5px]'
-              : 'border-[#F0F3F6] !border-[1.5px]'
+              ? 'border-primary !border-[2px]'
+              : 'border-[#F0F3F6] !border-[2px]'
           }  rounded-[12px] mb-4`"
           @click="!item.soon ? (selectedType = item.key) : null"
         >
@@ -121,7 +121,7 @@ export default defineComponent({
         description:
           "Sell your products on the Greep online market, and reach buyers across country.",
         icon: "vendor",
-        soon: true,
+        soon: false,
       },
     ]);
 

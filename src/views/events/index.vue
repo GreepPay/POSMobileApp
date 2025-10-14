@@ -3,7 +3,7 @@
     <default-page-layout
       :title="'Events'"
       :photoUrl="
-        AuthUser?.profile?.business?.logo || '/images/profile-image.svg'
+        Logic.Auth.GetDefaultBusiness()?.logo || '/images/profile-image.svg'
       "
     >
       <div

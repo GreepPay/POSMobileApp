@@ -327,6 +327,11 @@ export default defineComponent({
           column: CREATED_AT
           operator: BETWEEN
           value: ["${filterFrom.value}", "${filterTo.value}"]
+          AND: {
+            column: WALLET_ID
+            operator: EQ
+            value: ${Logic.Auth.GetDefaultBusiness()?.wallet?.id || 0}
+          }
         }`,
           true
         ).then((transactions) => {
@@ -344,6 +349,11 @@ export default defineComponent({
           column: CREATED_AT
           operator: BETWEEN
           value: ["${filterFrom.value}", "${filterTo.value}"]
+          AND: {
+            column: WALLET_ID
+            operator: EQ
+            value: ${Logic.Auth.GetDefaultBusiness()?.wallet?.id || 0}
+          }
         }`,
           true
         ).then((pointTransactions) => {

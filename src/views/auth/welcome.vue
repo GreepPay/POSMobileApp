@@ -11,9 +11,9 @@
       <div class="w-full flex flex-row items-center justify-center pt-4">
         <app-image-loader
           :photo-url="
-            AuthUser?.profile?.business?.logo || '/images/profile-image.svg'
+            Logic.Auth.GetDefaultBusiness()?.logo || '/images/profile-image.svg'
           "
-          class="h-[96px] w-[96px] rounded-full xs:w-[80px] xs:h-[80px]"
+          class="h-[96px] w-[96px] rounded-full xs:w-[80px] xs:h-[80px] border-[1px] border-gray-100"
         />
       </div>
 
@@ -26,7 +26,7 @@
         <app-normal-text
           class="text-center w-full !text-[#0A141E] sm:!text-sm xs:!text-xs"
           >{{
-            AuthUser?.profile?.business?.business_name || "User"
+            Logic.Auth.GetDefaultBusiness()?.business_name || "User"
           }}</app-normal-text
         >
       </div>

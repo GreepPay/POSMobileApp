@@ -1,7 +1,7 @@
 <template>
   <app-wrapper mobilePadding="!pt-0">
-    <default-page-layout :title="'Home'" :photoUrl="AuthUser?.profile?.business?.logo || '/images/profile-image.svg'
-      ">
+    <default-page-layout :title="Logic.Auth.GetDefaultBusiness()?.business_name" :photoUrl="Logic.Auth.GetDefaultBusiness()?.logo || '/images/profile-image.svg'
+      " icon="drop" :title-click-action="() => Logic.Common.GoToRoute('/auth/switch-business')">
       <div class="w-full flex flex-col items-center justify-start !space-y-[20px]">
         <!-- Balance card section -->
         <div class="w-full flex flex-col space-y-2 pt-2">
@@ -34,7 +34,7 @@
           <!-- Quick Actions -->
           <div class="w-full grid grid-cols-12 items-center px-4 pt-3 pb-5 !border-b-[11px] !border-[#F0F3F6]">
             <div v-for="(item, index) in quickActions" :key="index"
-              class="col-span-3 flex flex-col space-y-1 items-center justify-center relative"
+              class="col-span-4 flex flex-col space-y-1 items-center justify-center relative"
               @click="Logic.Common.GoToRoute(item.route_path)">
               <app-icon :name="item.icon" custom-class="!h-[56px]" />
 
@@ -292,12 +292,12 @@ export default defineComponent({
         name: "Request",
         soon: false,
       },
-      {
-        icon: "quick-actions/send",
-        route_path: "#",
-        name: "Send",
-        soon: true,
-      },
+      // {
+      //   icon: "quick-actions/send",
+      //   route_path: "#",
+      //   name: "Send",
+      //   soon: true,
+      // },
       {
         icon: "quick-actions/withdraw",
         route_path: "/withdraw",
