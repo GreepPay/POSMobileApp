@@ -13,14 +13,23 @@ export interface WorkflowMessage {
   info_icon?: string;
   isOrderSummary?: boolean;
   orderSummary?: {
-    youSell: string;
-    youGet: string;
-    fee: string;
-    deliveryFee: string;
-    youPay: string;
-    paymentType: string;
-    payoutOption: string;
-    deliveryAddress: string;
+    // P2P order fields
+    youSell?: string;
+    youGet?: string;
+    fee?: string;
+    deliveryFee?: string;
+    youPay?: string;
+    paymentType?: string;
+    payoutOption?: string;
+    deliveryAddress?: string;
+
+    // Delivery-specific fields (matches ChatMessage component)
+    itemDescription?: string;
+    weight?: string;
+    trackingNumber?: string;
+    orderId?: string;
+    status?: string;
+    payment_method?: string;
   } | null;
   sender?: {
     uuid: string;
@@ -52,11 +61,21 @@ export const useSimpleWorkflowEngine = (options: SimpleWorkflowOptions) => {
     try {
       // Get order data from database
       const conversationData = Logic.Messaging.SingleConversation;
+
       const conversationMetadata = conversationData?.metadata
         ? typeof conversationData.metadata === "string"
           ? JSON.parse(conversationData.metadata)
           : conversationData.metadata
         : {};
+
+      // Auto-detect workflow type from conversation data if needed
+      let actualWorkflowType = options.workflowType;
+      if (
+        conversationData?.entity_type === "deliveries" ||
+        conversationMetadata?.workflow_type === "deliveries"
+      ) {
+        actualWorkflowType = "deliveries";
+      }
 
       // Try to get order_uuid from multiple sources
       let orderUuid = conversationMetadata.order_uuid;
@@ -72,46 +91,154 @@ export const useSimpleWorkflowEngine = (options: SimpleWorkflowOptions) => {
         orderUuid = (conversationData as any).order_uuid;
       }
 
+      // For deliveries, try to get delivery UUID from URL or conversation metadata
+      if (!orderUuid && actualWorkflowType === "deliveries") {
+        // Try delivery_uuid from URL params
+        const urlParams = new URLSearchParams(window.location.search);
+        orderUuid = urlParams.get("delivery_uuid");
+
+        // Try from conversation metadata (delivery conversations store delivery_uuid)
+        if (!orderUuid && conversationMetadata.delivery_uuid) {
+          orderUuid = conversationMetadata.delivery_uuid;
+        }
+
+        // Try different ways to access the delivery_uuid
+        if (!orderUuid) {
+          // Try bracket notation
+          orderUuid = conversationMetadata["delivery_uuid"];
+        }
+
+        // Also try deliveryId as fallback
+        if (!orderUuid && conversationMetadata.deliveryId) {
+          orderUuid = conversationMetadata.deliveryId;
+        }
+      }
+
       // Fetch fresh order data if we have order_uuid
       if (orderUuid) {
-        const orderData = await Logic.Wallet.GetP2pOrder(orderUuid);
+        let orderData;
+
+        // Get order data based on workflow type
+        if (actualWorkflowType === "deliveries") {
+          // For delivery orders, use Logic.Commerce.GetDeliveryByUuid
+          try {
+            orderData = await Logic.Commerce.GetDeliveryByUuid(orderUuid);
+            // If not found, use conversation metadata as fallback
+            if (!orderData && conversationMetadata.orderData) {
+              orderData = conversationMetadata.orderData;
+            }
+          } catch (error) {
+            console.log("Using conversation metadata for delivery order data");
+            orderData = conversationMetadata.orderData;
+          }
+        } else {
+          // For P2P orders, get P2P order data
+          orderData = await Logic.Wallet.GetP2pOrder(orderUuid);
+        }
 
         if (orderData) {
-          // Create clean order summary
-          const deliveryFee =
-            orderData.payment_type === "cash_delivery" ? 3 : 0;
-          const totalAmount = orderData.amount + deliveryFee;
-          const sellAmount = orderData.amount * (orderData.ad?.rate || 10);
+          // Create order summary based on workflow type
+          if (actualWorkflowType === "deliveries") {
+            // Delivery order summary - matches ChatMessage delivery template
+            const metadata = orderData.metadata
+              ? typeof orderData.metadata === "string"
+                ? JSON.parse(orderData.metadata)
+                : orderData.metadata
+              : {};
 
-          // Map payment types correctly
-          let paymentType = "Cash";
-          let payoutOption = "Pickup";
+            const deliveryFee =
+              orderData.delivery_fee ||
+              orderData.deliveryFee ||
+              metadata.deliveryFee ||
+              5;
+            const itemCost =
+              orderData.total_amount ||
+              orderData.amount ||
+              orderData.subtotal ||
+              metadata.amount ||
+              0;
 
-          if (orderData.payment_type === "cash_pickup") {
-            paymentType = "Cash";
-            payoutOption = "Pickup";
-          } else if (orderData.payment_type === "cash_delivery") {
-            paymentType = "Cash";
-            payoutOption = "Delivery";
-          } else if (orderData.payment_type === "bank_transfer") {
-            paymentType = "Bank Transfer";
-            payoutOption = "Bank Transfer";
+            // Create delivery-specific order summary
+            orderSummary.value = {
+              // Delivery-specific fields that trigger delivery template in ChatMessage
+              itemDescription:
+                metadata.itemDescription ||
+                orderData.description ||
+                orderData.item_description ||
+                "Delivery Item",
+              weight: metadata.weight || orderData.weight || "Not specified",
+              deliveryFee: `${deliveryFee} USDC`,
+              paymentType:
+                orderData.payment_method ||
+                orderData.payment_type ||
+                metadata.paymentMethod ||
+                "Cash on Delivery",
+              trackingNumber:
+                orderData.tracking_number ||
+                orderData.trackingNumber ||
+                orderData.uuid?.slice(-8),
+              orderId: orderData.id || orderData.uuid,
+              status: orderData.status || "Pending",
+              deliveryAddress:
+                orderData.delivery_address ||
+                orderData.deliveryAddress ||
+                orderData.shippingAddress ||
+                metadata.deliveryAddress ||
+                "Delivery address to be confirmed",
+            };
+          } else {
+            // P2P order summary (existing logic)
+            const deliveryFee =
+              orderData.payment_type === "cash_delivery" ? 3 : 0;
+            const totalAmount = orderData.amount + deliveryFee;
+            const sellAmount = orderData.amount * (orderData.ad?.rate || 10);
+
+            // Map payment types correctly
+            let paymentType = "Cash";
+            let payoutOption = "Pickup";
+
+            if (orderData.payment_type === "cash_pickup") {
+              paymentType = "Cash";
+              payoutOption = "Pickup";
+            } else if (orderData.payment_type === "cash_delivery") {
+              paymentType = "Cash";
+              payoutOption = "Delivery";
+            } else if (orderData.payment_type === "bank_transfer") {
+              paymentType = "Bank Transfer";
+              payoutOption = "Bank Transfer";
+            }
+
+            orderSummary.value = {
+              youSell: `${orderData.amount} USDC`,
+              youGet: `₺${sellAmount.toFixed(2)}`,
+              fee: "0 USDC",
+              deliveryFee: `${deliveryFee} USDC`,
+              youPay: `${totalAmount} USDC`,
+              paymentType: paymentType,
+              payoutOption: payoutOption,
+              deliveryAddress:
+                orderData.pickup_location_address_line ||
+                "Address to be confirmed",
+            };
           }
 
+          // Add order summary message
+          addOrderSummaryMessage();
+        }
+      } else {
+        // Create a fallback delivery order summary for testing
+        if (actualWorkflowType === "deliveries") {
           orderSummary.value = {
-            youSell: `${orderData.amount} USDC`,
-            youGet: `₺${sellAmount.toFixed(2)}`,
-            fee: "0 USDC",
-            deliveryFee: `${deliveryFee} USDC`,
-            youPay: `${totalAmount} USDC`,
-            paymentType: paymentType,
-            payoutOption: payoutOption,
-            deliveryAddress:
-              orderData.pickup_location_address_line ||
-              "Address to be confirmed",
+            itemDescription: "Test Delivery Item",
+            weight: "1kg",
+            deliveryFee: "5 USDC",
+            paymentType: "Cash on Delivery",
+            trackingNumber: "TEST123",
+            orderId: "test-order-123",
+            status: "Pending",
+            deliveryAddress: "Test delivery address",
           };
 
-          // Add order summary message
           addOrderSummaryMessage();
         }
       }
@@ -174,6 +301,74 @@ export const useSimpleWorkflowEngine = (options: SimpleWorkflowOptions) => {
     };
 
     messages.push(joinMessage);
+  };
+
+  // Step 4: Delivery completion (for business users)
+  const handleDeliveryComplete = async () => {
+    if (!businessJoined.value) {
+      console.error("❌ Cannot complete delivery - business not joined");
+      return false;
+    }
+
+    try {
+      isProcessing.value = true;
+
+      // Add delivery completion message
+      const completionMessage: WorkflowMessage = {
+        id: `delivery_completed_${Date.now()}`,
+        content: `🚚 **DELIVERY COMPLETED** - Item has been successfully delivered to the customer.`,
+        text_content: `🚚 **DELIVERY COMPLETED** - Item has been successfully delivered to the customer.`,
+        user_uuid: businessUserInfo.value?.uuid || "business",
+        user_name: businessUserInfo.value
+          ? `${businessUserInfo.value.first_name} ${businessUserInfo.value.last_name}`
+          : "Business Partner",
+        type: "info",
+        info_icon: "delivery-complete",
+        isUser: false,
+        timestamp: new Date(),
+        isOrderSummary: false,
+        orderSummary: null,
+        sender: {
+          uuid: businessUserInfo.value?.uuid || "business",
+          name: businessUserInfo.value
+            ? `${businessUserInfo.value.first_name} ${businessUserInfo.value.last_name}`
+            : "Business Partner",
+        },
+      };
+
+      messages.push(completionMessage);
+
+      // Send completion message via backend
+      const messageContent =
+        "🚚 **DELIVERY COMPLETED** - Item has been successfully delivered to the customer.";
+
+      Logic.Messaging.CreateMessageForm = {
+        input: {
+          conversation_id: options.conversationId,
+          content: messageContent,
+          type: "text",
+          sender_id: parseInt(Logic.Auth.AuthUser?.id?.toString() || "0"),
+          metadata: JSON.stringify({
+            type: "delivery_completion",
+            sender_type: "business",
+            status: "completed",
+          }),
+        },
+      };
+
+      await Logic.Messaging.CreateMessage();
+
+      // TODO: Update order status in backend if needed
+      // await Logic.Order.UpdateDeliveryStatus(orderUuid, 'completed');
+
+      console.log("✅ Delivery marked as completed successfully");
+      return true;
+    } catch (error) {
+      console.error("❌ Error marking delivery as complete:", error);
+      return false;
+    } finally {
+      isProcessing.value = false;
+    }
   };
 
   // Step 3: Proof upload - Only workflow step needed
@@ -355,9 +550,10 @@ export const useSimpleWorkflowEngine = (options: SimpleWorkflowOptions) => {
     showProofUpload,
     orderSummary,
 
-    // Core workflow functions (4 steps)
+    // Core workflow functions (5 steps)
     initialize,
     handleBusinessJoined,
+    handleDeliveryComplete,
     handleProofUpload,
     handleProofUploadComplete,
 

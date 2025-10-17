@@ -27,7 +27,7 @@
 
                 <!-- Loading indicator -->
                 <div v-if="isProcessing" class="flex items-center justify-center py-4">
-                    <div class="animate-pulse text-gray-500">AI is typing...</div>
+                    <div class="animate-pulse text-gray-500">typing...</div>
                 </div>
 
                 <div class="w-full h-[200px]" id="bottom-anchor"></div>
