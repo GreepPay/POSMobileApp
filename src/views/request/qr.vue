@@ -41,7 +41,7 @@
 
         <div class="w-full flex flex-col pt-3 gap-4 truncate">
           <div
-            class="w-full p-4 border-[1.5px] border rounded-lg flex items-center justify-between truncate"
+            class="w-full p-4 border-[1.5px] rounded-lg flex items-center justify-between truncate"
           >
             <app-normal-text class="!text-[#616161]"> Note </app-normal-text>
 
@@ -51,7 +51,7 @@
           </div>
 
           <div
-            class="w-full border-[1.5px] border rounded-lg flex items-center justify-between truncate"
+            class="w-full border-[1.5px] rounded-lg flex items-center justify-between truncate"
           >
             <app-normal-text class="!text-[#616161] truncate p-4 !border-r">
               {{ qrCodeUrl }}
@@ -93,8 +93,28 @@
 </template>
 
 <script lang="ts">
-  import { defineComponent } from "vue"
-  import {
+import { defineComponent } from "vue";
+import {
+  AppHeaderText,
+  AppNormalText,
+  AppQrCode,
+  AppButton,
+  AppImageLoader,
+  AppIcon,
+  AppLinkText,
+} from "@greep/ui-components";
+import { ref } from "vue";
+import { Logic } from "@greep/logic";
+import { onMounted } from "vue";
+import { onIonViewWillEnter } from "@ionic/vue";
+import { computed } from "vue";
+import { User } from "@greep/logic/src/gql/graphql";
+import { availableCurrencies, getBottomPadding } from "../../composable";
+import { downloadReceipt } from "../../composable/common";
+
+export default defineComponent({
+  name: "RequestQRPage",
+  components: {
     AppHeaderText,
     AppNormalText,
     AppQrCode,
@@ -102,101 +122,81 @@
     AppImageLoader,
     AppIcon,
     AppLinkText,
-  } from "@greep/ui-components"
-  import { ref } from "vue"
-  import { Logic } from "@greep/logic"
-  import { onMounted } from "vue"
-  import { onIonViewWillEnter } from "@ionic/vue"
-  import { computed } from "vue"
-  import { User } from "@greep/logic/src/gql/graphql"
-  import { availableCurrencies, getBottomPadding } from "../../composable"
-  import { downloadReceipt } from "../../composable/common"
+  },
+  setup() {
+    const amount = ref("0");
 
-  export default defineComponent({
-    name: "RequestQRPage",
-    components: {
-      AppHeaderText,
-      AppNormalText,
-      AppQrCode,
-      AppButton,
-      AppImageLoader,
-      AppIcon,
-      AppLinkText,
-    },
-    setup() {
-      const amount = ref("0")
+    const AuthUser = ref<User>(Logic.Auth.AuthUser);
+    const narration = ref("");
+    const currentCurrency = ref("TRY");
 
-      const AuthUser = ref<User>(Logic.Auth.AuthUser)
-      const narration = ref("")
-      const currentCurrency = ref("TRY")
+    const currencySymbol = computed(() => {
+      return availableCurrencies.filter(
+        (item) => item.code == currentCurrency.value
+      )[0]?.symbol;
+    });
 
-      const currencySymbol = computed(() => {
-        return availableCurrencies.filter(
-          (item) => item.code == currentCurrency.value
-        )[0]?.symbol
-      })
-
-      const setAmount = () => {
-        //  Get amount from query params
-        const queryParams = Logic.Common.route?.query
-        if (queryParams) {
-          amount.value = queryParams.amount as string
-          currentCurrency.value = (queryParams.currency as string) || "TRY"
-          narration.value =
-            (queryParams.narration as string) || "Payment Request"
-        }
+    const setAmount = () => {
+      //  Get amount from query params
+      const queryParams = Logic.Common.route?.query;
+      if (queryParams) {
+        amount.value = queryParams.amount as string;
+        currentCurrency.value = (queryParams.currency as string) || "TRY";
+        narration.value =
+          (queryParams.narration as string) || "Payment Request";
       }
+    };
 
-      // const qrCodeData = computed(() => {
-      //   return JSON.stringify({
-      //     amount: amount.value,
-      //     currency: currentCurrency.value,
-      //     uuid: AuthUser.value?.uuid || "",
-      //   })
-      // })
+    // const qrCodeData = computed(() => {
+    //   return JSON.stringify({
+    //     amount: amount.value,
+    //     currency: currentCurrency.value,
+    //     uuid: AuthUser.value?.uuid || "",
+    //   })
+    // })
 
-      const qrCodeUrl = computed(() => {
-        const baseUrl =
-          process.env.NODE_ENV === "production"
-            ? process.env.VITE_GREEP_APP_URL
-            : "http://localhost:5173"
+    const qrCodeUrl = computed(() => {
+      const baseUrl =
+        process.env.NODE_ENV === "production"
+          ? process.env.VITE_GREEP_APP_URL
+          : "http://localhost:5173";
 
-        const params = new URLSearchParams({
-          amount: amount.value,
-          currency: currentCurrency.value,
-          uuid: AuthUser.value?.uuid || "",
-        })
+      const params = new URLSearchParams({
+        amount: amount.value,
+        currency: currentCurrency.value,
+        wallet_uuid: Logic.Auth.GetDefaultBusiness()?.wallet?.uuid,
+      });
 
-        const finalUrl = `${baseUrl}/request?${params.toString()}`
-        return finalUrl
-      })
+      const finalUrl = `${baseUrl}/pay?${params.toString()}`;
+      return finalUrl;
+    });
 
-      const continueToNext = () => {
-        // Navigate to the next page
-        // Logic.Common.navigate("/request/qr");
-      }
+    const continueToNext = () => {
+      // Navigate to the next page
+      // Logic.Common.navigate("/request/qr");
+    };
 
-      onIonViewWillEnter(() => {
-        setAmount()
-      })
+    onIonViewWillEnter(() => {
+      setAmount();
+    });
 
-      onMounted(() => {
-        setAmount()
-        Logic.Auth.watchProperty("AuthUser", AuthUser)
-      })
+    onMounted(() => {
+      setAmount();
+      Logic.Auth.watchProperty("AuthUser", AuthUser);
+    });
 
-      return {
-        amount,
-        Logic,
-        // qrCodeData,
-        continueToNext,
-        currentCurrency,
-        getBottomPadding,
-        narration,
-        downloadReceipt,
-        qrCodeUrl,
-        currencySymbol,
-      }
-    },
-  })
+    return {
+      amount,
+      Logic,
+      // qrCodeData,
+      continueToNext,
+      currentCurrency,
+      getBottomPadding,
+      narration,
+      downloadReceipt,
+      qrCodeUrl,
+      currencySymbol,
+    };
+  },
+});
 </script>
