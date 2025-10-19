@@ -129,6 +129,7 @@ export default defineComponent({
     const AuthUser = ref<User>(Logic.Auth.AuthUser);
     const narration = ref("");
     const currentCurrency = ref("TRY");
+    const countryCode = ref("");
 
     const currencySymbol = computed(() => {
       return availableCurrencies.filter(
@@ -144,6 +145,7 @@ export default defineComponent({
         currentCurrency.value = (queryParams.currency as string) || "TRY";
         narration.value =
           (queryParams.narration as string) || "Payment Request";
+        countryCode.value = queryParams?.country_code?.toString() || "";
       }
     };
 
@@ -156,18 +158,18 @@ export default defineComponent({
     // })
 
     const qrCodeUrl = computed(() => {
-      const baseUrl =
-        process.env.NODE_ENV === "production"
-          ? process.env.VITE_GREEP_APP_URL
-          : "http://localhost:5173";
+      const baseUrl = import.meta.env.VITE_GREEP_APP_URL
+        ? import.meta.env.VITE_GREEP_APP_URL
+        : "http://localhost:5173";
 
       const params = new URLSearchParams({
         amount: amount.value,
         currency: currentCurrency.value,
-        wallet_uuid: Logic.Auth.GetDefaultBusiness()?.wallet?.uuid,
+        payment_uuid: Logic.Auth.GetDefaultBusiness()?.wallet?.uuid,
+        country_code: countryCode.value,
       });
 
-      const finalUrl = `${baseUrl}/pay?${params.toString()}`;
+      const finalUrl = `${baseUrl}/send/confirm?${params.toString()}`;
       return finalUrl;
     });
 

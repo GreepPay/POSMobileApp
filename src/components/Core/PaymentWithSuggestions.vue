@@ -45,7 +45,7 @@
             :availableCurrencies="availableCurrencies"
             v-model:model-symbol="currencySymbol"
             label="Choose Currency"
-            information-text="Select the currency to send out"
+            :information-text="currencySwitchLabel"
             v-model:model-country="selectedCountry"
           />
         </div>
@@ -160,6 +160,12 @@ import {
 
 export default defineComponent({
   name: "WalletAddMoneyPage",
+  props: {
+    currencySwitchLabel: {
+      type: String,
+      default: "Select currency to send out",
+    },
+  },
   components: {
     AppNormalText,
     AppHeaderText,
@@ -336,6 +342,7 @@ export default defineComponent({
         isValid: amountIsValid.value,
         businessUUID: null,
         selectedCurrencyData: currentSelectedCurrencyData.value,
+        countryCode: selectedCountry.value,
       };
 
       context.emit("update:paymentData", paymentData);
