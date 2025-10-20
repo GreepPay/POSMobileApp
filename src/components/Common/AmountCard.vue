@@ -1,6 +1,6 @@
 <template>
   <app-image-loader
-    class="w-full h-fit rounded-[35px] flex flex-col relative justify-center items-center px-4 py-5 xs:!py-4 bg-[linear-gradient(359.13deg,#10BB76_25.37%,#008651_99.25%)]"
+    class="w-full h-fit rounded-[20px] flex flex-col relative justify-center items-center px-4 py-5 xs:!py-4 !bg-[linear-gradient(269.64deg,_#0D965E_0.31%,_#00683F_89.75%)]"
     :photoUrl="''"
   >
     <!-- Image bg -->
@@ -70,7 +70,7 @@ export default defineComponent({
       default: "₺",
     },
   },
-  name: "AuthSetupVerifyEmail",
+  name: "AmountCard",
   setup() {
     return {
       Logic,
