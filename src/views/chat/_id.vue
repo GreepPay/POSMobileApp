@@ -1,25 +1,30 @@
 <template>
-  <simple-workflow-chat v-if="conversationId && conversationData" :conversation-id="conversationId"
-    workflow-type="p2p_withdrawal" :initial-messages="initialMessages" :conversation="conversationData" />
+  <app-workflow-chat
+    v-if="conversationId && conversationData"
+    :conversation-id="conversationId"
+    workflow-type="p2p_withdrawal"
+    :initial-messages="initialMessages"
+    :conversation="conversationData"
+  />
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, computed, onMounted } from 'vue';
-import { Logic } from '@greep/logic';
-import SimpleWorkflowChat from '../../components/Chat/SimpleWorkflowChat.vue';
-import { onIonViewWillEnter, onIonViewWillLeave } from '@ionic/vue';
+import { defineComponent, ref, computed, onMounted } from "vue";
+import { Logic } from "@greep/logic";
+import { AppWorkflowChat } from "@greep/ui-components";
+import { onIonViewWillEnter, onIonViewWillLeave } from "@ionic/vue";
 
 export default defineComponent({
-  name: 'ChatConversationPage',
+  name: "ChatConversationPage",
   components: {
-    SimpleWorkflowChat
+    AppWorkflowChat,
   },
   middlewares: {
     fetchRules: [
       {
-        domain: 'Messaging',
-        property: 'SingleConversation',
-        method: 'GetSingleConversation',
+        domain: "Messaging",
+        property: "SingleConversation",
+        method: "GetSingleConversation",
         params: [],
         useRouteId: true,
         requireAuth: true,
@@ -50,34 +55,44 @@ export default defineComponent({
 
       // Convert existing messages to workflow format
       return SingleConversation.value.messages.map((msg: any) => {
-        const metadata = msg.metadata ?
-          (typeof msg.metadata === 'string' ? JSON.parse(msg.metadata) : msg.metadata) : {};
+        const metadata = msg.metadata
+          ? typeof msg.metadata === "string"
+            ? JSON.parse(msg.metadata)
+            : msg.metadata
+          : {};
 
         return {
-          id: msg.uuid || msg.id || `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          id:
+            msg.uuid ||
+            msg.id ||
+            `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
           content: msg.content,
-          isUser: msg.sender?.uuid !== 'greep_ai' && msg.user_id !== 0,
+          isUser: msg.sender?.uuid !== "greep_ai" && msg.user_id !== 0,
           timestamp: new Date(msg.createdAt || msg.created_at || Date.now()),
           metadata,
-          sender: msg.sender || (msg.user_id === 0 ? { uuid: 'greep_ai', name: 'Greep AI' } : undefined)
+          sender:
+            msg.sender ||
+            (msg.user_id === 0
+              ? { uuid: "greep_ai", name: "Greep AI" }
+              : undefined),
         };
       });
     });
 
     // Initialize conversation and authentication watchers
     const initializeWatchers = () => {
-      Logic.Messaging.watchProperty('SingleConversation', SingleConversation);
-      Logic.Auth.watchProperty('AuthUser', AuthUser);
+      Logic.Messaging.watchProperty("SingleConversation", SingleConversation);
+      Logic.Auth.watchProperty("AuthUser", AuthUser);
     };
 
     // Lifecycle hooks
     onIonViewWillEnter(() => {
-      console.log('🚀 Simple P2P Chat page entered - using SimpleWorkflowChat');
+      console.log("🚀 Simple P2P Chat page entered - using SimpleWorkflowChat");
       initializeWatchers();
     });
 
     onIonViewWillLeave(() => {
-      console.log('👋 P2P Chat page left');
+      console.log("👋 P2P Chat page left");
     });
 
     onMounted(() => {
@@ -89,9 +104,9 @@ export default defineComponent({
       initialMessages,
       conversationData,
       SingleConversation,
-      AuthUser
+      AuthUser,
     };
-  }
+  },
 });
 </script>
 

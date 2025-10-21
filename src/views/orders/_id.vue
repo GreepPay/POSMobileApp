@@ -13,7 +13,10 @@
         <app-normal-text class="!text-center !text-red-500">
           {{ error }}
         </app-normal-text>
-        <button @click="loadOrder" class="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg">
+        <button
+          @click="loadOrder"
+          class="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg"
+        >
           Retry
         </button>
       </div>
@@ -24,16 +27,22 @@
         <div class="w-full flex flex-col px-4">
           <app-image-loader
             class="w-full h-fit rounded-[12px] flex flex-col overflow-x-hidden overflow-y-hidden justify-center items-center px-4 py-5 !bg-[linear-gradient(to_bottom,#10BB76,#00683F)] relative"
-            photo-url="">
-            <img class="absolute top-0 left-0 w-full" src="/images/greep-transparent-logo.svg" />
+            photo-url=""
+          >
+            <img
+              class="absolute top-0 left-0 w-full"
+              src="/images/greep-transparent-logo.svg"
+            />
 
-            <div class="w-full flex flex-row items-center justify-between z-10">
-              <app-normal-text class="!text-white">
+            <div
+              class="w-full flex flex-row items-center justify-between z-10 space-x-1"
+            >
+              <app-normal-text class="!text-white !whitespace-nowrap">
                 Order Number
               </app-normal-text>
 
-              <app-normal-text class="!text-white !font-semibold !text-sm">
-                {{ order.uuid }}
+              <app-normal-text class="!text-white !font-semibold !uppercase">
+                #{{ order.uuid.slice(0, 8) }}
               </app-normal-text>
             </div>
           </app-image-loader>
@@ -42,15 +51,21 @@
         <!-- P2P Chat -->
         <div
           class="w-full flex flex-row items-center mt-4 py-4 px-4 !border-t-[12px] !border-b-[12px] border-[#F0F3F6] cursor-pointer"
-          @click="goToChat">
+          @click="goToChat"
+        >
           <div class="w-[48px] mr-3">
             <div class="w-[48px]">
-              <app-image-loader :photoUrl="getBusinessLogo(order)" class="h-[48px] w-[48px] rounded-full" />
+              <app-image-loader
+                :photoUrl="getBusinessLogo(order)"
+                class="h-[48px] w-[48px] rounded-full"
+              />
             </div>
           </div>
           <div class="w-full flex flex-col">
             <div class="w-full flex flex-row justify-between item-center">
-              <app-normal-text class="!text-left !text-black !font-[500] !text-sm mb-[1px]">
+              <app-normal-text
+                class="!text-left !text-black !font-[500] !text-sm mb-[1px]"
+              >
                 {{ getBusinessName(order) }}
               </app-normal-text>
 
@@ -64,9 +79,12 @@
                 P2P Trade Chat
               </app-normal-text>
 
-              <div class="h-[24px] w-[24px] rounded-full flex items-center justify-center" :style="`background-color: ${colorByStatus(
-                getOrderStatus(order.status)
-              )} !important;`">
+              <div
+                class="h-[24px] w-[24px] rounded-full flex items-center justify-center"
+                :style="`background-color: ${colorByStatus(
+                  getOrderStatus(order.status)
+                )} !important;`"
+              >
                 <app-normal-text class="!text-[#ffffff] !font-[500]">
                   1
                 </app-normal-text>
@@ -77,15 +95,22 @@
 
         <!-- Customer -->
         <div class="w-full flex flex-row items-center py-4 px-4">
-          <div class="w-full flex flex-row items-center px-4 py-4 border-[1.5px] border-[#F0F3F6] rounded-[12px]">
+          <div
+            class="w-full flex flex-row items-center px-4 py-4 border-[1.5px] border-[#F0F3F6] rounded-[12px]"
+          >
             <div class="w-[48px] mr-3">
               <div class="w-[48px]">
-                <app-image-loader :photoUrl="getUserAvatar(order)" class="h-[48px] w-[48px] rounded-full" />
+                <app-image-loader
+                  :photoUrl="getUserAvatar(order)"
+                  class="h-[48px] w-[48px] rounded-full"
+                />
               </div>
             </div>
             <div class="w-full flex flex-col">
               <div class="w-full flex flex-row justify-between item-center">
-                <app-normal-text class="!text-left !text-black !font-[500] !text-sm mb-[1px]">
+                <app-normal-text
+                  class="!text-left !text-black !font-[500] !text-sm mb-[1px]"
+                >
                   {{ getUserName(order) }}
                 </app-normal-text>
               </div>
@@ -100,7 +125,10 @@
         </div>
 
         <!-- Details -->
-        <template v-for="(details, index) in getOrderDetails(order)" :key="index">
+        <template
+          v-for="(details, index) in getOrderDetails(order)"
+          :key="index"
+        >
           <div class="w-full flex flex-col px-4 mb-4">
             <app-details :details="details" :isVertical="false" />
           </div>
@@ -110,22 +138,45 @@
       </div>
 
       <!-- Bottom button -->
-      <div v-if="order && order.status?.toLowerCase() !== 'completed'"
-        class="w-full fixed bg-white dark:bg-black bottom-0 left-0 pt-4 px-4 flex flex-col" :style="`
+      <div
+        v-if="
+          order &&
+          order.status?.toLowerCase() !== 'completed' &&
+          order.status?.toLowerCase() !== 'accepted'
+        "
+        class="w-full fixed bg-white dark:bg-black bottom-0 left-0 pt-4 px-4 flex flex-col"
+        :style="`
           ${getBottomPadding}
-        `">
-        <div class="w-full flex flex-col pb-4" v-if="currentPageContent === 'waiting' && isPendingOrder(order)">
-          <app-countdown-timer :customText="`You must accept in`" custom-class="!py-5" :duration="600" />
+        `"
+      >
+        <div
+          class="w-full flex flex-col pb-4"
+          v-if="currentPageContent === 'waiting' && isPendingOrder(order)"
+        >
+          <app-countdown-timer
+            :customText="`You must accept in`"
+            custom-class="!py-5"
+            :duration="600"
+          />
         </div>
         <div class="w-full grid grid-cols-12 gap-4">
           <div class="col-span-6 flex flex-col">
-            <app-button variant="primary-white" :class="`!py-4 !border-red !text-red !border-[1.5px]`" outlined
-              @click="declineOrder">
+            <app-button
+              variant="primary-white"
+              :class="`!py-4 !border-red !text-red !border-[1.5px]`"
+              outlined
+              @click="declineOrder"
+            >
               Decline
             </app-button>
           </div>
           <div class="col-span-6 flex flex-col">
-            <app-button variant="secondary" :class="`!py-4`" @click="acceptOrder" :disabled="!isPendingOrder(order)">
+            <app-button
+              variant="secondary"
+              :class="`!py-4`"
+              @click="acceptOrder"
+              :disabled="!isPendingOrder(order)"
+            >
               {{ mainButtonLabel }}
             </app-button>
           </div>
@@ -206,10 +257,10 @@ export default defineComponent({
     const formatTime = (dateString: string | null) => {
       if (!dateString) return "";
       const date = new Date(dateString);
-      return date.toLocaleTimeString('en-US', {
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false
+      return date.toLocaleTimeString("en-US", {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
       });
     };
 
@@ -225,7 +276,9 @@ export default defineComponent({
 
     // Get user avatar
     const getUserAvatar = (order: ExchangeOrder) => {
-      return order.user?.profile?.profile_picture || "/images/temps/customer.png";
+      return (
+        order.user?.profile?.profile_picture || "/images/temps/customer.png"
+      );
     };
 
     // Get user name
@@ -273,7 +326,7 @@ export default defineComponent({
       // Time and status
       details.push([
         {
-          title: "Time Ordered",
+          title: "Ordered at",
           content: `<span class="flex flex-row items-center">
            <span> ${formatTime(order.created_at)} </span>
             <span class="h-[4px] w-[4px] rounded-full !bg-black mx-[5px]"> </span>
@@ -281,14 +334,14 @@ export default defineComponent({
           </span>`,
         },
         {
-          title: "Order Status",
+          title: "Order status",
           content: `<span class="flex flex-row items-center">
            <span style="color:${colorByStatus(
-            getOrderStatus(order.status)
-          )};" class="mr-1"> ${getOrderStatusLabel(order.status)} </span>
-           <span class="h-[12px] w-[12px] rounded-full" style="background-color:${colorByStatus(
-            getOrderStatus(order.status)
-          )};"></span>
+             getOrderStatus(order.status)
+           )};" class="mr-1"> ${getOrderStatusLabel(order.status)} </span>
+           <span class="h-[6px] w-[6px] rounded-full" style="background-color:${colorByStatus(
+             getOrderStatus(order.status)
+           )};"></span>
           </span>`,
         },
       ]);
@@ -297,18 +350,24 @@ export default defineComponent({
       details.push([
         {
           title: "You buy",
-          content: `${order.amount} ${order.ad?.from_currency || "USD"}`,
+          content: `${Logic.Common.convertToMoney(order.amount, false, "")} ${
+            order.ad?.to_currency || "USD"
+          }`,
         },
         {
           title: "You give",
-          content: `${order.expected_amount} ${order.ad?.to_currency || "TRY"}`,
+          content: `${Logic.Common.convertToMoney(
+            order.expected_amount,
+            false,
+            ""
+          )} ${order.ad?.from_currency || "TRY"}`,
         },
         {
-          title: "Payment Type",
+          title: "Payment type",
           content: order.payment_type || "Cash",
         },
         {
-          title: "Payout Option",
+          title: "Payout option",
           content: order.payout_option || "In-Person Pickup",
         },
       ]);
@@ -325,16 +384,24 @@ export default defineComponent({
       const amount = order.amount;
       const expectedAmount = order.expected_amount;
 
-      return `${amount} ${fromCurrency} to ${expectedAmount} ${toCurrency}`;
+      return `${Logic.Common.convertToMoney(
+        amount,
+        false,
+        ""
+      )} ${toCurrency} to ${Logic.Common.convertToMoney(
+        expectedAmount,
+        false,
+        ""
+      )} ${fromCurrency}`;
     };
 
     // Format date
     const formatDate = (dateString: string | null) => {
       if (!dateString) return "";
       const date = new Date(dateString);
-      return date.toLocaleDateString('en-US', {
-        month: 'short',
-        day: 'numeric'
+      return date.toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
       });
     };
 
@@ -357,9 +424,11 @@ export default defineComponent({
 
     // Navigate to chat
     const goToChat = () => {
-      if (order.value?.uuid) {
+      if (order.value?.conversation_uuid) {
         Logic.Common.GoToRoute(
-          `/chat/${order.value.uuid}?p2p=true&method=${order.value.payment_type || 'cash'}`
+          `/chat/${order.value.conversation_uuid}?p2p=true&method=${
+            order.value.payment_type || "cash"
+          }`
         );
       }
     };
@@ -374,19 +443,22 @@ export default defineComponent({
           selected_option: "business_accept",
           order_uuid: order.value.uuid,
           business_id: order.value.ad?.business?.uuid,
-          user_id: Logic.Auth.AuthUser?.id
+          user_id: Logic.Auth.AuthUser?.id,
         };
 
         // This would trigger the handleBusinessOrderAcceptance flow
         Logic.Common.showAlert({
           show: true,
           message: "Order accepted successfully! Redirecting to chat...",
-          type: "success"
+          type: "success",
         });
 
         // ✅ NEW: Get existing conversation and add business as participant
         try {
-          console.log("🔧 Looking for existing conversation for order:", order.value.uuid);
+          console.log(
+            "🔧 Looking for existing conversation for order:",
+            order.value.uuid
+          );
 
           // ✅ FIX: Use conversation_uuid from the order
           const conversationUuid = order.value.conversation_uuid;
@@ -395,22 +467,38 @@ export default defineComponent({
             throw new Error("No conversation UUID found for this order");
           }
 
-          console.log("🔧 Using conversation UUID from order:", conversationUuid);
+          console.log(
+            "🔧 Using conversation UUID from order:",
+            conversationUuid
+          );
 
           let existingConversation = null;
 
           try {
             // Get the existing conversation using its UUID
-            existingConversation = await Logic.Messaging.GetSingleConversation(conversationUuid);
-            console.log("✅ Found existing conversation:", existingConversation?.uuid);
+            existingConversation = await Logic.Messaging.GetSingleConversation(
+              conversationUuid
+            );
+            console.log(
+              "✅ Found existing conversation:",
+              existingConversation?.uuid
+            );
           } catch (error) {
-            console.log("❌ No conversation found with UUID:", conversationUuid);
+            console.log(
+              "❌ No conversation found with UUID:",
+              conversationUuid
+            );
             console.log("❌ Error:", error);
-            throw new Error(`No conversation found with UUID: ${conversationUuid}`);
+            throw new Error(
+              `No conversation found with UUID: ${conversationUuid}`
+            );
           }
 
           if (existingConversation) {
-            console.log("✅ Using existing conversation:", existingConversation.uuid);
+            console.log(
+              "✅ Using existing conversation:",
+              existingConversation.uuid
+            );
 
             // ✅ NEW: Add business as participant to the existing conversation
             try {
@@ -420,12 +508,14 @@ export default defineComponent({
                 conversationId: existingConversation.id,
                 businessUuid: businessUuid,
                 businessId: order.value.ad?.business?.id,
-                businessName: order.value.ad?.business?.business_name
+                businessName: order.value.ad?.business?.business_name,
               });
 
               if (businessUuid) {
                 // ✅ FIX: Get the business user ID from the business object
-                const businessUserId = parseInt(order.value.ad?.business?.user?.id?.toString() || "0");
+                const businessUserId = parseInt(
+                  order.value.ad?.business?.user?.id?.toString() || "0"
+                );
 
                 if (businessUserId > 0) {
                   await Logic.Messaging.AddParticipant(
@@ -433,8 +523,13 @@ export default defineComponent({
                     businessUserId, // user_id: the business user ID
                     0 // added_by: 0 (bot adding)
                   );
-                  console.log("✅ Business added as participant to existing conversation");
-                  console.log("📋 Order UUID for this conversation:", order.value.uuid);
+                  console.log(
+                    "✅ Business added as participant to existing conversation"
+                  );
+                  console.log(
+                    "📋 Order UUID for this conversation:",
+                    order.value.uuid
+                  );
                 } else {
                   console.error("❌ Invalid business user ID:", businessUserId);
                   console.log("🔧 Trying with AuthUser ID instead...");
@@ -447,7 +542,9 @@ export default defineComponent({
                       authUserId, // user_id: the authenticated user ID
                       0 // added_by: 0 (bot adding)
                     );
-                    console.log("✅ Business added as participant using AuthUser ID");
+                    console.log(
+                      "✅ Business added as participant using AuthUser ID"
+                    );
                   } else {
                     console.error("❌ No valid user ID found");
                   }
@@ -456,20 +553,28 @@ export default defineComponent({
                 console.error("❌ No business UUID found");
               }
             } catch (participantError) {
-              console.error("❌ Error adding business as participant:", participantError);
+              console.error(
+                "❌ Error adding business as participant:",
+                participantError
+              );
               // Continue anyway - the conversation exists
             }
 
             // Navigate to existing chat
             setTimeout(() => {
               // Extract pickup address from order
-              const pickupAddress = order.value?.pickup_location_address_line ||
+              const pickupAddress =
+                order.value?.pickup_location_address_line ||
                 "Pickup location to be confirmed";
 
               console.log("📍 Pickup address from order:", pickupAddress);
 
               Logic.Common.GoToRoute(
-                `/chat/${existingConversation.uuid}?p2p=true&method=${order.value?.payment_type || 'cash'}&order_uuid=${order.value?.uuid}&pickup_address=${encodeURIComponent(pickupAddress)}`
+                `/chat/${existingConversation.uuid}?p2p=true&method=${
+                  order.value?.payment_type || "cash"
+                }&order_uuid=${
+                  order.value?.uuid
+                }&pickup_address=${encodeURIComponent(pickupAddress)}`
               );
             }, 1500);
           } else {
@@ -480,16 +585,17 @@ export default defineComponent({
           console.error("Error handling conversation:", conversationError);
           Logic.Common.showAlert({
             show: true,
-            message: conversationError?.message || "Failed to find the conversation for this order. Please contact support.",
-            type: "error"
+            message:
+              conversationError?.message ||
+              "Failed to find the conversation for this order. Please contact support.",
+            type: "error",
           });
         }
-
       } catch (err) {
         Logic.Common.showAlert({
           show: true,
           message: "Failed to accept order. Please try again.",
-          type: "error"
+          type: "error",
         });
         console.error("Error accepting order:", err);
       }
@@ -505,14 +611,14 @@ export default defineComponent({
           selected_option: "decline",
           order_uuid: order.value.uuid,
           business_id: order.value.ad?.business?.uuid,
-          user_id: Logic.Auth.AuthUser?.id
+          user_id: Logic.Auth.AuthUser?.id,
         };
 
         // This would trigger the order decline flow
         Logic.Common.showAlert({
           show: true,
           message: "Order declined successfully!",
-          type: "success"
+          type: "success",
         });
 
         // Reload order to get updated status
@@ -521,7 +627,7 @@ export default defineComponent({
         Logic.Common.showAlert({
           show: true,
           message: "Failed to decline order. Please try again.",
-          type: "error"
+          type: "error",
         });
         console.error("Error declining order:", err);
       }

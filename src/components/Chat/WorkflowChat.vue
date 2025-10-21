@@ -1,13 +1,21 @@
 <template>
   <app-wrapper>
-    <div class="w-full flex flex-col lg:text-sm mdlg:text-[12px] relative text-xs font-poppins overflow-y-auto h-full"
-      id="workflow-chat-page" :style="mobileFullHeight">
-
+    <div
+      class="w-full flex flex-col lg:text-sm mdlg:text-[12px] relative text-xs font-poppins overflow-y-auto h-full"
+      id="workflow-chat-page"
+      :style="mobileFullHeight"
+    >
       <!-- Top bar -->
-      <chat-top-bar :conversation="conversationData" @back-click="handleBackClick" />
+      <chat-top-bar
+        :conversation="conversationData"
+        @back-click="handleBackClick"
+      />
 
       <!-- WebSocket Connection Status -->
-      <div v-if="!isConnected" class="w-full bg-yellow-50 border-b border-yellow-200 px-4 py-2">
+      <div
+        v-if="!isConnected"
+        class="w-full bg-yellow-50 border-b border-yellow-200 px-4 py-2"
+      >
         <div class="flex items-center space-x-2">
           <div class="w-2 h-2 bg-yellow-500 rounded-full animate-pulse"></div>
           <span class="text-yellow-700 text-xs">
@@ -18,10 +26,17 @@
 
       <!-- Chat content -->
       <div class="w-full flex flex-col px-4 pt-4 pb-4">
-        <template v-for="(message, index) in messages" :key="`msg-${message.id}-${index}`">
+        <template
+          v-for="(message, index) in messages"
+          :key="`msg-${message.id}-${index}`"
+        >
           <div class="mb-4">
-            <chat-message :conversation="conversationData" :message="message" :show-actions="true"
-              :authUser="Logic.Auth.AuthUser" />
+            <chat-message
+              :conversation="conversationData"
+              :message="message"
+              :show-actions="true"
+              :authUser="Logic.Auth.AuthUser"
+            />
           </div>
         </template>
 
@@ -31,45 +46,83 @@
         </div>
 
         <!-- Countdown Timer -->
-        <div v-if="isCountdownActive && !isBusinessUser && !businessJoined"
-          class="flex items-center justify-center py-4">
-          <app-countdown-timer :duration="countdownTime" :customText="countdownText"
-            customClass="!bg-orange-50 !border !border-orange-200 !text-orange-800" @expired="handleCountdownExpired" />
+        <div
+          v-if="isCountdownActive && !isBusinessUser && !businessJoined"
+          class="flex items-center justify-center py-4"
+        >
+          <app-countdown-timer
+            :duration="countdownTime"
+            :customText="countdownText"
+            customClass="!bg-orange-50 !border !border-orange-200 !text-orange-800"
+            @expired="handleCountdownExpired"
+          />
         </div>
 
         <div class="w-full h-[130px]" id="bottom-anchor"></div>
       </div>
 
       <!-- Bottom bar -->
-      <chat-bottom-bar :conversation="conversationData" :send-message="sendMessage" :last-a-i-message="lastAIMessage"
-        :is-processing="isProcessing" :authUser="Logic.Auth.AuthUser" @upload-proof="handleUploadProof" />
+      <chat-bottom-bar
+        :conversation="conversationData"
+        :send-message="sendMessage"
+        :last-a-i-message="lastAIMessage"
+        :is-processing="isProcessing"
+        :authUser="Logic.Auth.AuthUser"
+        @upload-proof="handleUploadProof"
+      />
 
       <!-- Address Input -->
-      <chat-address-input v-if="activeModal === 'address'" :is-processing="isProcessing"
-        @address-confirm="handleAddressSelection" @cancel="handleAddressCancel" />
+      <chat-address-input
+        v-if="activeModal === 'address'"
+        :is-processing="isProcessing"
+        @address-confirm="handleAddressSelection"
+        @cancel="handleAddressCancel"
+      />
 
       <!-- Bank Transfer Modal -->
-      <bank-transfer-modal v-if="activeModal === 'bank_transfer'" :show="true" :savedBankAccounts="savedBankAccounts"
-        :isProcessing="isProcessing" @bank-details-submitted="handleBankDetailsSubmitted"
-        @saved-account-selected="handleSavedAccountSelected" @cancel="handleBankTransferCancel" />
+      <bank-transfer-modal
+        v-if="activeModal === 'bank_transfer'"
+        :show="true"
+        :savedBankAccounts="savedBankAccounts"
+        :isProcessing="isProcessing"
+        @bank-details-submitted="handleBankDetailsSubmitted"
+        @saved-account-selected="handleSavedAccountSelected"
+        @cancel="handleBankTransferCancel"
+      />
 
       <!-- Pickup Location Modal -->
-      <pickup-location-modal v-if="activeModal === 'cash_pickup'" :isOpen="true"
-        :savedLocations="businessStoreLocations" @confirm="handlePickupSelection" @close="handlePickupCancel" />
+      <pickup-location-modal
+        v-if="activeModal === 'cash_pickup'"
+        :isOpen="true"
+        :savedLocations="businessStoreLocations"
+        @confirm="handlePickupSelection"
+        @close="handlePickupCancel"
+      />
 
       <!-- Proof Upload Modal -->
-      <proof-upload-modal :isOpen="showProofModal" @close="handleProofCancel" @upload="handleProofUploadFiles" />
-
+      <proof-upload-modal
+        :isOpen="showProofModal"
+        @close="handleProofCancel"
+        @upload="handleProofUploadFiles"
+      />
     </div>
   </app-wrapper>
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, computed, onMounted, nextTick, watch, onUnmounted } from 'vue';
-import { useSimpleWorkflowEngine } from '../../composable/useSimpleWorkflowEngine';
-import { useWorkflowInput } from '../../composable/useWorkflowInput';
-import { useWebSocket } from '../../composable/useWebSocket';
-import { Logic } from '@greep/logic';
+import {
+  defineComponent,
+  ref,
+  computed,
+  onMounted,
+  nextTick,
+  watch,
+  onUnmounted,
+} from "vue";
+import { useSimpleWorkflowEngine } from "../../composable/useSimpleWorkflowEngine";
+import { useWorkflowInput } from "../../composable/useWorkflowInput";
+import { useWebSocket } from "../../composable/useWebSocket";
+import { Logic } from "@greep/logic";
 
 import {
   ChatTopBar,
@@ -79,11 +132,11 @@ import {
   BankTransferModal,
   PickupLocationModal,
   ProofUploadModal,
-  AppCountdownTimer
+  AppCountdownTimer,
 } from "@greep/ui-components";
 
 export default defineComponent({
-  name: 'WorkflowChat',
+  name: "WorkflowChat",
   components: {
     ChatTopBar,
     ChatBottomBar,
@@ -92,31 +145,31 @@ export default defineComponent({
     BankTransferModal,
     PickupLocationModal,
     ProofUploadModal,
-    AppCountdownTimer
+    AppCountdownTimer,
   },
   props: {
     conversationId: {
       type: Number,
-      required: true
+      required: true,
     },
     workflowType: {
-      type: String as () => 'p2p_withdrawal' | 'deliveries',
-      required: true
+      type: String as () => "p2p_withdrawal" | "deliveries",
+      required: true,
     },
     initialMessages: {
       type: Array,
-      default: () => []
+      default: () => [],
     },
     conversation: {
       type: Object,
-      default: () => null
-    }
+      default: () => null,
+    },
   },
   setup(props) {
     // Simple workflow engine
     const workflowEngine = useSimpleWorkflowEngine({
       conversationId: props.conversationId,
-      workflowType: props.workflowType
+      workflowType: props.workflowType,
     });
 
     const {
@@ -136,7 +189,7 @@ export default defineComponent({
       isBusinessUser,
       directMessagingEnabled,
       activeModal,
-      manualModalOverride
+      manualModalOverride,
     } = workflowEngine;
 
     // ✅ NEW: Use the input handling composable
@@ -144,7 +197,7 @@ export default defineComponent({
       {
         workflowType: props.workflowType,
         conversationId: props.conversationId,
-        conversation: props.conversation
+        conversation: props.conversation,
       },
       engineSendMessage,
       manualModalOverride
@@ -164,18 +217,18 @@ export default defineComponent({
       handlePickupCancel,
       handleUploadProof,
       handleProofUploadFiles,
-      handleProofCancel
+      handleProofCancel,
     } = workflowInput;
 
     // ✅ Countdown visibility logic (simplified - no countdown in simple workflow)
     const isCountdownActive = computed(() => false);
 
     // ✅ Countdown text (simplified)
-    const countdownText = computed(() => '⏰ Processing');
+    const countdownText = computed(() => "⏰ Processing");
 
     // ✅ Handle countdown expiration (simplified)
     const handleCountdownExpired = () => {
-      console.log('⏰ Simple workflow - no countdown needed');
+      console.log("⏰ Simple workflow - no countdown needed");
     };
 
     // WebSocket integration
@@ -195,31 +248,45 @@ export default defineComponent({
       }
 
       const conversationUuid = props.conversation.uuid;
-      console.log("🔧 Setting up WebSocket for conversation:", conversationUuid);
+      console.log(
+        "🔧 Setting up WebSocket for conversation:",
+        conversationUuid
+      );
 
       setupWebSocketListeners(conversationUuid, {
         onUserJoining: (user) => {
           console.log("🔧 User joining detected:", user);
 
           const currentUserId = parseInt(Logic.Auth.AuthUser?.id || "0");
-          console.log("🔧 Current user ID:", currentUserId, "Joining user ID:", user.id || user.user_id);
+          console.log(
+            "🔧 Current user ID:",
+            currentUserId,
+            "Joining user ID:",
+            user.id || user.user_id
+          );
 
-          const isBusiness = user.user_type === 'business' ||
-            user.participant_type === 'business' ||
+          const isBusiness =
+            user.user_type === "business" ||
+            user.participant_type === "business" ||
             user.is_business === true ||
-            ((user.id && user.id !== currentUserId && user.id !== 0) ||
-              (user.user_id && user.user_id !== currentUserId && user.user_id !== 0));
+            (user.id && user.id !== currentUserId && user.id !== 0) ||
+            (user.user_id &&
+              user.user_id !== currentUserId &&
+              user.user_id !== 0);
 
           console.log("🔧 Business detection result:", isBusiness, {
             user_type: user.user_type,
             participant_type: user.participant_type,
             is_business: user.is_business,
-            different_user: (user.id && user.id !== currentUserId && user.id !== 0),
-            businessJoined: businessJoined.value
+            different_user:
+              user.id && user.id !== currentUserId && user.id !== 0,
+            businessJoined: businessJoined.value,
           });
 
           if (isBusiness && !businessJoined.value) {
-            console.log("🎉 Business user detected! Calling handleBusinessJoined");
+            console.log(
+              "🎉 Business user detected! Calling handleBusinessJoined"
+            );
             handleBusinessJoined(user);
           } else if (businessJoined.value) {
             console.log("⚠️ Business already joined, skipping");
@@ -254,7 +321,8 @@ export default defineComponent({
           handleIncomingMessage(data);
         },
         onBusinessJoined: (data) => {
-          const currentParticipantCount = props.conversation?.participant_count || 1;
+          const currentParticipantCount =
+            props.conversation?.participant_count || 1;
 
           if (currentParticipantCount < 2) {
             return;
@@ -268,7 +336,7 @@ export default defineComponent({
           setTimeout(async () => {
             await refreshConversationData();
           }, 1000);
-        }
+        },
       });
     };
 
@@ -279,7 +347,7 @@ export default defineComponent({
 
     // Watch for bank transfer modal activation to load saved accounts
     watch(activeModal, (newModal) => {
-      if (newModal === 'bank_transfer') {
+      if (newModal === "bank_transfer") {
         loadSavedBankAccounts();
       }
     });
@@ -290,23 +358,27 @@ export default defineComponent({
 
       return {
         ...lastAI,
-        metadata: typeof lastAI.metadata === 'object'
-          ? JSON.stringify(lastAI.metadata)
-          : lastAI.metadata
+        metadata:
+          typeof lastAI.metadata === "object"
+            ? JSON.stringify(lastAI.metadata)
+            : lastAI.metadata,
       };
     });
 
     const conversationData = computed(() => {
       const fullConversation = Logic.Messaging?.SingleConversation;
 
-      return props.conversation || fullConversation || {
-        id: props.conversationId,
-        participants: [],
-      };
+      return (
+        props.conversation ||
+        fullConversation || {
+          id: props.conversationId,
+          participants: [],
+        }
+      );
     });
 
     const mobileFullHeight = computed(() => {
-      return 'height: 100vh;';
+      return "height: 100vh;";
     });
 
     // Methods
@@ -314,20 +386,31 @@ export default defineComponent({
       try {
         console.log("🔄 Refreshing conversation data after business joined...");
 
-        const conversationUuid = conversationData.value?.uuid || props.conversation?.uuid;
+        const conversationUuid =
+          conversationData.value?.uuid || props.conversation?.uuid;
         if (!conversationUuid) {
           console.log("❌ No conversation UUID to refresh");
           return;
         }
 
-        console.log("🔧 Current participants before refresh:", conversationData.value?.participants);
+        console.log(
+          "🔧 Current participants before refresh:",
+          conversationData.value?.participants
+        );
 
-        const updatedConversation = await Logic.Messaging.GetSingleConversation(conversationUuid);
+        const updatedConversation = await Logic.Messaging.GetSingleConversation(
+          conversationUuid
+        );
 
         if (updatedConversation) {
           Logic.Messaging.SingleConversation = updatedConversation;
-          console.log("✅ Conversation data refreshed - participant names updated");
-          console.log("🔧 New participants after refresh:", updatedConversation.participants);
+          console.log(
+            "✅ Conversation data refreshed - participant names updated"
+          );
+          console.log(
+            "🔧 New participants after refresh:",
+            updatedConversation.participants
+          );
 
           nextTick(() => {
             console.log("🔧 Topbar should now show updated participant names");
@@ -353,7 +436,9 @@ export default defineComponent({
     };
 
     const handleActionClick = async (action: any) => {
-      const success = await engineSendMessage(action.label, { selected_option: action.value });
+      const success = await engineSendMessage(action.label, {
+        selected_option: action.value,
+      });
       if (success) {
         await scrollToBottom();
       }
@@ -362,9 +447,13 @@ export default defineComponent({
     // Business action handlers
     const handleCompleteOrder = async () => {
       try {
-        const success = await sendDirectMessage("Order has been completed successfully. Payment has been processed.");
+        const success = await sendDirectMessage(
+          "Order has been completed successfully. Payment has been processed."
+        );
         if (success) {
-          await sendDirectMessage("✅ **ORDER COMPLETED** - Transaction finalized by business partner");
+          await sendDirectMessage(
+            "✅ **ORDER COMPLETED** - Transaction finalized by business partner"
+          );
           await scrollToBottom();
         }
       } catch (error) {
@@ -398,7 +487,9 @@ export default defineComponent({
         }
 
         if (summary?.method) {
-          const methodName = summary.method.replace("_", " ").replace(/\b\w/g, (l: string) => l.toUpperCase());
+          const methodName = summary.method
+            .replace("_", " ")
+            .replace(/\b\w/g, (l: string) => l.toUpperCase());
           receiptContent += `🏦 Method: ${methodName}\n`;
         }
 
@@ -417,16 +508,17 @@ export default defineComponent({
 
     const scrollToBottom = async () => {
       await nextTick();
-      const bottomAnchor = document.getElementById('bottom-anchor');
+      const bottomAnchor = document.getElementById("bottom-anchor");
       if (bottomAnchor) {
-        bottomAnchor.scrollIntoView({ behavior: 'smooth' });
+        bottomAnchor.scrollIntoView({ behavior: "smooth" });
       }
     };
 
     // Initialize
     onMounted(async () => {
+      console.log(props.initialMessages);
       if (props.initialMessages?.length) {
-        props.initialMessages.forEach(msg => addMessage(msg));
+        props.initialMessages.forEach((msg) => addMessage(msg));
       }
 
       await initializeFromConversation(props.conversation);
@@ -441,9 +533,13 @@ export default defineComponent({
     });
 
     // Auto-scroll when new messages arrive
-    watch(messages, async () => {
-      await scrollToBottom();
-    }, { deep: true });
+    watch(
+      messages,
+      async () => {
+        await scrollToBottom();
+      },
+      { deep: true }
+    );
 
     return {
       messages,
@@ -485,9 +581,9 @@ export default defineComponent({
       isCountdownActive,
       countdownText,
       handleCountdownExpired,
-      Logic
+      Logic,
     };
-  }
+  },
 });
 </script>
 

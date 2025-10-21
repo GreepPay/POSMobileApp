@@ -148,7 +148,11 @@ import {
   AppModal,
 } from "@greep/ui-components";
 import { Logic } from "@greep/logic";
-import { User, WithdrawMethod } from "@greep/logic/src/gql/graphql";
+import {
+  InteractiveWithdrawalResponse,
+  User,
+  WithdrawMethod,
+} from "@greep/logic/src/gql/graphql";
 import {
   getBottomPadding,
   withdrawalAvailableCurrencies,
@@ -161,6 +165,39 @@ import {
 import { Currency } from "@greep/ui-components/src/types";
 import PaymentWithSuggestions from "../../components/Core/PaymentWithSuggestions.vue";
 import { onIonViewWillEnter } from "@ionic/vue";
+
+type WithdrawalStatus =
+  | "incomplete"
+  | "pending_user_transfer_start"
+  | "pending_user_transfer_complete"
+  | "pending_external"
+  | "pending_anchor"
+  | "on_hold"
+  | "pending_stellar"
+  | "pending_trust"
+  | "pending_user"
+  | "completed"
+  | "refunded"
+  | "expired"
+  | "error";
+
+const withdrawalStatusMap: Record<WithdrawalStatus, string> = {
+  incomplete: "There is not yet enough information to initiate this withdrawal",
+  pending_user_transfer_start: "Awaiting user to initiate transfer",
+  pending_user_transfer_complete:
+    "Stellar payment received, funds ready for pickup",
+  pending_external:
+    "Withdrawal submitted to external network, awaiting confirmation",
+  pending_anchor: "Withdrawal being processed by provider",
+  on_hold: "Withdrawal under review",
+  pending_stellar: "Operation submitted to Stellar network",
+  pending_trust: "Awaiting trustline setup",
+  pending_user: "Additional user action required",
+  completed: "Withdrawal completed",
+  refunded: "Withdrawal refunded",
+  expired: "Withdrawal expired",
+  error: "An error occurred",
+};
 
 export default defineComponent({
   name: "WithdrawPage",
@@ -198,6 +235,8 @@ export default defineComponent({
       selectedCurrencyData: Currency;
     }>();
     const paymentWidgetComp = ref<any>(null);
+
+    const interactiveAnchorResponse = ref<InteractiveWithdrawalResponse>();
 
     const CurrentWithdrawalInfo = ref(Logic.Wallet.CurrentWithdrawalInfo);
     const kycInitiaionResponse = ref();
@@ -397,30 +436,24 @@ export default defineComponent({
           loading: true,
         });
 
-        const responseString = await Logic.Wallet.InitiateWalletKYC(
-          selectedCurrency.value
-        );
-        if (responseString) {
-          const responseData: any = JSON.parse(responseString);
+        Logic.Wallet.InitiateInteractiveWithdrawalForm = {
+          amount: parseFloat(amount.value),
+          withdrawal_currency: selectedCurrency.value,
+        };
 
-          if (responseData.provider == "mykobo") {
-            const mykoboKYCLink: MyKoboInitiationResponse = responseData;
+        interactiveAnchorResponse.value =
+          await Logic.Wallet.InitiateInteractiveWithdrawal();
+        Logic.Common.hideLoader();
+        if (interactiveAnchorResponse.value) {
+          showRedirectInfoModal.value = true;
+          partnerName.value = "MyKobo";
+          partnerLogoUrl.value =
+            "https://miro.medium.com/v2/resize:fit:1400/format:webp/1*gwAPJbEiBG9OmyswTvuj6w.png";
+          modalContent.value = `To complete withdrawal for ${selectedCurrency.value}, Greep uses MyKobo to securely connect accounts and move funds.
 
-            if (mykoboKYCLink.data.status == "NEEDS_INFO") {
-              localStorage.setItem(
-                "mykobo_extra_info_needed",
-                JSON.stringify(mykoboKYCLink.data.fields)
-              );
+              Click on "Continue", to complete your withdrawal on MyKobo.`;
 
-              Logic.Common.GoToRoute(
-                `/withdraw/saved-accounts?method=bank_account&amount=${parseFloat(
-                  amount.value.replace(/,/g, "")
-                )}&currency=${selectedCurrency.value}&channel_id=${
-                  method.unique_id
-                }`
-              );
-            }
-          }
+          modalRedirectButtonCopy.value = "Continue";
         }
       }
     };
@@ -441,7 +474,50 @@ export default defineComponent({
       selectedCurrency.value = paymentData.value?.currency || "";
 
       if (selectedCurrency.value == "EUR") {
-        //
+        await Browser.open({ url: interactiveAnchorResponse.value?.url || "" });
+        const handleResponse = async () => {
+          Logic.Wallet.ExtractAnchorTransactionForm = {
+            transaction_id: interactiveAnchorResponse.value?.id || "",
+            withdrawal_currency: selectedCurrency.value,
+          };
+          Logic.Common.showLoader({
+            show: true,
+            loading: true,
+          });
+          const response = await Logic.Wallet.ExtractAnchorTransaction();
+
+          const message =
+            withdrawalStatusMap[
+              (response?.status as WithdrawalStatus) || "error"
+            ] || "Unknown status";
+
+          if (response?.status == "completed") {
+            Logic.Common.showAlert({
+              show: true,
+              type: "success",
+              message: "Withdrawal completed successfully!",
+            });
+          } else {
+            let type: "info" | "success" | "error" = "info";
+            if (response?.status == "error" || response?.status == "expired") {
+              type = "error";
+            }
+            Logic.Common.showAlert({
+              show: true,
+              type,
+              message: message,
+            });
+          }
+
+          Logic.Common.hideLoader();
+          Logic.Auth.GetAuthUser();
+          Logic.Common.GoToRoute("/");
+        };
+        Browser.addListener("browserFinished", async () => {
+          await handleResponse();
+        });
+
+        return;
       } else if (bridgeCurrencies.includes(selectedCurrency.value || "")) {
         const responseData: BridgeKYCInitiaionResponse =
           kycInitiaionResponse.value;

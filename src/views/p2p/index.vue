@@ -1,33 +1,48 @@
 <template>
   <app-wrapper mobilePadding="!pt-0">
-    <default-page-layout :title="'Exchange Ads'" :photoUrl="AuthUser?.profile?.business?.logo || '/images/profile-image.svg'
-      ">
-      <div class="w-full flex flex-col items-center h-[80%] justify-start !space-y-[20px]">
+    <default-page-layout
+      :title="'Exchange Ads'"
+      :photoUrl="
+        Logic.Auth.GetDefaultBusiness()?.logo || '/images/profile-image.svg'
+      "
+    >
+      <div
+        class="w-full flex flex-col items-center h-[80%] justify-start !space-y-[20px]"
+      >
         <template v-if="ManyExchangeAds?.data.length == 0">
           <div class="h-full flex flex-col items-center justify-center">
-            <app-empty-state icon="empty-ads" title="Create Exchange Ads For P2P"
+            <app-empty-state
+              icon="empty-ads"
+              title="Create Exchange Ads For P2P"
               description="Buy and sell currencies at your own exchange rates, set limits, and give customers the option to pick cash or transfer."
-              class="!border-none" :buttonData="{
+              class="!border-none"
+              :buttonData="{
                 label: 'Create Ad',
                 action: () => {
                   Logic.Common.GoToRoute('/p2p/ads/add');
                 },
-              }" />
+              }"
+            />
           </div>
         </template>
 
         <template v-else>
           <div class="flex flex-col w-full px-4 pt-2 !pb-[100px]">
-
             <div class="w-full flex flex-col pb-4">
-              <app-tabs :tabs="p2pTabs" v-model:activeTab="selectedMethod"
+              <app-tabs
+                :tabs="p2pTabs"
+                v-model:activeTab="selectedMethod"
                 tabsClass="!w-full flex border !border-veryLightGray rounded-full"
-                tabClass="!flex-1 text-center border-none !mr-0 py-3" customClass="!overflow-x-hidden" type="badge" />
+                tabClass="!flex-1 text-center border-none !mr-0 py-3"
+                customClass="!overflow-x-hidden"
+                type="badge"
+              />
             </div>
 
             <div
               class="w-full px-4 flex flex-row space-x-1 items-center border-[1.5px] border-primary py-3 rounded-[12px]"
-              @click="Logic.Common.GoToRoute('/p2p/ads/add')">
+              @click="Logic.Common.GoToRoute('/p2p/ads/add')"
+            >
               <app-icon name="add-green" custom-class="!h-[24px]" />
               <app-normal-text class="!text-primary !font-[500]">
                 Create new Ad
@@ -35,10 +50,17 @@
             </div>
 
             <div class="w-full flex flex-col pt-4">
-              <div class="w-full flex flex-col mb-1" v-for="(item, index) in p2pAdverts" :key="index">
-                <app-exchange-ad :item="item" @click="
-                  Logic.Common.GoToRoute(`/p2p/ads/add?uuid=${item.uuid}`)
-                  ">
+              <div
+                class="w-full flex flex-col mb-1"
+                v-for="(item, index) in p2pAdverts"
+                :key="index"
+              >
+                <app-exchange-ad
+                  :item="item"
+                  @click="
+                    Logic.Common.GoToRoute(`/p2p/ads/add?uuid=${item.uuid}`)
+                  "
+                >
                 </app-exchange-ad>
               </div>
             </div>
@@ -57,7 +79,7 @@ import {
   AppIcon,
   AppNormalText,
   AppExchangeAd,
-  AppTabs
+  AppTabs,
 } from "@greep/ui-components";
 import { Logic } from "@greep/logic";
 import { User } from "@greep/logic/src/gql/graphql";
@@ -73,7 +95,7 @@ export default defineComponent({
     AppNormalText,
     AppEmptyState,
     AppExchangeAd,
-    AppTabs
+    AppTabs,
   },
   layout: "Dashboard",
   middlewares: {
@@ -187,7 +209,7 @@ export default defineComponent({
       p2pAdverts,
       p2pTabs,
       selectedMethod,
-      ManyExchangeAds
+      ManyExchangeAds,
     };
   },
 });
