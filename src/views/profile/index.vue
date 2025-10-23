@@ -201,10 +201,10 @@
           route: "/profile/business-info",
         },
         {
-          title: "Store Locations",
+          title: "Business Locations",
           logo: "event/location",
           logo_size: "!h-[22px]",
-          route: "/profile/store-locations",
+          route: "/profile/business-location",
         },
         {
           title: "Default Currency",
