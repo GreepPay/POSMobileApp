@@ -263,7 +263,7 @@ export default defineComponent({
             type: "success",
           });
 
-          Logic.Common.GoToRoute("/profile/business-location");
+          Logic.Common.goBack();
         }
       } catch (error) {
         console.error("Error adding delivery address:", error);

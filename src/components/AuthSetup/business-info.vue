@@ -213,6 +213,8 @@ export default defineComponent({
     const ecommerceCategories = reactive<SelectOption[]>([
       { key: "payment-solutions", value: "Payment Solutions" },
       { key: "currency-exchange", value: "Currency Exchange" },
+      { key: "events-and-tickets", value: "Events & Tickets" },
+      { key: "logistics-and-shipping", value: "Logistics & Shipping" },
       { key: "fashion-and-apparel", value: "Fashion & Apparel" },
       { key: "electronics", value: "Electronics" },
       { key: "home-and-kitchen", value: "Home & Kitchen" },

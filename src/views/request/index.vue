@@ -84,7 +84,7 @@ export default defineComponent({
 
     const currentCurrency = computed(() => {
       return availableCurrencies.filter(
-        (item) => item.code == AuthUser.value?.businesses[0]?.default_currency
+        (item) => item.code == Logic.Auth.GetDefaultBusiness()?.default_currency
       )[0]?.symbol;
     });
 
