@@ -12,7 +12,7 @@
             :style="`background-image: url(${photoUrl});  background-size: cover;
       background-repeat: no-repeat;
       background-position: center;`"
-            class="h-[90px] w-[90px] rounded-full flex flex-row items-center relative"
+            class="h-[90px] w-[90px] rounded-full flex flex-row items-center relative !border-[1.5px] border-gray-200"
           ></div>
         </div>
         <div class="w-full flex flex-col pt-5">
@@ -48,26 +48,24 @@ export default defineComponent({
     const FormValidations = Logic.Form;
 
     const setPageDefault = () => {
-      photoUrl.value =
-        AuthUser.value?.profile?.business?.logo || "/images/avatar.svg";
+      const business = Logic.Auth.GetDefaultBusiness();
+      photoUrl.value = business?.logo || "/images/avatar.svg";
       profileDetails.length = 0;
       profileDetails.push({
         title: "Business Name",
-        content: AuthUser.value?.profile?.business?.business_name || "Nil",
+        content: business?.business_name || "Nil",
       });
       profileDetails.push({
         title: "Business Category",
-        content: AuthUser.value?.profile?.business?.category || "Nil",
+        content: business?.category || "Nil",
       });
       profileDetails.push({
         title: "Business Description",
-        content: AuthUser.value?.profile?.business?.description || "Nil",
+        content: business?.description || "Nil",
       });
       profileDetails.push({
         title: "Business Location",
-        content: `${AuthUser.value?.profile?.business?.city || "Nil"}, ${
-          AuthUser.value?.profile?.business?.country || "Nil"
-        }`,
+        content: `${business?.city || "Nil"}, ${business?.country || "Nil"}`,
       });
     };
 

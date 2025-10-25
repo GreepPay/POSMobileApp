@@ -1,26 +1,45 @@
 <template>
   <app-wrapper mobilePadding="!pt-0">
-    <default-page-layout :title="Logic.Auth.GetDefaultBusiness()?.business_name" :photoUrl="Logic.Auth.GetDefaultBusiness()?.logo || '/images/profile-image.svg'
-      " icon="drop" :title-click-action="() => Logic.Common.GoToRoute('/auth/switch-business')">
-      <div class="w-full flex flex-col items-center justify-start !space-y-[20px]">
+    <default-page-layout
+      :title="Logic.Auth.GetDefaultBusiness()?.business_name"
+      :photoUrl="
+        Logic.Auth.GetDefaultBusiness()?.logo || '/images/profile-image.svg'
+      "
+      icon="drop"
+      :title-click-action="
+        () => Logic.Common.GoToRoute('/auth/switch-business')
+      "
+    >
+      <div
+        class="w-full flex flex-col items-center justify-start !space-y-[20px]"
+      >
         <!-- Balance card section -->
         <div class="w-full flex flex-col space-y-2 pt-2">
           <div class="w-full flex flex-col px-4">
             <app-image-loader
               class="w-full h-fit rounded-[16px] flex flex-col overflow-x-hidden overflow-y-hidden justify-center items-center px-4 py-5 !bg-[linear-gradient(269.64deg,_#0D965E_0.31%,_#00683F_89.75%)] relative"
-              photo-url="">
-              <img class="absolute top-0 left-0 w-full" src="/images/greep-transparent-logo.svg" />
+              photo-url=""
+            >
+              <img
+                class="absolute top-0 left-0 w-full"
+                src="/images/greep-transparent-logo.svg"
+              />
 
-            
-              <div class="w-full flex flex-col space-y-[2px] justify-center items-center pt-2 z-10">
+              <div
+                class="w-full flex flex-col space-y-[2px] justify-center items-center pt-2 z-10"
+              >
                 <app-normal-text class="text-center !text-[#E0E2E4]">
                   Total Balance
                 </app-normal-text>
 
-                <app-header-text class="text-center !text-white !text-[27px] !font-normal pb-2">
-                  {{ "$" }}{{
+                <app-header-text
+                  class="text-center !text-white !text-[27px] !font-normal pb-2"
+                >
+                  {{ currencySymbol
+                  }}{{
                     Logic.Common.convertToMoney(
-                      currentWalletBalance || 0,
+                      (currentWalletBalance || 0) *
+                        (CurrentGlobalExchangeRate?.mid || 1),
                       true,
                       "",
                       false
@@ -32,18 +51,26 @@
           </div>
 
           <!-- Quick Actions -->
-          <div class="w-full grid grid-cols-12 items-center px-4 pt-3 pb-5 !border-b-[11px] !border-[#F0F3F6]">
-            <div v-for="(item, index) in quickActions" :key="index"
+          <div
+            class="w-full grid grid-cols-12 items-center px-4 pt-3 pb-5 !border-b-[11px] !border-[#F0F3F6]"
+          >
+            <div
+              v-for="(item, index) in quickActions"
+              :key="index"
               class="col-span-4 flex flex-col space-y-1 items-center justify-center relative"
-              @click="Logic.Common.GoToRoute(item.route_path)">
+              @click="Logic.Common.GoToRoute(item.route_path)"
+            >
               <app-icon :name="item.icon" custom-class="!h-[56px]" />
 
               <app-normal-text class="!text-[#616161] !text-center !font-[500]">
                 {{ item.name }}
               </app-normal-text>
 
-              <span v-if="item.soon"
-                class="px-3 py-[3px] bg-primary rounded-full !text-[10px] !text-white absolute top-[-20%] right-0">Soon</span>
+              <span
+                v-if="item.soon"
+                class="px-3 py-[3px] bg-primary rounded-full !text-[10px] !text-white absolute top-[-20%] right-0"
+                >Soon</span
+              >
             </div>
           </div>
         </div>
@@ -65,32 +92,48 @@
             Transactions
           </app-normal-text>
 
-          <app-normal-text class="text-primary" @click="Logic.Common.GoToRoute('/transactions')">
+          <app-normal-text
+            class="text-primary"
+            @click="Logic.Common.GoToRoute('/transactions')"
+          >
             See all
           </app-normal-text>
         </div>
 
         <!-- Transactions -->
-        <div class="w-full flex flex-col h-fit bg-white relative px-4 space-y-[5px] min-h-[70vh]"
-          id="home_transactions">
+        <div
+          class="w-full flex flex-col h-fit bg-white relative px-4 space-y-[5px] min-h-[70vh]"
+          id="home_transactions"
+        >
           <template v-if="activeTab == 'latest'">
             <div v-if="!recentTransactions.length" class="py-4 !pt-2 z-10">
-              <app-empty-state title="No transactions"
-                description="Collect Payments, Make Withdrawals, and Redeem the GRP Tokens you’ve earned." />
+              <app-empty-state
+                title="No transactions"
+                description="Collect Payments, Make Withdrawals, and Redeem the GRP Tokens you’ve earned."
+              />
             </div>
             <template v-else>
-              <app-transaction class="z-[10]" v-for="transaction in recentTransactions" :key="transaction.id"
-                :data="transaction" @click="
+              <app-transaction
+                class="z-[10]"
+                v-for="transaction in recentTransactions"
+                :key="transaction.id"
+                :data="transaction"
+                @click="
                   Logic.Common.GoToRoute(
                     '/transactions/' +
-                    transaction.id +
-                    `?group=${transaction.transaction_group}`
+                      transaction.id +
+                      `?group=${transaction.transaction_group}`
                   )
-                  " />
+                "
+              />
 
               <div class="w-full flex flex-col pt-3">
-                <app-button @click="Logic.Common.GoToRoute('/transactions')" variant="primary" outlined
-                  class="py-3 !font-[500] !border-[#F0F3F6]">
+                <app-button
+                  @click="Logic.Common.GoToRoute('/transactions')"
+                  variant="primary"
+                  outlined
+                  class="py-3 !font-[500] !border-[#F0F3F6]"
+                >
                   See all
                 </app-button>
               </div>
@@ -99,8 +142,11 @@
 
           <template v-if="activeTab == 'tools'">
             <div class="w-full grid grid-cols-12 gap-4">
-              <div v-for="(item, index) in tools" :key="index"
-                class="col-span-6 flex flex-col z-10 px-3 py-3 border-[1.5px] border-[#F0F3F6] rounded-[12px]">
+              <div
+                v-for="(item, index) in tools"
+                :key="index"
+                class="col-span-6 flex flex-col z-10 px-3 py-3 border-[1.5px] border-[#F0F3F6] rounded-[12px]"
+              >
                 <app-icon :name="item.icon" custom-class="23px" />
 
                 <div class="w-full flex flex-col pt-1">
@@ -124,7 +170,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, reactive, watch } from "vue"
+import { defineComponent, reactive, watch } from "vue";
 import {
   AppImageLoader,
   AppNormalText,
@@ -135,23 +181,23 @@ import {
   DefaultPageLayout,
   // AppTabs,
   AppButton,
-} from "@greep/ui-components"
-import { Logic } from "@greep/logic"
-import { ref } from "vue"
-import { onMounted } from "vue"
+} from "@greep/ui-components";
+import { Logic } from "@greep/logic";
+import { ref } from "vue";
+import { onMounted } from "vue";
 import {
   getPlatforms,
   onIonViewDidEnter,
   onIonViewWillEnter,
-} from "@ionic/vue"
-import { User } from "@greep/logic/src/gql/graphql"
-import { computed } from "vue"
-import { availableCurrencies } from "../composable"
+} from "@ionic/vue";
+import { User } from "@greep/logic/src/gql/graphql";
+import { computed } from "vue";
+import { availableCurrencies } from "../composable";
 import {
   getTransaction,
   getPointTransaction,
   TransactionType,
-} from "../composable/financials"
+} from "../composable/financials";
 
 export default defineComponent({
   name: "IndexPage",
@@ -200,46 +246,46 @@ export default defineComponent({
   },
   setup() {
     const defaultCurrency = ref(
-      Logic.Auth.AuthUser?.businesses[0]?.default_currency || "USD"
-    )
+      Logic.Auth.GetDefaultBusiness()?.default_currency || "USD"
+    );
     const selectedCurrency = ref(
-      Logic.Auth.AuthUser?.businesses[0]?.default_currency || "USD"
-    )
+      Logic.Auth.GetDefaultBusiness()?.default_currency || "USD"
+    );
 
-    const selectedCountry = ref("")
+    const selectedCountry = ref("");
 
     const currencySymbol = computed(
       () =>
         availableCurrencies.find(
           (currency) => currency.code === selectedCurrency.value
         )?.symbol
-    )
+    );
 
-    const ManyTransactions = ref(Logic.Wallet.ManyTransactions)
-    const ManyPointTransactions = ref(Logic.Wallet.ManyPointTransactions)
+    const ManyTransactions = ref(Logic.Wallet.ManyTransactions);
+    const ManyPointTransactions = ref(Logic.Wallet.ManyPointTransactions);
     const CurrentGlobalExchangeRate = ref(
       Logic.Wallet.CurrentGlobalExchangeRate
-    )
-    const AuthUser = ref<User>(Logic.Auth.AuthUser)
+    );
+    const AuthUser = ref<User>(Logic.Auth.AuthUser);
 
-    const currentWalletBalance = ref(0)
+    const currentWalletBalance = ref(0);
 
     const recentTransactions = reactive<
       {
-        id: string | number
-        title: string
-        amount: number
-        type: TransactionType
-        transactionType: "credit" | "debit"
-        date: string
-        currencySymbol: string
-        subAmount: string
-        transaction_group: string
-        real_date: string
+        id: string | number;
+        title: string;
+        amount: number;
+        type: TransactionType;
+        transactionType: "credit" | "debit";
+        date: string;
+        currencySymbol: string;
+        subAmount: string;
+        transaction_group: string;
+        real_date: string;
       }[]
-    >([])
+    >([]);
 
-    const activeTab = ref("latest")
+    const activeTab = ref("latest");
 
     const homeTab = reactive([
       {
@@ -250,7 +296,7 @@ export default defineComponent({
         key: "tools",
         label: "Tools",
       },
-    ])
+    ]);
 
     const tools = reactive([
       {
@@ -283,7 +329,7 @@ export default defineComponent({
         sub_title: "Ride to earn",
         route_path: "#",
       },
-    ])
+    ]);
 
     const quickActions = reactive([
       {
@@ -310,19 +356,19 @@ export default defineComponent({
         name: "Insights",
         soon: true,
       },
-    ])
+    ]);
 
     const setPageDefaults = () => {
       defaultCurrency.value =
-        Logic.Auth.AuthUser?.businesses[0]?.default_currency || "USD"
-      selectedCurrency.value = defaultCurrency.value
+        Logic.Auth.GetDefaultBusiness()?.default_currency || "USD";
+      selectedCurrency.value = defaultCurrency.value;
 
-      setCurrentWalletBalance()
-    }
+      setCurrentWalletBalance();
+    };
 
     const currentPlatform = computed(() => {
-      return getPlatforms()[0]
-    })
+      return getPlatforms()[0];
+    });
 
     const setCurrentWalletBalance = () => {
       // let midRate = CurrentGlobalExchangeRate.value?.mid || 0;
@@ -331,11 +377,11 @@ export default defineComponent({
       //   midRate = 1;
       // }
       currentWalletBalance.value =
-        Logic.Auth.GetDefaultBusiness()?.wallet?.total_balance
-    }
+        Logic.Auth.GetDefaultBusiness()?.wallet?.total_balance;
+    };
 
     const setTransactionData = () => {
-      recentTransactions.length = 0
+      recentTransactions.length = 0;
 
       // Normal transactions
       ManyTransactions.value?.data?.forEach((data) => {
@@ -343,40 +389,40 @@ export default defineComponent({
           data,
           selectedCurrency.value,
           currencySymbol.value || ""
-        )
-        recentTransactions.push(transaction)
-      })
+        );
+        recentTransactions.push(transaction);
+      });
 
       // Point transactions
       ManyPointTransactions.value?.data?.forEach((data) => {
         const pointTransaction = getPointTransaction(
           data,
           currencySymbol.value || ""
-        )
-        recentTransactions.push(pointTransaction)
-      })
+        );
+        recentTransactions.push(pointTransaction);
+      });
 
       // Sort transactions desc by date
       recentTransactions.sort(
         (a, b) =>
           new Date(b.real_date).getTime() - new Date(a.real_date).getTime()
-      )
-    }
+      );
+    };
 
     onIonViewDidEnter(() => {
-      setPageDefaults()
-      setTransactionData()
+      setPageDefaults();
+      setTransactionData();
       setTimeout(() => {
-        Logic.Auth.GetAuthUser()
-      }, 5000)
-      setCurrentWalletBalance()
-    })
+        Logic.Auth.GetAuthUser();
+      }, 5000);
+      setCurrentWalletBalance();
+    });
 
     onIonViewWillEnter(() => {
       //  Logic.Auth.GetCurrentAppVersion()?.then((version) => {
       //    checkAppVersion(version || '1.0');
       // });
-    })
+    });
 
     watch(
       [
@@ -386,31 +432,31 @@ export default defineComponent({
         CurrentGlobalExchangeRate,
       ],
       () => {
-        setTransactionData()
-        setCurrentWalletBalance()
+        setTransactionData();
+        setCurrentWalletBalance();
       }
-    )
+    );
 
     watch(AuthUser, () => {
-      setCurrentWalletBalance()
-    })
+      setCurrentWalletBalance();
+    });
 
     onMounted(() => {
       // Register reactive data
-      Logic.Wallet.watchProperty("ManyTransactions", ManyTransactions)
+      Logic.Wallet.watchProperty("ManyTransactions", ManyTransactions);
       Logic.Wallet.watchProperty(
         "ManyPointTransactions",
         ManyPointTransactions
-      )
+      );
       Logic.Wallet.watchProperty(
         "CurrentGlobalExchangeRate",
         CurrentGlobalExchangeRate
-      )
-      Logic.Auth.watchProperty("AuthUser", AuthUser)
-      setPageDefaults()
-      setTransactionData()
-      setCurrentWalletBalance()
-    })
+      );
+      Logic.Auth.watchProperty("AuthUser", AuthUser);
+      setPageDefaults();
+      setTransactionData();
+      setCurrentWalletBalance();
+    });
 
     return {
       recentTransactions,
@@ -428,9 +474,9 @@ export default defineComponent({
       tools,
       currentWalletBalance,
       selectedCountry,
-    }
+    };
   },
-})
+});
 </script>
 
 <style scoped>

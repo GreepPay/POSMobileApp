@@ -7,6 +7,7 @@
       ref="formComponent"
       :parent-refs="parentRefs"
       class="w-full flex flex-col space-y-[20px] h-full"
+      v-if="!hideContent"
     >
       <div class="w-full flex flex-col">
         <!-- Stock -->
@@ -24,9 +25,9 @@
               <app-content-editable
                 v-model="formData.stock"
                 :default-value="formData.stock.toString()"
-                class="!font-[500] !text-sm !text-black !min-w-[70px]"
+                class="!font-[500] !text-sm !text-black !min-w-[70px] !w-full"
                 placeholder="Custom"
-                type="number"
+                type="tel"
                 :listenForUpdate="true"
               />
             </div>
@@ -82,9 +83,14 @@
                 v-model="selectedCurrencyCode"
                 :options="currencyOptions"
                 :defaultSize="'!w-[25px]'"
+                auto-complete
               >
                 <app-image-loader
-                  :photo-url="`/images/icons/flags/${selectedCurrency?.code.toLocaleLowerCase()}.${'svg'}`"
+                  :photo-url="`/images/icons/flags/${
+                    selectedCurrency?.use_country_code
+                      ? selectedCurrency?.country_code?.toLocaleLowerCase()
+                      : selectedCurrency?.code?.toLocaleLowerCase()
+                  }.${selectedCurrency?.icon_extension || 'svg'}`"
                   class="h-[25px] w-[25px] rounded-full"
                 />
               </app-select>
@@ -97,7 +103,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, reactive, ref } from "vue";
+import { defineComponent, reactive, ref, watch } from "vue";
 import {
   AppFormWrapper,
   AppIcon,
@@ -112,6 +118,7 @@ import { SelectOption } from "@greep/logic/src/logic/types/common";
 import { onMounted } from "vue";
 import { availableCurrencies } from "../../composable";
 import { computed } from "vue";
+import { BaseProductSummary } from "../../composable/shop";
 
 export default defineComponent({
   components: {
@@ -123,18 +130,25 @@ export default defineComponent({
     AppSelect,
     AppImageLoader,
   },
-  props: {},
+  props: {
+    data: {
+      type: Object as () => BaseProductSummary,
+    },
+  },
   name: "ProductSetupProductInventory",
-  setup() {
+  setup(props) {
     const FormValidations = Logic.Form;
 
     const formData = reactive({
       stock: 0,
       price: "0",
+      currency: "USD",
     });
 
+    const hideContent = ref(false);
+
     const currencySymbol = ref("$");
-    const selectedCurrencyCode = ref("USD");
+    const selectedCurrencyCode = ref("USD_US");
 
     const currencyOptions = reactive<SelectOption[]>([]);
 
@@ -143,6 +157,7 @@ export default defineComponent({
     const continueWithForm = () => {
       const state = formComponent.value?.validate();
       if (state) {
+        formData.currency = selectedCurrencyCode.value?.split("_")[0];
         // Proceed with form submission
         return formData;
       } else {
@@ -152,18 +167,64 @@ export default defineComponent({
 
     const selectedCurrency = computed(() => {
       return availableCurrencies.find(
-        (item) => item.code == selectedCurrencyCode.value
+        (item) => item.code == selectedCurrencyCode.value?.split("_")[0]
       );
     });
+
+    const setFromProductData = () => {
+      if (props.data) {
+        hideContent.value = true;
+        formData.stock = props.data.stock;
+        formData.price = props.data.price;
+        formData.currency = props.data.currency;
+
+        const currencyInfo = availableCurrencies.find(
+          (currency) => currency.code === props.data?.currency
+        );
+
+        if (currencyInfo) {
+          currencySymbol.value = currencyInfo.symbol;
+        }
+
+        selectedCurrencyCode.value =
+          props.data.currency + "_" + currencyInfo?.country_code;
+
+        setTimeout(() => {
+          hideContent.value = false;
+        }, 200);
+      } else {
+        const currencyFromDefault =
+          Logic.Auth.GetDefaultBusiness()?.default_currency || "USD";
+
+        const currencyInfo = availableCurrencies.find(
+          (currency) => currency.code === currencyFromDefault
+        );
+        if (currencyInfo) {
+          selectedCurrencyCode.value =
+            currencyInfo.code + "_" + currencyInfo.country_code;
+        }
+      }
+    };
+
+    watch(
+      () => props.data,
+      () => {
+        setFromProductData();
+      }
+    );
 
     onMounted(() => {
       currencyOptions.length = 0;
       availableCurrencies.forEach((item) => {
-        currencyOptions.push({
-          key: item.code,
-          value: item.name,
-        });
+        if (!item.is_crypto) {
+          currencyOptions.push({
+            key: item.code + "_" + item.country_code,
+            value: item.name,
+          });
+        }
       });
+
+      setFromProductData();
     });
 
     return {
@@ -176,6 +237,7 @@ export default defineComponent({
       selectedCurrencyCode,
       currencyOptions,
       selectedCurrency,
+      hideContent,
     };
   },
   data() {

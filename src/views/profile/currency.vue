@@ -1,19 +1,24 @@
 <template>
   <app-wrapper>
     <subpage-layout title="Default Currency">
-      <div
-        class="w-full flex flex-col space-y-5 justify-start px-4 h-full pt-1"
-      >
+      <div class="w-full flex flex-col space-y-5 justify-start px-4 pt-1">
         <div class="w-full flex flex-col space-y-1">
           <div
             class="w-full flex flex-row justify-between items-center py-2"
             v-for="(currency, index) in availableCurrencies"
             :key="index"
-            @click="formData.preferred_currency = currency.code"
+            @click="
+              formData.preferred_currency =
+                currency.code + '_' + currency.country_code
+            "
           >
             <div class="flex flex-row space-x-2 items-center">
               <app-image-loader
-                :photo-url="`/images/icons/flags/${currency.code.toLocaleLowerCase()}.svg`"
+                :photo-url="`/images/icons/flags/${
+                  currency.use_country_code
+                    ? currency.country_code?.toLocaleLowerCase()
+                    : currency.code?.toLocaleLowerCase()
+                }.${currency?.icon_extension || 'svg'}`"
                 class="h-[40px] w-[40px] rounded-full"
               />
 
@@ -25,7 +30,8 @@
             <div class="flex flex-row justify-end">
               <app-icon
                 :name="`${
-                  formData.preferred_currency == currency.code
+                  formData.preferred_currency ==
+                  currency.code + '_' + currency.country_code
                     ? 'selected'
                     : 'not-selected'
                 }`"
@@ -34,6 +40,8 @@
             </div>
           </div>
         </div>
+
+        <div class="h-[100px]"></div>
       </div>
 
       <!-- Bottom button -->
@@ -44,7 +52,12 @@
         `"
       >
         <div class="w-full flex flex-col">
-          <app-button variant="secondary" :class="`!py-4`">Confirm</app-button>
+          <app-button
+            @click="continueToNext"
+            variant="secondary"
+            :class="`!py-4`"
+            >Confirm</app-button
+          >
         </div>
       </div>
     </subpage-layout>
@@ -52,7 +65,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from "vue";
+import { defineComponent, onMounted } from "vue";
 import {
   AppButton,
   AppNormalText,
@@ -77,12 +90,46 @@ export default defineComponent({
     const formData = reactive<{
       preferred_currency: string;
     }>({
-      preferred_currency: "TRY",
+      preferred_currency: "TRY_TR",
     });
 
-    const continueToNext = () => {
-      //   modalIsOpen.value = true;
+    const continueToNext = async () => {
+      const currencyCode = formData.preferred_currency.split("_")[0];
+
+      Logic.User.UpdateBusinessProfileForm = {
+        business_uuid: Logic.Auth.GetDefaultBusiness()?.id || "",
+        default_currency: currencyCode,
+      };
+
+      Logic.Common.showLoader({
+        show: true,
+        loading: true,
+      });
+
+      await Logic.User.UpdateBusinessProfile();
+      await Logic.Auth.GetAuthUser();
+
+      Logic.Common.hideLoader();
+      Logic.Common.showAlert({
+        show: true,
+        message: "Default currency has been updated.",
+        type: "success",
+      });
+
+      Logic.Common.goBack();
     };
+
+    onMounted(() => {
+      const currentCurrency = Logic.Auth.GetDefaultBusiness()?.default_currency;
+
+      const currencyInfo = availableCurrencies.find(
+        (currency) => currency.code === currentCurrency
+      );
+      if (currencyInfo) {
+        formData.preferred_currency =
+          currencyInfo.code + "_" + currencyInfo.country_code;
+      }
+    });
 
     return {
       Logic,

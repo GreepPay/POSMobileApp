@@ -53,17 +53,18 @@ export default defineComponent({
       if (formData) {
         loadingState.value = true;
 
-        Logic.User.UpdateProfileForm = {
-          business_category: formData.businessCategory,
-          business_description: formData.businessDescription,
+        Logic.User.UpdateBusinessProfileForm = {
+          business_uuid: Logic.Auth.GetDefaultBusiness()?.id || "",
+          category: formData.businessCategory,
+          description: formData.businessDescription,
           business_name: formData.businessName,
           country: formData.country,
-          state: formData.state,
+          city: formData.state,
           business_logo: formData.photo,
         };
 
         try {
-          await Logic.User.UpdateProfile();
+          await Logic.User.UpdateBusinessProfile();
           await Logic.Auth.GetAuthUser();
           Logic.Common.showAlert({
             show: true,

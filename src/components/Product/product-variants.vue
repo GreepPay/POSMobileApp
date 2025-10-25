@@ -182,7 +182,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, reactive, ref } from "vue";
+import { defineComponent, onMounted, reactive, ref, watch } from "vue";
 import {
   AppFormWrapper,
   AppInfoBox,
@@ -194,7 +194,7 @@ import {
   AppTextField,
 } from "@greep/ui-components";
 import { Logic } from "@greep/logic";
-import { VariantAttribute } from "../../composable/shop";
+import { BaseProductSummary, VariantAttribute } from "../../composable/shop";
 
 export default defineComponent({
   components: {
@@ -207,15 +207,14 @@ export default defineComponent({
     AppContentEditable,
     AppTextField,
   },
-  props: {},
+  props: {
+    data: {
+      type: Object as () => BaseProductSummary,
+    },
+  },
   name: "ProductSetupProductVariants",
-  setup() {
+  setup(props) {
     const FormValidations = Logic.Form;
-
-    const formData = reactive({
-      password: "",
-      confirmPassword: "",
-    });
 
     const variantAttributes = reactive<VariantAttribute[]>([
       {
@@ -237,8 +236,13 @@ export default defineComponent({
     const continueWithForm = () => {
       const state = formComponent.value?.validate();
       if (state) {
+        variantAttributes.forEach((item) => {
+          item.values = item.values.filter(
+            (val) => val !== undefined && val !== null && val !== ""
+          );
+        });
         // Proceed with form submission
-        return formData;
+        return variantAttributes;
       } else {
         return;
       }
@@ -261,10 +265,29 @@ export default defineComponent({
       variantAttributes.splice(index, 1);
     };
 
+    const setFromProductData = () => {
+      if (props.data && props.data.variants && props.data.variants.length > 0) {
+        variantAttributes.length = 0;
+        props.data.variants.forEach((item) => {
+          variantAttributes.push(item);
+        });
+      }
+    };
+
+    watch(
+      () => props.data,
+      () => {
+        setFromProductData();
+      }
+    );
+
+    onMounted(() => {
+      setFromProductData();
+    });
+
     return {
       FormValidations,
       Logic,
-      formData,
       formComponent,
       continueWithForm,
       showVariantModal,

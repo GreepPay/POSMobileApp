@@ -349,13 +349,13 @@ export default defineComponent({
       // Order details
       details.push([
         {
-          title: "You buy",
+          title: order.ad?.ad_type == "buy" ? "You sell" : "You buy",
           content: `${Logic.Common.convertToMoney(order.amount, false, "")} ${
             order.ad?.to_currency || "USD"
           }`,
         },
         {
-          title: "You give",
+          title: order?.ad?.ad_type == "buy" ? "You receive" : "You give",
           content: `${Logic.Common.convertToMoney(
             order.expected_amount,
             false,

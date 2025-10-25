@@ -267,18 +267,16 @@ export default defineComponent({
 
     const setDefaultValues = () => {
       if (props.authUser) {
+        const business = Logic.Auth.GetDefaultBusiness();
         hideContent.value = true;
-        formData.businessName =
-          props.authUser.profile?.business?.business_name || "";
-        formData.businessCategory =
-          props.authUser.profile?.business?.category || "";
-        formData.businessDescription =
-          props.authUser.profile?.business?.description || "";
-        formData.country = props.authUser.profile?.business?.country || "";
-        formData.state = props.authUser.profile?.business?.city || "";
+        formData.businessName = business?.business_name || "";
+        formData.businessCategory = business?.category || "";
+        formData.businessDescription = business?.description || "";
+        formData.country = business?.country || "";
+        formData.state = business?.city || "";
 
-        if (props.authUser.profile?.business?.logo) {
-          photoUrl.value = props.authUser.profile?.business?.logo;
+        if (business?.logo) {
+          photoUrl.value = business?.logo;
         }
 
         setTimeout(() => {

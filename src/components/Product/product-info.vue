@@ -14,14 +14,9 @@
           <div class="pr-3 flex flex-col">
             <app-file-attachment
               :is-wrapper="true"
-              @update:model-value="
-                (images) => {
-                  formData.photos.push(...images);
-                }
-              "
-              @update:local-file-url="
-                (imageUrls) => {
-                  formData.photo_urls.push(...imageUrls);
+              @update:files-and-url="
+                (newPhotos: any[]) => {
+                  formData.photos.push(...newPhotos);
                 }
               "
               :accept="`image/png, image/gif, image/jpeg`"
@@ -40,17 +35,17 @@
 
           <div
             class="pr-3 flex flex-col relative"
-            v-for="(item, index) in formData.photo_urls"
+            v-for="(item, index) in formData.photos"
             :key="index"
           >
             <span
               class="absolute top-0 right-0 py-1 px-1 bg-white rounded-full"
-              @click="formData.photo_urls.splice(index, 1)"
+              @click="formData.photos.splice(index, 1)"
             >
               <app-icon name="remove-image" custom-class="!h-[28px]" />
             </span>
             <app-image-loader
-              :photo-url="item"
+              :photo-url="item.url"
               class="w-[96px] h-[96px] !border-[1.5px] border-[#E0E2E4] rounded-[16px]"
             >
             </app-image-loader>
@@ -82,6 +77,17 @@
       >
       </app-text-field>
 
+      <app-select
+        :placeholder="'Product Type'"
+        :hasTitle="false"
+        :paddings="'py-4 !px-3'"
+        :options="productTypeOptions"
+        ref="country"
+        use-floating-label
+        v-model="formData.type"
+      >
+      </app-select>
+
       <app-text-field
         :has-title="false"
         type="text"
@@ -103,16 +109,19 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, reactive, onMounted, ref } from "vue";
+import { defineComponent, reactive, onMounted, ref, watch } from "vue";
 import {
   AppFormWrapper,
   AppTextField,
   AppIcon,
   AppFileAttachment,
   AppImageLoader,
+  AppSelect,
 } from "@greep/ui-components";
 import { Logic } from "@greep/logic";
 import { User } from "@greep/logic/src/gql/graphql";
+import { BaseProductSummary } from "../../composable/shop";
+import { SelectOption } from "@greep/ui-components/src/types";
 
 export default defineComponent({
   components: {
@@ -121,10 +130,14 @@ export default defineComponent({
     AppIcon,
     AppFileAttachment,
     AppImageLoader,
+    AppSelect,
   },
   props: {
     authUser: {
       type: Object as () => User,
+    },
+    data: {
+      type: Object as () => BaseProductSummary,
     },
   },
   name: "ProductSetupProductInfo",
@@ -137,17 +150,31 @@ export default defineComponent({
       name: string;
       category: string;
       descriptions: string;
-      photos: any[];
-      photo_urls: any[];
+      photos: {
+        url: string;
+        rawValue: string;
+      }[];
+      type: string;
     }>({
       name: "",
       category: "",
       descriptions: "",
       photos: [],
-      photo_urls: [],
+      type: "physical",
     });
 
     const formComponent = ref<any>(null);
+
+    const productTypeOptions = reactive<SelectOption[]>([
+      {
+        key: "physical",
+        value: "Physical",
+      },
+      {
+        key: "digital",
+        value: "Digital",
+      },
+    ]);
 
     const continueWithForm = () => {
       const state = formComponent.value?.validate();
@@ -166,7 +193,27 @@ export default defineComponent({
           hideContent.value = false;
         }, 100);
       }
+
+      if (props.data) {
+        hideContent.value = true;
+        formData.name = props.data.name;
+        formData.category = props.data.category;
+        formData.descriptions = props.data.descriptions;
+        formData.photos = props.data.photos;
+        formData.type = props.data.type;
+
+        setTimeout(() => {
+          hideContent.value = false;
+        }, 200);
+      }
     };
+
+    watch(
+      () => props.data,
+      () => {
+        setDefaultValues();
+      }
+    );
 
     onMounted(() => {
       setDefaultValues();
@@ -179,6 +226,7 @@ export default defineComponent({
       formComponent,
       continueWithForm,
       hideContent,
+      productTypeOptions,
     };
   },
   data() {

@@ -83,51 +83,55 @@
       </div>
 
       <!-- Attributes Section -->
-      <template
-        v-for="(item, index) in productSummaryData.variants"
-        :key="index"
-      >
-        <div
-          class="w-full flex flex-col pt-4 pb-4 border-b-[1.5px] border-[#F0F3F6]"
+      <template v-if="productSummaryData.variants.length > 0">
+        <template
+          v-for="(item, index) in productSummaryData.variants"
+          :key="index"
         >
-          <app-normal-text class="!text-xl !font-semibold !text-left mb-1">
-            {{ item.name }}
-          </app-normal-text>
-          <div class="w-full flex flex-row flex-wrap">
-            <template v-if="item.type == 'color'">
-              <div
-                class="pr-2 pb-2"
-                v-for="(attr, index) in item.values"
-                :key="index"
-              >
+          <div
+            v-if="item.values.length > 0"
+            class="w-full flex flex-col pt-4 pb-4 border-b-[1.5px] border-[#F0F3F6]"
+          >
+            <app-normal-text class="!text-xl !font-semibold !text-left mb-1">
+              {{ item.name }}
+            </app-normal-text>
+            <div class="w-full flex flex-row flex-wrap">
+              <template v-if="item.type == 'color'">
                 <div
-                  class="border-[1.5px] border-[#E0E2E4] h-[32px] w-[32px] rounded-full"
-                  :style="`background-color: ${attr};`"
-                ></div>
-              </div>
-            </template>
-            <template v-if="item.type == 'text'">
-              <div
-                class="pr-2 pb-2"
-                v-for="(attr, index) in item.values"
-                :key="index"
-              >
-                <div
-                  class="border-[1.5px] border-[#E0E2E4] px-4 py-3 rounded-[10px] flex flex-row items-center justify-center"
+                  class="pr-2 pb-2"
+                  v-for="(attr, index) in item.values"
+                  :key="index"
                 >
-                  <app-normal-text class="!text-black !font-[500]">
-                    {{ attr }}
-                  </app-normal-text>
+                  <div
+                    class="border-[1.5px] border-[#E0E2E4] h-[32px] w-[32px] rounded-full"
+                    :style="`background-color: ${attr};`"
+                  ></div>
                 </div>
-              </div>
-            </template>
+              </template>
+              <template v-if="item.type == 'text'">
+                <div
+                  class="pr-2 pb-2"
+                  v-for="(attr, index) in item.values"
+                  :key="index"
+                >
+                  <div
+                    class="border-[1.5px] border-[#E0E2E4] px-4 py-3 rounded-[10px] flex flex-row items-center justify-center"
+                  >
+                    <app-normal-text class="!text-black !font-[500]">
+                      {{ attr }}
+                    </app-normal-text>
+                  </div>
+                </div>
+              </template>
+            </div>
           </div>
-        </div>
+        </template>
       </template>
 
       <!-- Description -->
       <div
         class="w-full flex flex-col pt-4 border-b-[1.5px] border-[#F0F3F6] !pb-[140px]"
+        v-if="productSummaryData.description"
       >
         <app-normal-text class="!text-xl !font-semibold !text-left mb-1">
           Description
@@ -143,10 +147,15 @@
 
 <script lang="ts">
 import { defineComponent, reactive, ref } from "vue";
-import { AppImageLoader, AppSwiper, AppNormalText } from "@greep/ui-components";
+import {
+  AppImageLoader,
+  AppSwiper,
+  AppNormalText,
+  availableCurrencies,
+} from "@greep/ui-components";
 import { Logic } from "@greep/logic";
 import { onMounted } from "vue";
-import { VariantAttribute } from "../../composable/shop";
+import { BaseProductSummary, VariantAttribute } from "../../composable/shop";
 import { watch } from "vue";
 import { SwiperSlide } from "swiper/vue";
 
@@ -157,9 +166,13 @@ export default defineComponent({
     SwiperSlide,
     AppNormalText,
   },
-  props: {},
+  props: {
+    data: {
+      type: Object as () => BaseProductSummary,
+    },
+  },
   name: "ProductSetupSummary",
-  setup() {
+  setup(props) {
     const FormValidations = Logic.Form;
 
     const currentSlidePosition = ref(0);
@@ -233,6 +246,31 @@ export default defineComponent({
         "The quick brown rabbit jumps over the lazy frogs with no effort.",
     });
 
+    const setFromProductData = () => {
+      if (props.data) {
+        const productData = props.data;
+        productSummaryData.images = productData?.photos?.map((item) => {
+          return {
+            url: item.url,
+          };
+        });
+        productSummaryData.name = productData.name;
+        productSummaryData.category = productData.category;
+        productSummaryData.stock_quantity = productData.stock;
+        productSummaryData.description = productData.descriptions;
+        productSummaryData.variants = productData.variants;
+
+        const currencyInfo = availableCurrencies.find(
+          (item) => item.code == productData.currency
+        );
+        productSummaryData.price = {
+          amount: parseFloat(productData.price),
+          currency: currencyInfo?.code || "USD",
+          currency_symbol: currencyInfo?.symbol || "$",
+        };
+      }
+    };
+
     const continueWithForm = () => {
       return productSummaryData;
     };
@@ -242,7 +280,7 @@ export default defineComponent({
     });
 
     onMounted(() => {
-      //
+      setFromProductData();
     });
 
     return {
