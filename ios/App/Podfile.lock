@@ -9,27 +9,27 @@ PODS:
     - CapacitorCordova
   - CapacitorApp (7.0.0):
     - Capacitor
-  - CapacitorBrowser (7.0.1):
+  - CapacitorBrowser (7.0.2):
     - Capacitor
-  - CapacitorCommunityAppleSignIn (7.0.1):
+  - CapacitorCommunityAppleSignIn (7.1.0):
     - Capacitor
   - CapacitorCordova (7.0.1)
-  - CapacitorFirebaseAuthentication (7.2.0):
+  - CapacitorFirebaseAuthentication (7.3.1):
     - Capacitor
-    - CapacitorFirebaseAuthentication/Lite (= 7.2.0)
+    - CapacitorFirebaseAuthentication/Lite (= 7.3.1)
     - FirebaseAuth (~> 11.7.0)
-  - CapacitorFirebaseAuthentication/Google (7.2.0):
+  - CapacitorFirebaseAuthentication/Google (7.3.1):
     - Capacitor
     - FirebaseAuth (~> 11.7.0)
     - GoogleSignIn (= 7.1.0)
-  - CapacitorFirebaseAuthentication/Lite (7.2.0):
+  - CapacitorFirebaseAuthentication/Lite (7.3.1):
     - Capacitor
     - FirebaseAuth (~> 11.7.0)
   - CapacitorHaptics (7.0.0):
     - Capacitor
   - CapacitorKeyboard (7.0.0):
     - Capacitor
-  - CapacitorSplashScreen (7.0.1):
+  - CapacitorSplashScreen (7.0.3):
     - Capacitor
   - CapacitorStatusBar (7.0.0):
     - Capacitor
@@ -135,16 +135,16 @@ EXTERNAL SOURCES:
 
 SPEC CHECKSUMS:
   AppAuth: d4f13a8fe0baf391b2108511793e4b479691fb73
-  Capacitor: 23fff43571a4d1e3ee7d67b5a3588c6e757c2913
-  CapacitorApp: 45cb7cbef4aa380b9236fd6980033eb5cde6fcd2
-  CapacitorBrowser: 081852cf532acf77b9d2953f3a88fe5b9711fb06
-  CapacitorCommunityAppleSignIn: b95415441e6c4223783a543f3a736ea4eabf8524
+  Capacitor: de199cba6c8b20995428ad0b7cb0bc6ca625ffd4
+  CapacitorApp: 9cb31064a6c6bb2b1438583733a7bf45557fc1da
+  CapacitorBrowser: 22541e48442de44dc629c214388290d6eecc6ae9
+  CapacitorCommunityAppleSignIn: 271cb2860576fd2961508bbfa7a82117d93eadca
   CapacitorCordova: 63d476958d5022d76f197031e8b7ea3519988c64
-  CapacitorFirebaseAuthentication: 7043f8e03813762af1b037da82c67963fa5768e0
-  CapacitorHaptics: 1fba3e460e7614349c6d5f868b1fccdc5c87b66d
-  CapacitorKeyboard: 2c26c6fccde35023c579fc37d4cae6326d5e6343
-  CapacitorSplashScreen: 19cd3573e57507e02d6f34597a8c421e00931487
-  CapacitorStatusBar: 438e90beeeefa8276b24e6c5991cb02dd13e51bf
+  CapacitorFirebaseAuthentication: d966e29421168f94621b8df9bc8ddf602b261fc7
+  CapacitorHaptics: 7be406a91e4eb87287f321c6c68e1709d6837b3a
+  CapacitorKeyboard: 4db71e694e7afb5d7c0be09b05495c19f7d6c914
+  CapacitorSplashScreen: e388b8e0ed0e982a9d3a40417f478e7a018a8763
+  CapacitorStatusBar: a8c4c83ed2e973bdafb979e80e4b00d027832cb7
   FirebaseAppCheckInterop: 72066489c209823649a997132bcd9269bc33a4bb
   FirebaseAuth: 77e25aa24f3e1c626c5babd3338551fc1669ee0e
   FirebaseAuthInterop: 4fa327ec3c551a80a6929561f83af80b1dd44937
@@ -159,4 +159,4 @@ SPEC CHECKSUMS:
 
 PODFILE CHECKSUM: 9b743ac93044216383ecbf1499bea6e8f2023b90
 
-COCOAPODS: 1.15.2
+COCOAPODS: 1.16.2

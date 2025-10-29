@@ -1,6 +1,21 @@
 <template>
   <div class="flex flex-col gap-4 w-full">
     <app-button
+      v-if="canUseApp"
+      class="!w-full !py-3.5 font-semibold"
+      variant="secondary"
+      :outlined="true"
+      @click="authenticateApple"
+    >
+      <div class="flex items-center justify-center space-x-2">
+        <app-icon name="apple" />
+        <app-normal-text class="!font-[500] pt-[2px]">
+          Continue with Apple
+        </app-normal-text>
+      </div>
+    </app-button>
+
+    <app-button
       class="!w-full !py-3.5 font-semibold"
       variant="secondary"
       :outlined="true"
@@ -13,19 +28,6 @@
         </app-normal-text>
       </div>
     </app-button>
-
-    <!-- <app-button
-      class="!w-full !py-3.5 font-semibold"
-      variant="secondary"
-      :outlined="true"
-    >
-      <div class="flex items-center justify-center space-x-2">
-        <app-icon name="apple" />
-        <app-normal-text class="!font-[500] pt-[2px]">
-          Continue with Apple
-        </app-normal-text>
-      </div>
-    </app-button> -->
 
     <div class="flex flex-row items-center justify-between w-full pt-2">
       <div class="!border-[1.5px] border-[#F0F3F6] w-full"></div>
@@ -41,19 +43,13 @@ import { AppButton, AppIcon, AppNormalText } from "@greep/ui-components";
 import { Logic } from "@greep/logic";
 import { getPlatforms, isPlatform } from "@ionic/vue";
 import {
-  SignInWithApple,
-  SignInWithAppleResponse,
-  SignInWithAppleOptions,
-} from "@capacitor-community/apple-sign-in";
-import { FirebaseAuthentication } from "@capacitor-firebase/authentication";
-import {
-  GoogleAuthProvider,
-  getAuth,
-  signInWithPopup,
-} from "firebase/auth";
+  FirebaseAuthentication,
+  FirebaseAuthenticationPlugin,
+} from "@capacitor-firebase/authentication";
+import { GoogleAuthProvider, getAuth, signInWithPopup } from "firebase/auth";
 import { initializeApp } from "firebase/app";
 import { handleAuthResponse } from "../../composable/auth";
-
+import { MutationSignInArgs } from "@greep/logic/src/gql/graphql";
 
 export default defineComponent({
   name: "AuthSSO",
@@ -79,26 +75,41 @@ export default defineComponent({
       last_name: "",
     });
 
-    const options: SignInWithAppleOptions = {
-      clientId: "io.greep.everything.vendor",
-      redirectURI: "https://greep.io",
-      scopes: "email name",
-      state: Logic.Common.makeid(10),
-      nonce: "nonce",
-    };
-
-    const authenticateUser = (userId: string) => {
+    const authenticateUser = async (userId: string) => {
       if (props.fromAction == "signUp") {
+        const password = Logic.Common.makeid(12);
         // @ts-expect-error Extending Logic.Auth.SignUpPayload
         Logic.Auth.SignUpPayload = {
           email: formData.email,
           first_name: formData.first_name,
           last_name: formData.last_name,
           sso_id: userId,
+          password,
         };
 
+        localStorage.setItem("auth_pass", password);
+
         localStorage.setItem(`social_${userId}`, formData.email);
-        Logic.Common.GoToRoute("/auth/set-password");
+
+        Logic.Common.showLoader({
+          show: true,
+          loading: true,
+        });
+
+        await Logic.Auth.SignUp(true, () => {});
+
+        const formSignIn: MutationSignInArgs = {
+          email:
+            localStorage.getItem("auth_email") || Logic.Auth.SignUpForm?.email,
+          password,
+        };
+
+        Logic.Auth.SignInForm = formSignIn;
+        await Logic.Auth.SignIn(true);
+
+        Logic.Common.hideLoader();
+
+        Logic.Common.GoToRoute("/auth/setup-account");
       } else {
         Logic.Auth.SignInForm = {
           email:
@@ -107,20 +118,22 @@ export default defineComponent({
         };
         Logic.Auth.SignIn(true)?.then(async (data) => {
           if (data) {
-           
-           await Logic.Auth.GetAuthUser();
-           handleAuthResponse(Logic.Auth.SignInForm || {
-              email: formData.email,
-              sso_id: userId,
-            });
-          
+            await Logic.Auth.GetAuthUser();
+            handleAuthResponse(
+              Logic.Auth.SignInForm || {
+                email: formData.email,
+                sso_id: userId,
+              }
+            );
           }
         });
       }
     };
 
     const canUseApp = computed(() => {
-      return getPlatforms()[0] != "android";
+      return (
+        getPlatforms()[0] != "android" && isPlatform("mobileweb") === false
+      );
     });
 
     const authenticateGoogle = async () => {
@@ -168,24 +181,26 @@ export default defineComponent({
       }
     };
 
-    const authenticateApple = () => {
-      SignInWithApple.authorize(options)
-        .then((result: SignInWithAppleResponse) => {
-          // Handle user information
-          // Validate token with server and create new session
+    const authenticateApple = async () => {
+      try {
+        const result = await FirebaseAuthentication?.signInWithApple();
 
-          const response = result.response;
+        const fullName = result?.user?.displayName?.split(" ") || [];
+        formData.email = result?.user?.email || "";
+        formData.first_name = fullName[0] || "";
+        formData.last_name = fullName.length > 1 ? fullName[1] : "";
 
-          formData.email = response.email || "";
-          formData.first_name = response.givenName || "";
-          formData.last_name = response.familyName || "";
+        localStorage.setItem("acc_email", formData.email);
 
-          authenticateUser(response.user || "");
-        })
-        .catch((error: any) => {
-          // Handle error
-          console.log(error);
-        });
+        authenticateUser(result?.user?.uid || "");
+      } catch (error) {
+        console.log(error);
+        // Logic.Common.showAlert({
+        //   show: true,
+        //   message: JSON.stringify(error),
+        //   type: "error",
+        // });
+      }
     };
 
     onMounted(() => {

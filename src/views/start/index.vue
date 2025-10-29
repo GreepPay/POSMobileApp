@@ -1,256 +1,128 @@
 <template>
   <app-wrapper>
     <div
-      :class="`w-full flex flex-col lg:text-sm mdlg:text-[12px] text-xs  overflow-y-hidden !font-inter bg-white`"
-       :style="`height: ${mobileFullHeight ? mobileFullHeight.height : ''};`"
+      :class="`w-full flex flex-col lg:text-sm mdlg:text-[12px] text-xs h-screen overflow-y-hidden !font-inter bg-white`"
+      style="
+        padding-top: calc(env(safe-area-inset-top) + 16px) !important;
+        padding-bottom: calc(env(safe-area-inset-bottom) + 16px) !important;
+      "
     >
-      <!-- Slide indicator -->
-      <div
-        v-if="slidePosition <= 2"
-        class="flex justify-center items-center fixed w-full top-0 left-0 px-4 z-50"
-        :style="`${paddings.paddingTop} ${paddings.paddingBottom}`"
-      >
-        <div class="w-[80%] rounded-[99px] bg-light-gray-two h-[6px] relative">
-          <div
-            :class="`absolute top-0 left-0 bg-black h-full ${
-              slidePosition == 2 ? 'rounded-[99px]' : 'rounded-l-[99px]'
-            }`"
-            :style="`width: ${((slidePosition + 1) / totalSlides) * 100}%;`"
-          ></div>
-        </div>
-      </div>
-      <app-swiper
-        :free-mode="false"
-        :show-pagination="false"
-        :space-between="0"
-        :slide-per-view="1"
-        :currentSlidePosition="currentSlidePosition"
-        custom-class="!h-full "
-        :swiperClass="''"
-        v-model="slidePosition"
-        id="swiperContainer"
-      >
-        <!-- Slide 1 -->
-        <swiper-slide
-          class="!flex !flex-col items-start relative justify-center bg-white"
-          :style="`height: ${mobileFullHeight ? mobileFullHeight.height : ''};`"
-        >
-          <div
-            class="w-full flex flex-col items-center h-full relative space-y-2 justify-between"
-            :style="`${paddings.paddingTop} ${paddings.paddingBottom}`"
+      <div class="w-full flex h-full flex-col justify-between">
+        <div class="w-full flex flex-col items-center justify-center px-4">
+          <app-image-loader
+            photo-url="/images/onboard-image.png"
+            class="h-[300px] w-full relative rounded-[16px] !object-bottom"
           >
-            <!-- Main section -->
             <div
-              class="w-full flex flex-col items-center justify-center space-y-5 px-4 -mt-8 h-full"
-            >
-              <img
-                src="/images/onboarding/slide-1.png"
-                alt="Slide 1"
-                class="h-[210px]"
-              />
-
-              <div class="flex flex-col space-y-2 items-center justify-center">
-                <app-header-text class="text-center">
-                  Accept African Currency
-                </app-header-text>
-
-                <app-normal-text
-                  class="text-center text-gray-two px-4 !text-sm"
-                >
-                  Collect payments in multiple African currencies and receive
-                  them instantly in your preferred currency.
-                </app-normal-text>
-              </div>
-            </div>
-
-            <!-- Button -->
-            <div
-              class="flex flex-col justify-center items-center bottom-0 left-0 px-4 pt-4 w-full"
-            >
-              <app-button
-                class="!w-full !py-4 font-semibold"
-                variant="secondary"
-                @click="currentSlidePosition = 1"
-              >
-                Next
-              </app-button>
-            </div>
-          </div>
-        </swiper-slide>
-
-        <!-- Slide 2 -->
-        <swiper-slide
-          class="!flex !flex-col items-start relative justify-center bg-white  "
-           :style="`height: ${mobileFullHeight ? mobileFullHeight.height : ''};`"
-        >
-          <div
-            class="w-full flex flex-col items-center h-full relative space-y-2 justify-between"
-            :style="`${paddings.paddingTop} ${paddings.paddingBottom}`"
-          >
-            <!-- Main section -->
-            <div
-              class="w-full flex flex-col items-center justify-center space-y-5 px-4 -mt-8 h-full"
-            >
-              <img
-                src="/images/onboarding/slide-2.png"
-                alt="Slide 2"
-                class="h-[210px]"
-              />
-
-              <div class="flex flex-col space-y-2 items-center justify-center">
-                <app-header-text class="text-center">
-                  Collect Crypto Directly
-                </app-header-text>
-
-                <app-normal-text
-                  class="text-center text-gray-two px-4 !text-sm"
-                >
-                  Accept payments in crypto, like stablecoins, and receive them
-                  instantly in your preferred currency.
-                </app-normal-text>
-              </div>
-            </div>
-
-            <!-- Button -->
-            <div
-              class="flex flex-col justify-center items-center bottom-0 left-0 px-4 pt-4 w-full"
-            >
-              <app-button
-                class="!w-full !py-4 font-semibold"
-                variant="secondary"
-                @click="currentSlidePosition = 2"
-              >
-                Next
-              </app-button>
-            </div>
-          </div>
-        </swiper-slide>
-
-        <!-- Slide 3 -->
-        <swiper-slide
-          class="!flex !flex-col items-start relative justify-center bg-white "
-           :style="`height: ${mobileFullHeight ? mobileFullHeight.height : ''};`"
-        >
-          <div
-            class="w-full flex flex-col items-center h-full relative space-y-2 justify-between"
-            :style="`${paddings.paddingTop} ${paddings.paddingBottom}`"
-          >
-            <!-- Main section -->
-            <div
-              class="w-full flex flex-col items-center justify-center space-y-5 px-4 -mt-8 h-full"
-            >
-              <img
-                src="/images/onboarding/slide-3.png"
-                alt="Slide 3"
-                class="h-[210px]"
-              />
-
-              <div class="flex flex-col space-y-2 items-center justify-center">
-                <app-header-text class="text-center">
-                  Earn GRP Tokens
-                </app-header-text>
-
-                <app-normal-text
-                  class="text-center text-gray-two px-4 !text-sm"
-                >
-                  Get rewarded with our token per transaction; redeem GRP tokens
-                  directly to your default currency.
-                </app-normal-text>
-              </div>
-            </div>
-
-            <!-- Button -->
-            <div
-              class="flex flex-col justify-center items-center bottom-0 left-0 px-4 pt-4 w-full"
-            >
-              <app-button
-                class="!w-full !py-4 font-semibold"
-                variant="secondary"
-                @click="currentSlidePosition = 3"
-              >
-                Next
-              </app-button>
-            </div>
-          </div>
-        </swiper-slide>
-
-        <!-- Slide 4 -->
-        <swiper-slide
-          class="!flex !flex-col items-start relative justify-center bg-white z-50"
-           :style="`height: ${mobileFullHeight ? mobileFullHeight.height : ''};`"
-        >
-          <div
-            class="w-full flex flex-col items-center h-full relative space-y-2 justify-between"
-            :style="`${paddings.paddingTop} ${paddings.paddingBottom}`"
-          >
-            <!-- Main section -->
-            <div
-              class="w-full flex flex-col items-center justify-center space-y-5 px-4 -mt-[44px] h-full"
-            >
-              <img src="/images/logo.png" alt="logo" class="w-[100px]" />
-
-              <div class="flex flex-col space-y-2 items-center justify-center">
-                <app-header-text class="text-center">
-                  Get started <br />
-                  with GreepPay
-                </app-header-text>
-              </div>
-            </div>
-
-            <!-- Button -->
-            <div
-              class="flex flex-col justify-center items-center bottom-0 left-0 px-4 pt-4 w-full z-50"
+              class="flex flex-col justify-end absolute top-0 left-0 w-full h-full px-4 py-4 rounded-[16px]"
+              style="
+                background: linear-gradient(
+                  180deg,
+                  rgba(0, 0, 0, 0) 50%,
+                  rgba(0, 0, 0, 0.75) 100%
+                );
+              "
             >
               <div
-                class="flex flex-col space-y-2 items-center justify-center w-full z-50 pb-4"
+                class="w-full flex flex-row flex-nowrap scrollbar-hide overflow-x-hidden bg-white rounded-[16px] px-4 py-4"
               >
-                <app-button
-                  class="!w-full !py-4 border-secondary"
-                  variant="secondary"
-                  @click="Logic.Common.GoToRoute('/auth/signup')"
+                <div
+                  v-for="(currency, index) in localCountryWithLogo"
+                  class="flex flex-row items-center pr-3"
                 >
-                  Create account
-                </app-button>
+                  <app-image-loader
+                    :photo-url="`/images/icons/flags/${currency.country_code?.toLocaleLowerCase()}.svg`"
+                    class="size-8 rounded-full border-[1px] border-gray-200 object-cover"
+                  />
+                </div>
               </div>
+            </div>
+          </app-image-loader>
 
-              <app-button
-                class="!w-full !py-4 font-semibold !text-center z-50"
-                variant="secondary"
-                outlined
-                @click="Logic.Common.GoToRoute('/auth/login')"
-              >
-                Sign In
-              </app-button>
+          <div class="w-full flex flex-col items-center justify-center mt-6">
+            <app-header-text class="text-center !font-extrabold !text-3xl">
+              CATER FOR
+              <span class="text-[#00683f]">CROSS BORDER </span>
+              CUSTOMERS
+            </app-header-text>
+
+            <div class="w-full flex flex-col items-center justify-center mt-2">
+              <ul class="prose prose-sm !text-sm !text-[#616161] pl-3">
+                <li class="!text-center">
+                  <app-normal-text class="!text-[#616161] !item-center">
+                    Africans can now pay you directly.
+                  </app-normal-text>
+                </li>
+                <li class="!text-center">
+                  <app-normal-text class="!text-[#616161] !item-center">
+                    List and sell items and services.
+                  </app-normal-text>
+                </li>
+              </ul>
             </div>
           </div>
-        </swiper-slide>
-      </app-swiper>
+        </div>
+
+        <!-- Buttons -->
+        <div
+          class="w-full flex flex-col items-center justify-center px-4 space-y-4"
+        >
+          <app-button
+            class="w-full py-4"
+            style="
+              background: linear-gradient(
+                269.64deg,
+                #0d965e 0.31%,
+                #00683f 89.75%
+              ) !important;
+            "
+            @click="Logic.Common.GoToRoute('/auth/signup')"
+            variant="primary"
+          >
+            Get Started
+          </app-button>
+
+          <app-button
+            class="w-full py-4"
+            @click="Logic.Common.GoToRoute('/auth/login')"
+            variant="primary"
+            outlined
+          >
+            Sign In
+          </app-button>
+        </div>
+      </div>
     </div>
   </app-wrapper>
 </template>
 
 <script lang="ts">
-import { defineComponent, onMounted } from "vue";
-import AppWrapper from "@/components/AppWrapper.vue";
-import { Logic } from "@greep/logic";
+import {
+  defineComponent,
+  onMounted,
+  ref,
+  onUnmounted,
+  computed,
+  watch,
+} from "vue";
 import {
   AppNormalText,
   AppHeaderText,
   AppButton,
-  AppSwiper,
+  AppImageLoader,
 } from "@greep/ui-components";
-import { ref } from "vue";
-import { watch } from "vue";
+import { Logic } from "@greep/logic";
 import { SwiperSlide } from "swiper/vue";
-import { safeAreaInsetBottom, safeAreaInsetTop } from "../../composable";
-import { onUnmounted } from "vue";
-import { computed } from "vue";
-import { getPlatforms } from "@ionic/vue";
+import {
+  availableCurrencies,
+  safeAreaInsetBottom,
+  safeAreaInsetTop,
+} from "../../composable";
+import { getPlatforms, isPlatform } from "@ionic/vue";
 
 export default defineComponent({
   components: {
-    AppWrapper,
-    AppSwiper,
+    AppImageLoader,
     SwiperSlide,
     AppButton,
     AppHeaderText,
@@ -260,23 +132,40 @@ export default defineComponent({
   layout: "Onboarding",
   middlewares: {},
   setup() {
-    localStorage.setItem("user_onboarded", "true");
+    // constants
+    const slides = [
+      {
+        title: `Use Multiple Core Services`,
+        description: `Shop from markets and restaurants with instant delivery, Send items anywhere, and Discover events with easy ticket access—all in one app.`,
+        image: `/images/onboarding/slide-1.png`,
+        btnText: "Next",
+      },
+      {
+        title: `Rank Up And Earn Rewards`,
+        description: `Climb up the weekly and monthly leaderboards with your activity on the app and earn GRP Tokens that you can trade for payment discount coupons.`,
+        image: `/images/onboarding/slide-2.png`,
+        btnText: "Next",
+      },
+      {
+        title: `Easy Payment With Wallet`,
+        description: `Fund your wallet to make payments on the go, or better still – integrate your GreepPay account to make payments in your home currency.`,
+        image: `/images/onboarding/slide-3.png`,
+        btnText: "Get Started",
+      },
+    ];
 
+    //
     const slidePosition = ref(0);
-
     const currentSlidePosition = ref(0);
-
     const totalSlides = ref(3);
+    const innerHeight = ref(window.innerHeight);
 
-    watch(slidePosition, () => {
-      currentSlidePosition.value = slidePosition.value;
+    //
+    const mobileFullHeight = computed(() => {
+      return { height: `${innerHeight.value}px` };
     });
-
     const paddings = computed(() => {
-      const platformIsIOS =
-        getPlatforms()[0] === "iphone" ||
-        getPlatforms()[0] === "ipad" ||
-        getPlatforms()[0] === "ios";
+      const platformIsIOS = isPlatform("ios") || getPlatforms().includes("ios");
 
       if (platformIsIOS) {
         return {
@@ -284,50 +173,42 @@ export default defineComponent({
           paddingBottom: `padding-bottom: calc(env(safe-area-inset-bottom) + 16px) !important;`,
         };
       }
-
-      const platformIsAndroid = getPlatforms()[0] == "android";
-
-      if (platformIsAndroid) {
-        return {
-          paddingTop: `padding-top: calc(env(safe-area-inset-top) + 45px) !important;`,
-          paddingBottom: `padding-bottom: calc(env(safe-area-inset-bottom) + 45px) !important;`,
-        };
-      }
-
       return {
         paddingTop: `padding-top: calc(${safeAreaInsetTop.value}px + 16px);`,
         paddingBottom: `padding-bottom: calc(${safeAreaInsetBottom.value}px + 16px);`,
       };
     });
 
-       
-      //
-     
-    const innerHeight = ref(window.innerHeight);
-
-    const updateHeight = () => {
-      innerHeight.value = window.innerHeight;
+    //
+    const updateHeight = () => (innerHeight.value = window.innerHeight);
+    const handleNext = () => {
+      const isLastSlide = currentSlidePosition.value === slides.length - 1;
+      if (!isLastSlide) currentSlidePosition.value += 1;
+      else Logic.Common.GoToRoute("/auth/signup");
     };
 
+    const localCountryWithLogo = computed(() => {
+      return availableCurrencies.filter(
+        (item) => !item.is_foreign_currency && !item.is_crypto
+      );
+    });
+
+    //
+    watch(slidePosition, () => {
+      currentSlidePosition.value = slidePosition.value;
+    });
     onMounted(() => {
       updateHeight();
       window.addEventListener("resize", updateHeight);
       localStorage.clear();
-      console.log(paddings.value.paddingBottom);
     });
-
     onUnmounted(() => {
       window.removeEventListener("resize", updateHeight);
     });
 
-    const mobileFullHeight = computed(() => {
-      return {
-        height: `${innerHeight.value}px`,
-      };
-    });
-
     return {
       Logic,
+      slides,
       slidePosition,
       currentSlidePosition,
       totalSlides,
@@ -335,6 +216,8 @@ export default defineComponent({
       safeAreaInsetBottom,
       mobileFullHeight,
       paddings,
+      handleNext,
+      localCountryWithLogo,
     };
   },
 });

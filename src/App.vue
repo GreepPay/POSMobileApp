@@ -281,12 +281,12 @@ export default defineComponent({
         // Go to start page
         // Only if the path does not contain /auth
         if (!window.location.pathname.includes("/auth")) {
-          const isPWA = isPlatform("pwa");
-          console.log("IsPWA", isPWA);
-          if (!isPWA) {
-            Logic.Common.GoToRoute("/start/pwa");
-            return;
-          }
+          // const isPWA = isPlatform("pwa");
+          // console.log("IsPWA", isPWA);
+          // if (!isPWA) {
+          //   Logic.Common.GoToRoute("/start/pwa");
+          //   return;
+          // }
           Logic.Common.GoToRoute("/start");
         } else {
           return Logic.Common.GoToRoute("/auth/login");
