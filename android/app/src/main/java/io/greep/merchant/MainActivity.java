@@ -1,4 +1,4 @@
-package io.greep.pos.vendor;
+package io.greep.merchant;
 
 import com.getcapacitor.BridgeActivity;
 

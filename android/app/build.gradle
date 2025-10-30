@@ -1,13 +1,13 @@
 apply plugin: 'com.android.application'
 
 android {
-    namespace "io.greep.pos.vendor"
+    namespace "io.greep.merchant"
     compileSdk rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "io.greep.pos.vendor"
+        applicationId "io.greep.merchant"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 11
+        versionCode 1
         versionName "1.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {

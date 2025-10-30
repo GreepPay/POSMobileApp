@@ -43,6 +43,78 @@
     },
     {
       "client_info": {
+        "mobilesdk_app_id": "1:209656620172:android:28f64e1e92be1c700487a9",
+        "android_client_info": {
+          "package_name": "io.greep.merchant"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "209656620172-2p7b35r1h46t7oa2b4k6mj8bq8t8dqho.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCrF23NozJh3dnL4OWuVVRDWwZ7OnTAOrY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "209656620172-2p7b35r1h46t7oa2b4k6mj8bq8t8dqho.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "209656620172-3pa7cuj0heqm8vatuvkrpaf8iluku0rv.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "io.greep.client.pay"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:209656620172:android:eb0e8b0473119f000487a9",
+        "android_client_info": {
+          "package_name": "io.greep.pay"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "209656620172-2p7b35r1h46t7oa2b4k6mj8bq8t8dqho.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCrF23NozJh3dnL4OWuVVRDWwZ7OnTAOrY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "209656620172-2p7b35r1h46t7oa2b4k6mj8bq8t8dqho.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "209656620172-3pa7cuj0heqm8vatuvkrpaf8iluku0rv.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "io.greep.client.pay"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
         "mobilesdk_app_id": "1:209656620172:android:070337ebc35b017b0487a9",
         "android_client_info": {
           "package_name": "io.greep.pos.vendor"

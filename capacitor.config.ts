@@ -1,8 +1,8 @@
 import type { CapacitorConfig } from "@capacitor/cli";
 
 const config: CapacitorConfig = {
-  appId: "io.greep.pos.vendor",
-  appName: "Greep Vendor",
+  appId: "io.greep.merchant",
+  appName: "Greep Merchant",
   webDir: "dist",
   plugins: {
     SplashScreen: {
