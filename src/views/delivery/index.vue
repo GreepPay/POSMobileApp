@@ -24,9 +24,6 @@
                     <app-normal-text class="!text-center !text-red-500">
                         {{ error }}
                     </app-normal-text>
-                    <button @click="loadDeliveries" class="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg">
-                        Retry
-                    </button>
                 </div>
 
                 <!-- Deliveries List -->
@@ -36,14 +33,14 @@
                         @click="goToDelivery(delivery.uuid)">
                         <div class="w-[48px] mr-3">
                             <div class="w-[48px]">
-                                <app-icon :name="`order-${getDeliveryStatus(delivery.status)}`"
+                                <app-icon :name="`delivery-${getDeliveryStatus(delivery.status)}`"
                                     custom-class="!h-[48px]" />
                             </div>
                         </div>
 
                         <div class="w-full flex flex-col">
                             <app-normal-text class="!text-left !text-black !font-[500] !text-sm mb-[3px]">
-                                {{ formatDeliveryTitle(delivery) }}
+                                {{ getDeliveryItemName(delivery) }}
                             </app-normal-text>
 
                             <div class="w-full flex flex-row items-center">
@@ -65,7 +62,7 @@
                             <div v-if="delivery.fromAddress || delivery.toAddress" class="w-full flex flex-col mt-2">
                                 <app-normal-text class="!text-left !text-[#616161] !text-xs">
                                     <span v-if="delivery.fromAddress">From: {{ truncateAddress(delivery.fromAddress)
-                                        }}</span>
+                                    }}</span>
                                     <span v-if="delivery.fromAddress && delivery.toAddress"> → </span>
                                     <span v-if="delivery.toAddress">To: {{ truncateAddress(delivery.toAddress) }}</span>
                                 </app-normal-text>
@@ -106,20 +103,33 @@ export default defineComponent({
     },
     layout: "Dashboard",
     middlewares: {
-        fetchRules: [],
+        fetchRules: [
+            {
+                domain: "Commerce",
+                property: "ManyDeliveries",
+                method: "GetCustomDeliveryRequests",
+                params: [1, 50],
+                requireAuth: true,
+                ignoreProperty: false,
+            },
+            {
+                domain: "Commerce",
+                property: "ManyBusinessDeliveries",
+                method: "GetBusinessDeliveries",
+                params: [1, 50],
+                requireAuth: true,
+                ignoreProperty: false,
+            },
+        ],
     },
     setup() {
         const AuthUser = ref<User>(Logic.Auth.AuthUser);
-        const activeTab = ref("requests");
+        const activeTab = ref("active");
         const isLoading = ref(false);
         const error = ref<string | null>(null);
 
         // Delivery tabs
         const deliveryTabs = ref([
-            {
-                key: "requests",
-                label: "Requests",
-            },
             {
                 key: "active",
                 label: "Active",
@@ -140,33 +150,6 @@ export default defineComponent({
             }
         };
 
-        // Load deliveries from GraphQL
-        const loadDeliveries = async () => {
-            try {
-                isLoading.value = true;
-                error.value = null;
-
-                // Load different data based on active tab
-                if (activeTab.value === "requests") {
-                    // Load custom delivery requests (pending requests)
-                    await Logic.Commerce.GetCustomDeliveryRequests(1, 50);
-                } else {
-                    // Load business deliveries for active and history tabs
-                    await Logic.Commerce.GetBusinessDeliveries(1, 50);
-                }
-
-                // Force a reactive update
-                await nextTick();
-                updateTrigger.value++;
-
-            } catch (err) {
-                error.value = "Failed to load deliveries. Please try again.";
-                console.error("Error loading deliveries:", err);
-            } finally {
-                isLoading.value = false;
-            }
-        };
-
         // Format delivery title
         const formatDeliveryTitle = (delivery: any) => {
             if (delivery.trackingNumber) {
@@ -175,6 +158,30 @@ export default defineComponent({
                 return `Order #${delivery.orderNumber}`;
             } else if (delivery.uuid) {
                 return `Delivery #${delivery.uuid.slice(-8)}`;
+            }
+            return "Delivery Request";
+        };
+
+        // Get delivery item name/description
+        const getDeliveryItemName = (delivery: any) => {
+            try {
+                if (delivery.metadata && typeof delivery.metadata === 'string') {
+                    const metadata = JSON.parse(delivery.metadata);
+                    if (metadata.itemDescription) {
+                        return metadata.itemDescription;
+                    }
+                }
+            } catch (e) {
+                // If metadata is not valid JSON, continue
+            }
+
+            // Fallback to tracking number or default
+            if (delivery.trackingNumber) {
+                return `Delivery #${delivery.trackingNumber}`;
+            } else if (delivery.type === 'custom') {
+                return "Custom Delivery";
+            } else if (delivery.type === 'order') {
+                return "Order Delivery";
             }
             return "Delivery Request";
         };
@@ -242,9 +249,7 @@ export default defineComponent({
 
         // Get empty state text based on active tab
         const getEmptyStateText = () => {
-            if (activeTab.value === "requests") {
-                return "delivery requests";
-            } else if (activeTab.value === "active") {
+            if (activeTab.value === "active") {
                 return "active deliveries";
             } else {
                 return "completed deliveries";
@@ -268,15 +273,14 @@ export default defineComponent({
 
             let deliveries: any[] = [];
 
-            if (activeTab.value === "requests") {
-                // Requests tab: Show custom pending delivery requests
-                deliveries = Logic.Commerce.ManyDeliveries?.data || [];
-                console.log('Custom delivery requests (pending):', deliveries.length);
-            } else {
-                // Active and History tabs: Show business deliveries
-                deliveries = Logic.Commerce.ManyBusinessDeliveries?.data || [];
-                console.log('Business deliveries:', deliveries.length);
+            // Active and History tabs: Show business deliveries
+            const manyBusinessDeliveries = Logic.Commerce.ManyBusinessDeliveries;
+            if (manyBusinessDeliveries?.data) {
+                deliveries = manyBusinessDeliveries.data;
+            } else if (Array.isArray(manyBusinessDeliveries)) {
+                deliveries = manyBusinessDeliveries;
             }
+            console.log('Business deliveries:', deliveries.length, manyBusinessDeliveries);
 
             // Sort deliveries by created_at descending (recent first)
             const sortedDeliveries = [...deliveries].sort((a: any, b: any) => {
@@ -286,11 +290,7 @@ export default defineComponent({
             });
 
             // Filter based on tab
-            if (activeTab.value === "requests") {
-                // Requests: Custom deliveries with pending status (already filtered by API)
-                console.log('Request deliveries:', sortedDeliveries.length);
-                return sortedDeliveries;
-            } else if (activeTab.value === "active") {
+            if (activeTab.value === "active") {
                 // Active: Any status except "delivered" and "completed"
                 const activeDeliveries = sortedDeliveries.filter((delivery: any) => {
                     const status = delivery.status?.toLowerCase() || "";
@@ -307,16 +307,6 @@ export default defineComponent({
                 console.log('History deliveries:', historyDeliveries.length);
                 return historyDeliveries;
             }
-        });
-
-        // Load deliveries on mount and when tab changes
-        onMounted(() => {
-            loadDeliveries();
-        });
-
-        // Watch for tab changes
-        watch(activeTab, () => {
-            loadDeliveries();
         });
 
         // Watch for delivery changes
@@ -338,9 +328,9 @@ export default defineComponent({
             error,
             currentDeliveries,
             colorByStatus,
-            loadDeliveries,
             goToDelivery,
             formatDeliveryTitle,
+            getDeliveryItemName,
             getDeliveryTypeLabel,
             getDeliveryStatus,
             getDeliveryStatusLabel,

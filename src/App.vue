@@ -1,54 +1,31 @@
 <template>
   <ion-app class="font-poppins">
     <ion-router-outlet />
-    <app-bottom-bar
-      :tabs="bottomBar"
-      :tab-is-active="tabIsActive"
-      v-if="showBottomNav && bottomBar.length > 1"
-    />
+    <app-bottom-bar :tabs="bottomBar" :tab-is-active="tabIsActive" v-if="showBottomNav && bottomBar.length > 1" />
     <app-alert v-if="alertSetup.show" :setup="alertSetup" />
     <app-loader v-if="loaderSetup.show" :setup="loaderSetup" />
 
     <!-- Update App  modal -->
-    <app-modal
-      v-if="showUpdateAppModal"
-      :close="
-        () => {
-          showUpdateAppModal = false;
-        }
-      "
-      :contentClass="'!px-0'"
-    >
-      <div
-        class="w-full flex flex-col items-center pt-4"
-        :style="`
+    <app-modal v-if="showUpdateAppModal" :close="() => {
+        showUpdateAppModal = false;
+      }
+      " :contentClass="'!px-0'">
+      <div class="w-full flex flex-col items-center pt-4" :style="`
           ${getBottomPadding}
-        `"
-      >
+        `">
         <img :src="'/images/update-app.svg'" class="!h-[70px]" />
 
-        <div
-          class="w-full flex flex-col pt-4 pb-6 px-5 items-center justify-center"
-        >
-          <app-normal-text
-            class="text-center w-full !text-lg !font-semibold pb-2"
-          >
+        <div class="w-full flex flex-col pt-4 pb-6 px-5 items-center justify-center">
+          <app-normal-text class="text-center w-full !text-lg !font-semibold pb-2">
             New Update Available
           </app-normal-text>
 
-          <app-normal-text
-            is-html
-            class="text-center !text-sm !text-gray-two w-full !prose !prose-sm"
-            :html-content="`A new version of the app is available. Please update to the latest version for the best experience.`"
-          >
+          <app-normal-text is-html class="text-center !text-sm !text-gray-two w-full !prose !prose-sm"
+            :html-content="`A new version of the app is available. Please update to the latest version for the best experience.`">
           </app-normal-text>
         </div>
 
-        <app-button
-          :custom-class="`!bg-secondary !w-full !py-4 !px-8 !text-sm`"
-          variant="secondary"
-          @click="updateApp"
-        >
+        <app-button :custom-class="`!bg-secondary !w-full !py-4 !px-8 !text-sm`" variant="secondary" @click="updateApp">
           Update Now
         </app-button>
       </div>
@@ -179,10 +156,16 @@ export default defineComponent({
           bottomBar.push(
             ...[
               {
+                path: "/tasks",
+                icon: "task",
+                routeTag: "tasks",
+                name: "Tasks",
+              },
+              {
                 path: "/delivery",
                 icon: "order",
                 routeTag: "delivery",
-                name: "Deliveries",
+                name: "Orders",
               },
             ]
           );
@@ -235,7 +218,7 @@ export default defineComponent({
       // @ts-ignore
       // (import.meta as any).env.VITE_API_URL ?? "http://localhost:3000/graphql"
       (import.meta as any).env.VITE_API_URL ??
-        "https://api-pos-dev.greep.io/graphql"
+      "https://api-pos-dev.greep.io/graphql"
     );
 
     const handleMountActions = () => {
