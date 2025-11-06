@@ -2,6 +2,7 @@
   <app-wrapper>
     <subpage-layout title="Transaction Details">
       <div
+        id="receipt-section"
         class="w-full flex flex-col items-center justify-start px-4 pb-[120px]"
       >
         <AmountCard
@@ -74,7 +75,11 @@
         `"
       >
         <div class="w-full flex flex-col">
-          <app-button variant="secondary" outlined class="!py-4"
+          <app-button
+           variant="secondary"
+            outlined 
+            @click="shareReceipt"
+             class="!py-4"
             >Share Receipt</app-button
           >
         </div>
@@ -88,6 +93,7 @@ import { computed, defineComponent, onMounted, reactive, ref } from "vue";
 import { AppButton, AppIcon, AppNormalText } from "@greep/ui-components";
 import { Logic } from "@greep/logic";
 import AmountCard from "../../components/Common/AmountCard.vue";
+import { downloadReceipt } from "../../composable/common";
 import {
   getPointTransaction,
   getTransaction,
@@ -144,6 +150,10 @@ export default defineComponent({
     const selectedCurrency = ref(
       Logic.Auth.AuthUser?.profile?.default_currency
     );
+    
+    const shareReceipt = async () => {
+      await downloadReceipt("image", "receipt-section");
+    };
 
     const currentTransaction = computed(() => {
       return getTransaction(
@@ -321,6 +331,8 @@ export default defineComponent({
       Logic,
       transactionDetails,
       pageSetup,
+      downloadReceipt,
+      shareReceipt,
       currencySymbol,
       getBottomPadding,
       currentTransaction,
