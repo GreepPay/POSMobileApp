@@ -453,6 +453,13 @@ export default defineComponent({
       setPageDefaults();
       setTransactionData();
       setCurrentWalletBalance();
+
+      // Update notification token
+      Logic.Notification.addListeners().then(() => {
+        Logic.Notification.registerNotifications().then(() => {
+          // registration completed
+        });
+      });
     });
 
     return {
