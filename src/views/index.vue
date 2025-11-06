@@ -57,7 +57,7 @@
             <div
               v-for="(item, index) in quickActions"
               :key="index"
-              class="col-span-4 flex flex-col space-y-1 items-center justify-center relative"
+              class="col-span-3 flex flex-col space-y-1 items-center justify-center relative"
               @click="Logic.Common.GoToRoute(item.route_path)"
             >
               <app-icon :name="item.icon" custom-class="!h-[56px]" />
@@ -87,17 +87,14 @@
           />
         </div> -->
 
-        <div class="w-full flex justify-between items-center px-4">
+        <div class="w-full flex justify-between items-center px-4 z-20">
           <app-normal-text class="font-semibold !text-gray-800 !text-sm">
             Transactions
           </app-normal-text>
 
-          <app-normal-text
-            class="text-primary"
-            @click="Logic.Common.GoToRoute('/transactions')"
-          >
-            See all
-          </app-normal-text>
+          <span @click="Logic.Common.GoToRoute('/transactions')">
+            <app-normal-text class="text-primary"> See all </app-normal-text>
+          </span>
         </div>
 
         <!-- Transactions -->
@@ -338,12 +335,12 @@ export default defineComponent({
         name: "Request",
         soon: false,
       },
-      // {
-      //   icon: "quick-actions/send",
-      //   route_path: "#",
-      //   name: "Send",
-      //   soon: true,
-      // },
+      {
+        icon: "quick-actions/send",
+        route_path: "/send/pay",
+        name: "Send",
+        soon: false,
+      },
       {
         icon: "quick-actions/withdraw",
         route_path: "/withdraw",
@@ -414,7 +411,7 @@ export default defineComponent({
       setTransactionData();
       setTimeout(() => {
         Logic.Auth.GetAuthUser();
-      }, 5000);
+      }, 500);
       setCurrentWalletBalance();
     });
 

@@ -1,7 +1,7 @@
 <template>
   <app-wrapper>
     <div
-      :class="`w-full flex flex-col lg:text-sm mdlg:text-[12px] text-xs h-screen overflow-y-hidden !font-inter bg-white`"
+      :class="`w-full flex flex-col lg:text-sm mdlg:text-[12px] text-xs h-full overflow-y-hidden !font-inter bg-white`"
       style="
         padding-top: calc(env(safe-area-inset-top) + 16px) !important;
         padding-bottom: calc(env(safe-area-inset-bottom) + 16px) !important;
