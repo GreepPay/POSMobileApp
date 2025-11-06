@@ -10,7 +10,7 @@
         class="w-full flex flex-col items-center h-[80%] justify-start !space-y-[20px]"
       >
         <template v-if="events.length == 0">
-          <div class="h-full flex flex-col items-center justify-center">
+          <div class="h-full flex flex-col items-center justify-center px-4">
             <app-empty-state
               icon="empty-events"
               title="Run Events With Ease"
@@ -108,50 +108,50 @@ export default defineComponent({
     >([]);
 
     const setProducts = () => {
-      events.length = 0; 
-      ManyEventProducts.value?.data?.forEach((product,  ) => { 
+      events.length = 0;
+      ManyEventProducts.value?.data?.forEach((product) => {
         const productImages = JSON.parse(product.images);
         if (productImages.length) {
-        const currentCurrency = withdrawalAvailableCurrencies.find(
-          (item) => item.code === product.currency
-        );
+          const currentCurrency = withdrawalAvailableCurrencies.find(
+            (item) => item.code === product.currency
+          );
 
-        const productVariants: ProductVariantInput[] = JSON.parse(
-          product.variants
-        );
+          const productVariants: ProductVariantInput[] = JSON.parse(
+            product.variants
+          );
 
-        const variantWithLowestPrice = productVariants.reduce(
-          (acc: ProductVariantInput, variant: ProductVariantInput) => {
-            if (!acc || variant.priceAdjustment < acc.priceAdjustment)
-              return variant;
-            return acc;
-          }
-        ).priceAdjustment;
+          const variantWithLowestPrice = productVariants.reduce(
+            (acc: ProductVariantInput, variant: ProductVariantInput) => {
+              if (!acc || variant.priceAdjustment < acc.priceAdjustment)
+                return variant;
+              return acc;
+            }
+          ).priceAdjustment;
 
-        const amount = `${currentCurrency?.symbol}${Logic.Common.convertToMoney(
-          variantWithLowestPrice,
-          false,
-          ""
-        )}`;
+          const amount = `${
+            currentCurrency?.symbol
+          }${Logic.Common.convertToMoney(variantWithLowestPrice, false, "")}`;
 
-        const productImages = JSON.parse(product.images);
+          const productImages = JSON.parse(product.images);
 
-        events.push({
-          image_url: productImages[0].url,
-          title: product.name,
-          location: product.eventOnlineUrl ? "Online" : product.venueName || "",
-          sub_titles: [
-            `From ${amount}`,
-            Logic.Common.fomartDate(
-              product.eventStartDate || "",
-              "ddd, DD MMM"
-            ),
-            Logic.Common.fomartDate(product.eventEndDate || "", "hA"),
-          ],
-          uuid: product.uuid,
-        }); 
+          events.push({
+            image_url: productImages[0].url,
+            title: product.name,
+            location: product.eventOnlineUrl
+              ? "Online"
+              : product.venueName || "",
+            sub_titles: [
+              `From ${amount}`,
+              Logic.Common.fomartDate(
+                product.eventStartDate || "",
+                "ddd, DD MMM"
+              ),
+              Logic.Common.fomartDate(product.eventEndDate || "", "hA"),
+            ],
+            uuid: product.uuid,
+          });
         }
-      });  
+      });
     };
 
     onIonViewWillEnter(() => {

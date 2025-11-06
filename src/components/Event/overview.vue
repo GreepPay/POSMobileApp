@@ -29,58 +29,63 @@
 </template>
 
 <script lang="ts">
-  import { defineComponent, computed } from "vue"
-  import { AppNormalText } from "@greep/ui-components"
-  import { Logic } from "@greep/logic"
-  import { Product } from "@greep/logic/src/gql/graphql"
+import { defineComponent, computed } from "vue";
+import { AppNormalText } from "@greep/ui-components";
+import { Logic } from "@greep/logic";
+import { Product } from "@greep/logic/src/gql/graphql";
 
-  export default defineComponent({
-    components: {
-      AppNormalText,
+export default defineComponent({
+  components: {
+    AppNormalText,
+  },
+  props: {
+    product: {
+      type: Object as () => Product,
     },
-    props: {
-      product: {
-        type: Object as () => Product,
+  },
+  name: "EventOverview",
+  setup(props) {
+    const revenue = computed(() => props.product?.eventOveview?.revenue || 0);
+    const ticketSold = computed(
+      () => props.product?.eventOveview?.tickets_sold || 0
+    );
+    const ticketAvail = computed(
+      () => props.product?.eventOveview?.tickets_left
+    );
+    const checksIn = computed(() => props.product?.eventOveview?.checkins);
+    const attendeeCheckedIn = computed(
+      () => ticketSold.value / ticketAvail.value || 0
+    );
+
+    const eventOverview = computed(() => [
+      {
+        title: "Revenue",
+        content: `$${Logic.Common.convertToMoney(
+          revenue.value,
+          false,
+          "",
+          false
+        )}`,
       },
-    },
-    name: "EventOverview",
-    setup(props) {
-      const revenue = computed(() => props.product?.eventOveview?.revenue || 0)
-      const ticketSold = computed(
-        () => props.product?.eventOveview?.tickets_sold || 0
-      )
-      const ticketAvail = computed(
-        () => props.product?.eventOveview?.tickets_left
-      )
-      const checksIn = computed(() => props.product?.eventOveview?.checkins)
-      const attendeeCheckedIn = computed(
-        () => ticketSold.value / ticketAvail.value || 0
-      )
+      {
+        title: "Tickets Sold",
+        content: Logic.Common.convertToMoney(ticketSold.value, false, ""),
+      },
+      {
+        title: "Tickets Left",
+        content: Logic.Common.convertToMoney(ticketAvail.value, false, ""),
+      },
+      {
+        title: "Attendees Checked In",
+        content: Logic.Common.convertToMoney(checksIn.value, false, ""),
+        percentage_progress: attendeeCheckedIn.value,
+      },
+    ]);
 
-      const eventOverview = computed(() => [
-        {
-          title: "Revenue",
-          content: Logic.Common.convertToMoney(revenue.value, false, ""),
-        },
-        {
-          title: "Tickets Sold",
-          content: Logic.Common.convertToMoney(ticketSold.value, false, ""),
-        },
-        {
-          title: "Tickets Left",
-          content: Logic.Common.convertToMoney(ticketAvail.value, false, ""),
-        },
-        {
-          title: "Attendees Checked In",
-          content: Logic.Common.convertToMoney(checksIn.value, false, ""),
-          percentage_progress: attendeeCheckedIn.value,
-        },
-      ])
-
-      return {
-        Logic,
-        eventOverview,
-      }
-    },
-  })
+    return {
+      Logic,
+      eventOverview,
+    };
+  },
+});
 </script>

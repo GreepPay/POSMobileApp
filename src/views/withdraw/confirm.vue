@@ -7,7 +7,7 @@
         <!-- Confirmation details starts -->
         <template v-if="currentPageContent == 'confirmation_info'">
           <app-image-loader
-            class="w-full h-fit rounded-[16px] flex flex-col relative justify-start items-start space-y-5 px-4 py-5 !pt-3 xs:!py-4 bg-[linear-gradient(359.13deg,#10BB76_25.37%,#008651_99.25%)]"
+            class="w-full h-fit rounded-[16px] flex flex-col relative justify-start items-start space-y-5 px-4 py-5 !pt-3 xs:!py-4 !bg-[linear-gradient(269.64deg,_#0D965E_0.31%,_#00683F_89.75%)]"
             :photoUrl="''"
           >
             <!-- Image bg -->
@@ -145,10 +145,7 @@ import { reactive } from "vue";
 import { ref } from "vue";
 import { onMounted } from "vue";
 import { onIonViewWillEnter } from "@ionic/vue";
-import {
-  availableCurrencies,
-  getBottomPadding,
-} from "../../composable";
+import { availableCurrencies, getBottomPadding } from "../../composable";
 import { computed } from "vue";
 
 export default defineComponent({
@@ -203,7 +200,6 @@ export default defineComponent({
     );
 
     const selectedCurrency = ref("");
-
 
     const confirmationDetails = reactive<
       {

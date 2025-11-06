@@ -1,7 +1,6 @@
-import { Currency } from "@greep/ui-components/src/types"
-import { getPlatforms } from "@ionic/vue"
-import { computed, reactive, ref } from "vue"
-
+import { Currency } from "@greep/ui-components/src/types";
+import { getPlatforms } from "@ionic/vue";
+import { computed, reactive, ref } from "vue";
 
 export const showUpdateAppModal = ref(false);
 
@@ -12,13 +11,12 @@ export const checkAppVersion = (currentVersion: string) => {
   if (appVersion > savedVersion) {
     showUpdateAppModal.value = true;
   }
-
-}
+};
 
 export const updateApp = async () => {
   window.location.href =
     window.location.pathname + "?reload=" + new Date().getTime();
-}
+};
 
 export const availableCurrencies = reactive<Currency[]>([
   {
@@ -248,10 +246,44 @@ export const availableCurrencies = reactive<Currency[]>([
   },
   {
     code: "XAF",
-    name: "Republic of the Congo CFA Franc",
-    country_name: "Republic of the Congo",
+    name: "Congo-Brazzaville CFA Franc",
+    country_name: "Congo-Brazzaville",
     symbol: "FCFA",
     country_code: "CG",
+    use_country_code: true,
+    loading: false,
+    payin_fees: [
+      {
+        type: "percentage",
+        min: 1,
+        value: 2,
+        method: "momo",
+      },
+    ],
+  },
+  {
+    code: "CDF",
+    name: "DR Congo CDF",
+    country_name: "Democratic Republic of the Congo",
+    symbol: "FC",
+    country_code: "CD",
+    use_country_code: true,
+    loading: false,
+    payin_fees: [
+      {
+        type: "percentage",
+        min: 1,
+        value: 2,
+        method: "momo",
+      },
+    ],
+  },
+  {
+    code: "SLE",
+    name: "Sierra Leonean Leone",
+    country_name: "Sierra Leone",
+    symbol: "Le",
+    country_code: "SL",
     use_country_code: true,
     loading: false,
     payin_fees: [
@@ -478,7 +510,7 @@ export const availableCurrencies = reactive<Currency[]>([
   {
     code: "MWK",
     name: "Malawian Kwacha",
-    country_name: 'Malawi',
+    country_name: "Malawi",
     use_country_code: true,
     symbol: "MK",
     country_code: "MW",
@@ -602,57 +634,56 @@ export const availableCurrencies = reactive<Currency[]>([
   // },
 ]);
 
-
 export const depositCryptoAndNetworkMap = {
-  "USDC": [
+  USDC: [
     // {
     //   title: "Stellar",
     //   key: "stellar"
     // },
     {
       title: "Arbitrum",
-      key: "arbitrum"
+      key: "arbitrum",
     },
     {
       title: "Avalanche C-Chain",
-      key: "avalanche_c_chain"
+      key: "avalanche_c_chain",
     },
     {
       title: "Base",
-      key: "base"
+      key: "base",
     },
     {
       title: "Ethereum",
-      key: "ethereum"
+      key: "ethereum",
     },
     {
       title: "Optimism",
-      key: "optimism"
+      key: "optimism",
     },
     {
       title: "Polygon",
-      key: "polygon"
+      key: "polygon",
     },
     {
       title: "Solana",
-      key: "solana"
-    }
+      key: "solana",
+    },
   ],
-  "USDT": [
+  USDT: [
     {
       title: "Tron",
-      key: "tron"
+      key: "tron",
     },
     {
       title: "Ethereum",
-      key: "ethereum"
+      key: "ethereum",
     },
-  ]
-}
+  ],
+};
 
 export const safeAreaInsetTop = computed(() => {
   // Replace this with your actual platform detection logic
-  const isAndroid = getPlatforms()[0] === "android"
+  const isAndroid = getPlatforms()[0] === "android";
 
   const topInset = Number(
     String(
@@ -660,15 +691,15 @@ export const safeAreaInsetTop = computed(() => {
         "--safe-area-inset-top"
       )
     ).replace("px", "")
-  )
+  );
 
-  return isAndroid && topInset === 0 ? 20 : topInset
-})
+  return isAndroid && topInset === 0 ? 20 : topInset;
+});
 
 export const safeAreaInsetBottom = computed(() => {
   // Replace this with your actual platform detection logic
   const isAndroid =
-    getPlatforms()[0] === "android" || getPlatforms()[0] === "pwa"
+    getPlatforms()[0] === "android" || getPlatforms()[0] === "pwa";
 
   const bottomInset = Number(
     String(
@@ -676,31 +707,31 @@ export const safeAreaInsetBottom = computed(() => {
         "--safe-area-inset-bottom"
       )
     ).replace("px", "")
-  )
+  );
 
-  return isAndroid && bottomInset === 0 ? 20 : bottomInset
-})
+  return isAndroid && bottomInset === 0 ? 20 : bottomInset;
+});
 
 export const getBottomPadding = computed(() => {
   // Replace this with your actual platform detection logic
-  const isAndroid = getPlatforms()[0] === "android"
+  const isAndroid = getPlatforms()[0] === "android";
 
   return isAndroid
     ? "padding-bottom: calc(env(safe-area-inset-bottom) + 20px) !important;"
-    : "padding-bottom: calc(env(safe-area-inset-bottom) + 16px) !important;"
-})
+    : "padding-bottom: calc(env(safe-area-inset-bottom) + 16px) !important;";
+});
 
 export interface MessageInfo {
-  id: string
-  text_content: string
-  user_uuid: string
-  type: "text" | "info"
-  info_icon?: string
-  user_name?: string
+  id: string;
+  text_content: string;
+  user_uuid: string;
+  type: "text" | "info";
+  info_icon?: string;
+  user_name?: string;
   media?: {
-    type: "image"
-    url: string
-  }
+    type: "image";
+    url: string;
+  };
   actions?: {
     label: string;
     type: "success" | "info" | "danger" | "warning" | "primary";
@@ -708,7 +739,7 @@ export interface MessageInfo {
     value: string;
     handler: () => void;
   }[];
-  
+
   orderSummary?: {
     youSell: string;
     youGet: string;
@@ -1019,9 +1050,7 @@ export const withdrawalAvailableCurrencies = reactive<Currency[]>([
       },
     ],
   },
-])
-
-
+]);
 
 // Helper to round to nearest significant digit (10, 100, 1000, etc.)
 export function roundToNearestSignificant(num: number) {

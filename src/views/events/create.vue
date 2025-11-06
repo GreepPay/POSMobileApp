@@ -251,13 +251,27 @@ export default defineComponent({
                 const productVariants: ProductVariantInput[] = [];
 
                 formData.tickets.forEach(
-                  (ticket: { name: string; price: string; color: string }) => {
+                  (ticket: {
+                    name: string;
+                    price: string;
+                    color: string;
+                    is_vote: boolean;
+                    image_url: string;
+                  }) => {
                     productVariants.push({
                       id: Logic.Common.makeid(16),
                       attributes: [
                         {
                           key: "color",
                           value: ticket.color,
+                        },
+                        {
+                          key: "is_vote",
+                          value: ticket.is_vote ? "yes" : "no",
+                        },
+                        {
+                          key: "image_url",
+                          value: ticket.image_url || "",
                         },
                       ],
                       images: "empty",
@@ -286,7 +300,6 @@ export default defineComponent({
 
                 pageSettings.pages[1].action_btn.loading = true;
 
- 
                 try {
                   const eventProduct = isEdit.value
                     ? await Logic.Commerce.UpdateProduct()
