@@ -10,8 +10,10 @@
         () => Logic.Common.GoToRoute('/auth/switch-business')
       "
     >
-      <div
-        class="w-full flex flex-col items-center justify-start !space-y-[20px]"
+      <app-refresher
+        class="w-full flex flex-col items-center justify-start"
+        :onRefresh="onAppRefresherRefresh"
+        ref="appRefreshComp"
       >
         <!-- Balance card section -->
         <div class="w-full flex flex-col space-y-2 pt-2">
@@ -87,7 +89,9 @@
           />
         </div> -->
 
-        <div class="w-full flex justify-between items-center px-4 z-20">
+        <div
+          class="w-full flex justify-between items-center px-4 z-20 pt-[20px]"
+        >
           <app-normal-text class="font-semibold !text-gray-800 !text-sm">
             Transactions
           </app-normal-text>
@@ -161,7 +165,7 @@
           <!-- Spacer -->
           <div class="h-[90px] py-4"></div>
         </div>
-      </div>
+      </app-refresher>
     </default-page-layout>
   </app-wrapper>
 </template>
@@ -178,6 +182,7 @@ import {
   DefaultPageLayout,
   // AppTabs,
   AppButton,
+  AppRefresher,
 } from "@greep/ui-components";
 import { Logic } from "@greep/logic";
 import { ref } from "vue";
@@ -185,6 +190,7 @@ import { onMounted } from "vue";
 import {
   getPlatforms,
   onIonViewDidEnter,
+  onIonViewDidLeave,
   onIonViewWillEnter,
 } from "@ionic/vue";
 import { User } from "@greep/logic/src/gql/graphql";
@@ -208,6 +214,7 @@ export default defineComponent({
     DefaultPageLayout,
     // AppTabs,
     AppButton,
+    AppRefresher,
   },
   layout: "Dashboard",
   middlewares: {
@@ -248,6 +255,8 @@ export default defineComponent({
     const selectedCurrency = ref(
       Logic.Auth.GetDefaultBusiness()?.default_currency || "USD"
     );
+
+    const appRefreshComp = ref<any>(null);
 
     const selectedCountry = ref("");
 
@@ -406,6 +415,25 @@ export default defineComponent({
       );
     };
 
+    const onAppRefresherRefresh = async () => {
+      Logic.Common.showLoader({
+        show: true,
+        loading: true,
+      });
+
+      // Run non-blocking fetches
+
+      Logic.Wallet.GetTransactions(1, 5, "CREATED_AT");
+      Logic.Wallet.GetPointTransactions(1, 5, "CREATED_AT");
+      return await Promise.all([Logic.Auth.GetAuthUser()])
+        .then(() => {
+          Logic.Common.hideLoader();
+        })
+        .catch(() => {
+          Logic.Common.hideLoader();
+        });
+    };
+
     onIonViewDidEnter(() => {
       setPageDefaults();
       setTransactionData();
@@ -436,6 +464,14 @@ export default defineComponent({
 
     watch(AuthUser, () => {
       setCurrentWalletBalance();
+    });
+
+    onIonViewWillEnter(() => {
+      appRefreshComp.value?.registerListeners();
+    });
+
+    onIonViewDidLeave(async () => {
+      appRefreshComp.value?.removeListeners();
     });
 
     onMounted(() => {
@@ -478,6 +514,8 @@ export default defineComponent({
       tools,
       currentWalletBalance,
       selectedCountry,
+      onAppRefresherRefresh,
+      appRefreshComp,
     };
   },
 });

@@ -142,7 +142,13 @@ export default defineComponent({
         const isMobileWeb = isPlatform("mobileweb");
 
         if (!isMobileWeb) {
-          const result = await FirebaseAuthentication.signInWithGoogle();
+          Logic.Common.showLoader({
+            show: true,
+            loading: true,
+          });
+          const result = await FirebaseAuthentication.signInWithGoogle({
+            useCredentialManager: false,
+          });
 
           const fullName = result.user?.displayName?.split(" ") || [];
 
@@ -150,6 +156,7 @@ export default defineComponent({
           formData.first_name = fullName?.[0] || "";
           formData.last_name = fullName?.length > 1 ? fullName[1] : "";
 
+          Logic.Common.hideLoader();
           authenticateUser(result.user?.uid || "");
         } else {
           const provider = new GoogleAuthProvider();
@@ -184,6 +191,10 @@ export default defineComponent({
 
     const authenticateApple = async () => {
       try {
+        Logic.Common.showLoader({
+          show: true,
+          loading: true,
+        });
         const result = await FirebaseAuthentication?.signInWithApple();
 
         const fullName = result?.user?.displayName?.split(" ") || [];
@@ -193,6 +204,7 @@ export default defineComponent({
 
         localStorage.setItem("acc_email", formData.email);
 
+        Logic.Common.hideLoader();
         authenticateUser(result?.user?.uid || "");
       } catch (error) {
         console.log(error);
