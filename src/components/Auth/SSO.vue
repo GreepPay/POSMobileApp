@@ -78,13 +78,14 @@ export default defineComponent({
     const authenticateUser = async (userId: string) => {
       if (props.fromAction == "signUp") {
         const password = Logic.Common.makeid(12);
-        // @ts-expect-error Extending Logic.Auth.SignUpPayload
-        Logic.Auth.SignUpPayload = {
+
+        Logic.Auth.SignUpForm = {
           email: formData.email,
           first_name: formData.first_name,
           last_name: formData.last_name,
           sso_id: userId,
           password,
+          default_currency: "USDC",
         };
 
         localStorage.setItem("auth_pass", password);

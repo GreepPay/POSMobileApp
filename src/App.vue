@@ -257,7 +257,7 @@ export default defineComponent({
         const pathContainsIsForceReload =
           window.location.search.includes("isForceReload");
 
-        if (!AuthUser.value?.first_name) {
+        if (!AuthUser.value?.phone) {
           Logic.Common.GoToRoute("/auth/setup-account");
           return;
         }

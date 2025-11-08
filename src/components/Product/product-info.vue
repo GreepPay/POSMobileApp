@@ -19,7 +19,7 @@
                   formData.photos.push(...newPhotos);
                 }
               "
-              :accept="`image/png, image/gif, image/jpeg`"
+              :accept="`image/png, image/gif, image/jpeg, image/webp`"
               is-multiple
               class="flex flex-row items-center justify-start !w-auto"
             >

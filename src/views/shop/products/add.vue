@@ -9,6 +9,18 @@
       fallBackTitle="Product Preview"
       :fall-back-page="summaryCurrentPage"
     >
+      <template #top-right-section v-if="isEdit">
+        <div class="flex flex-col">
+          <app-button
+            variant="secondary"
+            :outlined="SingleProduct?.status == 'active'"
+            :class="`!py-1 !font-[500] !border-[1.5px] !w-fit`"
+            @click="toggleProductStatus()"
+          >
+            {{ SingleProduct?.status == "active" ? "Archive" : "Activate" }}
+          </app-button>
+        </div>
+      </template>
       <div
         class="w-full flex flex-col items-center justify-start h-full px-4 py-3 pt-2"
         v-if="!hidePageContent"
@@ -52,7 +64,11 @@
 
 <script lang="ts">
 import { defineComponent, ref, reactive } from "vue";
-import { AppOnboardingLayout, AppNormalText } from "@greep/ui-components";
+import {
+  AppOnboardingLayout,
+  AppNormalText,
+  AppButton,
+} from "@greep/ui-components";
 import { Logic } from "@greep/logic";
 import ProductInfo from "../../../components/Product/product-info.vue";
 import ProductVariants from "../../../components/Product/product-variants.vue";
@@ -80,6 +96,7 @@ export default defineComponent({
     ProductInfo,
     AppOnboardingLayout,
     AppNormalText,
+    AppButton,
     ProductVariants,
     ProductInventory,
     ProductSummary,
@@ -338,6 +355,8 @@ export default defineComponent({
               type: "success",
             });
 
+            showSummary.value = false;
+
             Logic.Common.GoToRoute("/shop");
           });
         },
@@ -349,6 +368,40 @@ export default defineComponent({
     const currentPlatform = computed(() => {
       return getPlatforms()[0];
     });
+
+    const toggleProductStatus = async () => {
+      if (SingleProduct.value) {
+        const newStatus: ProductStatus =
+          SingleProduct.value.status == "active"
+            ? ProductStatus.Archived
+            : ProductStatus.Active;
+        Logic.Commerce.UpdateProductForm = {
+          input: {
+            id: SingleProduct.value.id,
+            status: newStatus,
+          },
+        };
+        Logic.Common.showLoader({
+          show: true,
+          loading: true,
+        });
+        await Logic.Commerce.UpdateProduct();
+        Logic.Common.showLoader({
+          show: true,
+          loading: true,
+        });
+        await Logic.Commerce.GetProduct(SingleProduct.value.uuid || "");
+        Logic.Common.showAlert({
+          show: true,
+          type: "success",
+          message:
+            newStatus == ProductStatus.Active
+              ? "Product activated successfully."
+              : "Product archived successfully.",
+        });
+        Logic.Common.hideLoader();
+      }
+    };
 
     const initializeForm = () => {
       if (Logic.Common.route?.query?.uuid?.toString()) {
@@ -456,6 +509,8 @@ export default defineComponent({
       fullProductData,
       isEdit,
       hidePageContent,
+      toggleProductStatus,
+      SingleProduct,
     };
   },
   data() {

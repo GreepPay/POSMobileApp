@@ -2,7 +2,7 @@
   <app-wrapper>
     <subpage-layout title="Setup Your Account">
       <div
-        class="w-full flex flex-col items-center justify-start h-full space-y-3 px-4 pt-4"
+        class="w-full flex flex-col items-center justify-start space-y-3 px-4 pt-4 overflow-y-auto"
       >
         <!-- Form -->
         <app-form-wrapper
@@ -31,66 +31,70 @@
             </div>
           </div>
 
-          <div class="w-full flex flex-col pb-6">
-            <app-text-field
-              :has-title="false"
-              type="text"
-              placeholder="James"
-              ref="firstName"
-              name="First Name"
-              usePermanentFloatingLabel
-              v-model="formData.first_name"
-              :update-value="formData.first_name"
-              :rules="[FormValidations.RequiredRule]"
-            >
-            </app-text-field>
-          </div>
-
-          <div class="w-full flex flex-col pb-6">
-            <app-text-field
-              :has-title="false"
-              type="text"
-              placeholder="Micheal"
-              ref="lastName"
-              name="Last Name"
-              usePermanentFloatingLabel
-              v-model="formData.last_name"
-              :update-value="formData.last_name"
-              :rules="[FormValidations.RequiredRule]"
-            >
-            </app-text-field>
-          </div>
-
-          <div class="w-full grid grid-cols-12 gap-3 pb-6">
-            <div class="col-span-3 flex flex-col">
-              <app-select
-                :placeholder="'Country'"
-                :hasTitle="false"
-                :paddings="'py-4 !px-3'"
-                :options="countries"
-                name="Code"
-                ref="country"
-                usePermanentFloatingLabel
-                v-model="phoneCountryCode"
-                auto-complete
-              >
-              </app-select>
-            </div>
-            <div class="col-span-9 flex flex-col">
+          <template v-if="showFormItems">
+            <div class="w-full flex flex-col pb-6">
               <app-text-field
                 :has-title="false"
-                type="tel"
-                placeholder="0000000000"
-                ref="phoneNumber"
-                name="Phone Number"
+                type="text"
+                placeholder="James"
+                ref="firstName"
+                name="First Name"
                 usePermanentFloatingLabel
-                v-model="formData.phone_number"
-                :update-value="formData.phone_number"
+                v-model="formData.first_name"
+                :update-value="formData.first_name"
                 :rules="[FormValidations.RequiredRule]"
               >
               </app-text-field>
             </div>
-          </div>
+
+            <div class="w-full flex flex-col pb-6">
+              <app-text-field
+                :has-title="false"
+                type="text"
+                placeholder="Micheal"
+                ref="lastName"
+                name="Last Name"
+                usePermanentFloatingLabel
+                v-model="formData.last_name"
+                :update-value="formData.last_name"
+                :rules="[FormValidations.RequiredRule]"
+              >
+              </app-text-field>
+            </div>
+
+            <div class="w-full grid grid-cols-12 gap-3 pb-6">
+              <div class="col-span-3 flex flex-col">
+                <app-select
+                  :placeholder="'Country'"
+                  :hasTitle="false"
+                  :paddings="'py-4 !px-3'"
+                  :options="countries"
+                  name="Code"
+                  ref="country"
+                  usePermanentFloatingLabel
+                  v-model="phoneCountryCode"
+                  auto-complete
+                >
+                </app-select>
+              </div>
+              <div class="col-span-9 flex flex-col">
+                <app-text-field
+                  :has-title="false"
+                  type="tel"
+                  placeholder="0000000000"
+                  ref="phoneNumber"
+                  name="Phone Number"
+                  usePermanentFloatingLabel
+                  v-model="formData.phone_number"
+                  :update-value="formData.phone_number"
+                  :rules="[FormValidations.RequiredRule]"
+                >
+                </app-text-field>
+              </div>
+            </div>
+
+            <div class="h-[100px] py-3"></div>
+          </template>
         </app-form-wrapper>
       </div>
 
@@ -135,6 +139,7 @@ import { onMounted } from "vue";
 import { watch } from "vue";
 import { computed } from "vue";
 import { getBottomPadding } from "../../composable";
+import { onIonViewWillEnter } from "@ionic/vue";
 
 export default defineComponent({
   components: {
@@ -150,6 +155,8 @@ export default defineComponent({
     const FormValidations = Logic.Form;
 
     const loadingState = ref(false);
+
+    const showFormItems = ref(false);
 
     const formComponent = ref<any>();
 
@@ -244,6 +251,20 @@ export default defineComponent({
       }, 100);
     });
 
+    onIonViewWillEnter(() => {
+      if (Logic.Auth.AuthUser) {
+        showFormItems.value = false;
+        formData.first_name = Logic.Auth.AuthUser?.first_name;
+        formData.last_name = Logic.Auth.AuthUser?.last_name;
+
+        setTimeout(() => {
+          showFormItems.value = true;
+        }, 200);
+      } else {
+        showFormItems.value = true;
+      }
+    });
+
     onMounted(() => {
       setCountries();
     });
@@ -265,6 +286,7 @@ export default defineComponent({
       states,
       formIsValid,
       getBottomPadding,
+      showFormItems,
     };
   },
   data() {

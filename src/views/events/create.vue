@@ -263,7 +263,7 @@ export default defineComponent({
                       attributes: [
                         {
                           key: "color",
-                          value: ticket.color,
+                          value: ticket.color || "",
                         },
                         {
                           key: "is_vote",
@@ -271,7 +271,7 @@ export default defineComponent({
                         },
                         {
                           key: "image_url",
-                          value: ticket.image_url || "",
+                          value: ticket.image_url || "empty",
                         },
                       ],
                       images: "empty",

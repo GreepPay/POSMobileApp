@@ -1,5 +1,5 @@
-import { Logic } from "@greep/logic"
-import { User } from "@greep/logic/src/gql/graphql"
+import { Logic } from "@greep/logic";
+import { User } from "@greep/logic/src/gql/graphql";
 // import { availableCurrencies } from ".";
 
 export const handleAuthResponse = (formData: any) => {
@@ -13,41 +13,51 @@ export const handleAuthResponse = (formData: any) => {
   //     defaultCountryCode?.country_code || ""
   // );
 
-  const authUser: User = Logic.Auth.AuthUser
+  const authUser: User = Logic.Auth.AuthUser;
+
+  if (!authUser?.phone) {
+    Logic.Common.GoToRoute("/auth/setup-account");
+    return;
+  }
+
+  if ((authUser?.businesses?.length || 0) == 0) {
+    Logic.Common.GoToRoute("/auth/setup");
+    return;
+  }
 
   if (authUser?.transaction_pin) {
     const authLoginData = {
       email: formData.email,
       password: formData.password || "",
       sso_id: formData.sso_id || "",
-    }
+    };
 
     // Encrypt data
     const encryptedData = Logic.Common.encryptData(
       authLoginData,
       authUser.transaction_pin
-    )
+    );
 
-    localStorage.setItem("auth_encrypted_data", encryptedData)
-    localStorage.setItem("auth_passcode", authUser.transaction_pin)
+    localStorage.setItem("auth_encrypted_data", encryptedData);
+    localStorage.setItem("auth_passcode", authUser.transaction_pin);
   }
 
-  const auth_passcode = localStorage.getItem("auth_passcode") || ""
+  const auth_passcode = localStorage.getItem("auth_passcode") || "";
 
-  localStorage.setItem("auth_email", Logic.Auth.SignInForm?.email || "")
-  localStorage.setItem("auth_pass", Logic.Auth.SignInForm?.password || "")
+  localStorage.setItem("auth_email", Logic.Auth.SignInForm?.email || "");
+  localStorage.setItem("auth_pass", Logic.Auth.SignInForm?.password || "");
 
-  if(!authUser?.first_name) {
-     Logic.Common.GoToRoute("/auth/setup-account");
-     return;
+  if (!authUser?.first_name) {
+    Logic.Common.GoToRoute("/auth/setup-account");
+    return;
   }
 
   // Check if passcode has been set
   if (!auth_passcode) {
-    localStorage.setItem("auth_email", Logic.Auth.SignInForm?.email || "")
-    localStorage.setItem("auth_pass", Logic.Auth.SignInForm?.password || "")
-    Logic.Common.GoToRoute("/auth/set-passcode")
+    localStorage.setItem("auth_email", Logic.Auth.SignInForm?.email || "");
+    localStorage.setItem("auth_pass", Logic.Auth.SignInForm?.password || "");
+    Logic.Common.GoToRoute("/auth/set-passcode");
   } else {
-    Logic.Common.GoToRoute("/", true)
+    Logic.Common.GoToRoute("/", true);
   }
-}
+};

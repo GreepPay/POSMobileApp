@@ -15,7 +15,7 @@
             Amount
           </app-normal-text>
           <app-header-text class="mr-2 !text-2xl">
-            {{ currencySymbol }}
+            {{ currentSelectedCurrencyData?.symbol }}
           </app-header-text>
           <app-text-field
             v-if="!showBackup"
@@ -64,7 +64,7 @@
           @click="setSuggestion(item)"
         >
           <app-normal-text class="!text-[#050709] !text-sm !whitespace-nowrap">
-            {{ currencySymbol }}
+            {{ currentSelectedCurrencyData?.symbol }}
             {{ Logic.Common.convertToMoney(item, false, "") }}
           </app-normal-text>
         </div>
@@ -78,7 +78,9 @@
           Min:
           {{
             minimumAmount
-              ? `${currencySymbol}${Logic.Common.convertToMoney(
+              ? `${
+                  currentSelectedCurrencyData?.symbol
+                }${Logic.Common.convertToMoney(
                   minimumAmount,
                   false,
                   "",
@@ -92,7 +94,9 @@
           Max:
           {{
             maximumAmountValue
-              ? `${currencySymbol}${Logic.Common.convertToMoney(
+              ? `${
+                  currentSelectedCurrencyData?.symbol
+                }${Logic.Common.convertToMoney(
                   maximumAmountValue,
                   false,
                   "",
@@ -105,7 +109,7 @@
       <app-normal-text class="!text-[#616161] !whitespace-nowrap pt-2">
         Balance:
         <span class="!font-semibold !text-green-700"
-          >{{ currencySymbol
+          >{{ currentSelectedCurrencyData?.symbol
           }}{{
             Logic.Common.convertToMoney(
               (Logic.Auth.GetDefaultBusiness()?.wallet?.total_balance || 0) *
@@ -414,6 +418,7 @@ export default defineComponent({
       narration,
       runOnIonViewEnter,
       selectedCountry,
+      currentSelectedCurrencyData,
     };
   },
 });

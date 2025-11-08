@@ -54,24 +54,40 @@
         `"
       >
         <div class="w-full grid grid-cols-12 gap-4">
-          <div class="col-span-12 flex flex-col" v-if="selectedTab == 'about'">
-            <app-button
-              variant="primary"
-              outlined
-              :class="`!py-4 !font-[500] !border-[1.5px]`"
-              @click="
-                Logic.Common.GoToRoute(
-                  `/events/create?uuid=${SingleProduct?.uuid}`
-                )
-              "
-            >
-              <div class="flex flex-row items-center">
-                <app-icon name="edit-green" custom-class="!h-[22px] mr-2" />
-                <app-normal-text class="!font-[500] !text-[#17A068]">
-                  Edit
-                </app-normal-text>
-              </div>
-            </app-button>
+          <div
+            class="col-span-12 grid grid-cols-2 gap-4"
+            v-if="selectedTab == 'about'"
+          >
+            <div class="col-span-1 flex flex-col">
+              <app-button
+                variant="primary"
+                outlined
+                :class="`!py-3 !font-[500] !border-[1.5px]`"
+                @click="
+                  Logic.Common.GoToRoute(
+                    `/events/create?uuid=${SingleProduct?.uuid}`
+                  )
+                "
+              >
+                <div class="flex flex-row items-center">
+                  <app-icon name="edit-green" custom-class="!h-[22px] mr-2" />
+                  <app-normal-text class="!font-[500] !text-[#17A068]">
+                    Edit
+                  </app-normal-text>
+                </div>
+              </app-button>
+            </div>
+
+            <div class="col-span-1 flex flex-col">
+              <app-button
+                variant="secondary"
+                :outlined="SingleProduct?.status == 'active'"
+                :class="`!py-4 !font-[500] !border-[1.5px]`"
+                @click="toggleProductStatus()"
+              >
+                {{ SingleProduct?.status == "active" ? "Archive" : "Activate" }}
+              </app-button>
+            </div>
           </div>
           <div class="col-span-12 flex flex-col" v-else>
             <app-button
@@ -104,6 +120,7 @@ import RevenueEvent from "../../components/Event/revenue.vue";
 import { ref } from "vue";
 import { getBottomPadding } from "../../composable";
 import { onMounted } from "vue";
+import { ProductStatus } from "@greep/logic/src/gql/graphql";
 
 export default defineComponent({
   name: "EventDetailsPage",
@@ -162,6 +179,40 @@ export default defineComponent({
       },
     ]);
 
+    const toggleProductStatus = async () => {
+      if (SingleProduct.value) {
+        const newStatus: ProductStatus =
+          SingleProduct.value.status == "active"
+            ? ProductStatus.Archived
+            : ProductStatus.Active;
+        Logic.Commerce.UpdateProductForm = {
+          input: {
+            id: SingleProduct.value.id,
+            status: newStatus,
+          },
+        };
+        Logic.Common.showLoader({
+          show: true,
+          loading: true,
+        });
+        await Logic.Commerce.UpdateProduct();
+        Logic.Common.showLoader({
+          show: true,
+          loading: true,
+        });
+        await Logic.Commerce.GetProduct(SingleProduct.value.uuid || "");
+        Logic.Common.showAlert({
+          show: true,
+          type: "success",
+          message:
+            newStatus == ProductStatus.Active
+              ? "Event activated successfully."
+              : "Event archived successfully.",
+        });
+        Logic.Common.hideLoader();
+      }
+    };
+
     onMounted(() => {
       Logic.Commerce.watchProperty("SingleProduct", SingleProduct);
       Logic.Commerce.watchProperty("ManyEventTickets", ManyEventTickets);
@@ -175,6 +226,7 @@ export default defineComponent({
       showEditButton,
       SingleProduct,
       ManyEventTickets,
+      toggleProductStatus,
     };
   },
 });
