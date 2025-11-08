@@ -1,7 +1,8 @@
 <template>
     <app-wrapper mobilePadding="!pt-0">
-        <default-page-layout title="Deliveries"
-            :photoUrl="AuthUser?.profile?.business?.logo || '/images/profile-image.svg'">
+        <default-page-layout :title="Logic.Auth.GetDefaultBusiness()?.business_name" :photoUrl="Logic.Auth.GetDefaultBusiness()?.logo || '/images/profile-image.svg'
+            " icon="drop" :title-click-action="() => Logic.Common.GoToRoute('/auth/switch-business')
+                ">
             <template #extra-top-section>
                 <div class="w-full flex flex-col pt-4">
                     <app-tabs :tabs="deliveryTabs" v-model:activeTab="activeTab"
@@ -28,47 +29,11 @@
 
                 <!-- Deliveries List -->
                 <div v-else class="w-full flex flex-col px-4">
-                    <div v-for="(delivery, index) in currentDeliveries" :key="delivery.uuid || index"
-                        class="w-full flex flex-row items-center pt-4 pb-4 !border-b-[1.5px] !border-[#F0F3F6] cursor-pointer"
-                        @click="goToDelivery(delivery.uuid)">
-                        <div class="w-[48px] mr-3">
-                            <div class="w-[48px]">
-                                <app-icon :name="`delivery-${getDeliveryStatus(delivery.status)}`"
-                                    custom-class="!h-[48px]" />
-                            </div>
+                    <template v-for="(delivery, index) in currentDeliveries" :key="delivery.uuid || index">
+                        <div @click="goToDelivery(delivery.uuid)" class="cursor-pointer">
+                            <delivery-detail-card :delivery="delivery" />
                         </div>
-
-                        <div class="w-full flex flex-col">
-                            <app-normal-text class="!text-left !text-black !font-[500] !text-sm mb-[3px]">
-                                {{ getDeliveryItemName(delivery) }}
-                            </app-normal-text>
-
-                            <div class="w-full flex flex-row items-center">
-                                <app-normal-text class="!text-left !text-[#616161]">
-                                    {{ getDeliveryTypeLabel(delivery) }}
-                                </app-normal-text>
-
-                                <div class="h-[4px] w-[4px] rounded-full mx-[6px]"
-                                    :style="`background-color: ${colorByStatus(getDeliveryStatus(delivery.status))} !important;`">
-                                </div>
-
-                                <app-normal-text class="!text-left"
-                                    :style="`color: ${colorByStatus(getDeliveryStatus(delivery.status))} !important;`">
-                                    {{ getDeliveryStatusLabel(delivery.status) }}
-                                </app-normal-text>
-                            </div>
-
-                            <!-- Additional delivery info -->
-                            <div v-if="delivery.fromAddress || delivery.toAddress" class="w-full flex flex-col mt-2">
-                                <app-normal-text class="!text-left !text-[#616161] !text-xs">
-                                    <span v-if="delivery.fromAddress">From: {{ truncateAddress(delivery.fromAddress)
-                                    }}</span>
-                                    <span v-if="delivery.fromAddress && delivery.toAddress"> → </span>
-                                    <span v-if="delivery.toAddress">To: {{ truncateAddress(delivery.toAddress) }}</span>
-                                </app-normal-text>
-                            </div>
-                        </div>
-                    </div>
+                    </template>
 
                     <!-- Empty State -->
                     <div v-if="currentDeliveries.length === 0" class="w-full flex flex-col items-center py-8">
@@ -90,6 +55,7 @@ import {
     AppIcon,
     AppNormalText,
 } from "@greep/ui-components";
+import DeliveryDetailCard from "@/components/DeliveryDetailCard.vue";
 import { Logic } from "@greep/logic";
 import { User } from "@greep/logic/src/gql/graphql";
 
@@ -100,6 +66,7 @@ export default defineComponent({
         AppTabs,
         AppIcon,
         AppNormalText,
+        DeliveryDetailCard,
     },
     layout: "Dashboard",
     middlewares: {

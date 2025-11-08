@@ -2,89 +2,59 @@
   <app-wrapper>
     <subpage-layout title="Order Details" :hasBottomButton="true">
       <!-- Loading State -->
-      <div v-if="isLoading" class="w-full flex flex-col items-center py-8">
-        <app-normal-text class="!text-center !text-gray-500">
-          Loading order details...
-        </app-normal-text>
-      </div>
-
-      <!-- Error State -->
-      <div v-else-if="error" class="w-full flex flex-col items-center py-8">
-        <app-normal-text class="!text-center !text-red-500">
-          {{ error }}
-        </app-normal-text>
-        <button
-          @click="loadOrder"
-          class="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg"
-        >
-          Retry
-        </button>
+      <div v-if="isLoading" class="w-full flex flex-col pt-4">
+        <app-skeleton-loader type="order-details" />
       </div>
 
       <!-- Order Details -->
       <div v-else-if="order" class="w-full flex flex-col justify-start pt-1">
-        <!-- Order ID -->
+        <!-- Order Header -->
+
         <div class="w-full flex flex-col px-4">
           <app-image-loader
             class="w-full h-fit rounded-[12px] flex flex-col overflow-x-hidden overflow-y-hidden justify-center items-center px-4 py-5 !bg-[linear-gradient(to_bottom,#10BB76,#00683F)] relative"
-            photo-url=""
-          >
-            <img
-              class="absolute top-0 left-0 w-full"
-              src="/images/greep-transparent-logo.svg"
-            />
+            photo-url="">
+            <img class="absolute top-0 left-0 w-full" src="/images/greep-transparent-logo.svg" />
 
-            <div
-              class="w-full flex flex-row items-center justify-between z-10 space-x-1"
-            >
+            <div class="w-full flex flex-row items-center justify-between z-10 space-x-1">
               <app-normal-text class="!text-white !whitespace-nowrap">
                 Order Number
               </app-normal-text>
 
               <app-normal-text class="!text-white !font-semibold !uppercase">
-                #{{ order.uuid.slice(0, 8) }}
+                #{{ String(order.orderNumber || order.id).padStart(6, '0') }}
               </app-normal-text>
             </div>
           </app-image-loader>
         </div>
 
-        <!-- P2P Chat -->
+        <!-- Market Delivery Chat Section -->
         <div
           class="w-full flex flex-row items-center mt-4 py-4 px-4 !border-t-[12px] !border-b-[12px] border-[#F0F3F6] cursor-pointer"
-          @click="goToChat"
-        >
+          @click="goToChat">
           <div class="w-[48px] mr-3">
             <div class="w-[48px]">
-              <app-image-loader
-                :photoUrl="getBusinessLogo(order)"
-                class="h-[48px] w-[48px] rounded-full"
-              />
+              <app-image-loader :photoUrl="getBusinessLogo(order)" class="h-[48px] w-[48px] rounded-full" />
             </div>
           </div>
           <div class="w-full flex flex-col">
             <div class="w-full flex flex-row justify-between item-center">
-              <app-normal-text
-                class="!text-left !text-black !font-[500] !text-sm mb-[1px]"
-              >
-                {{ getBusinessName(order) }}
+              <app-normal-text class="!text-left !text-black !font-[500] !text-sm mb-[1px]">
+                Market Delivery Chat
               </app-normal-text>
 
               <app-normal-text class="!text-right !text-[#999999] mb-[1px]">
-                {{ formatTime(order.created_at) }}
+                {{ formatTime(order.createdAt) }}
               </app-normal-text>
             </div>
 
             <div class="w-full flex flex-row items-center justify-between">
               <app-normal-text class="!text-left !text-[#999999]">
-                P2P Trade Chat
+                Market Chat
               </app-normal-text>
 
-              <div
-                class="h-[24px] w-[24px] rounded-full flex items-center justify-center"
-                :style="`background-color: ${colorByStatus(
-                  getOrderStatus(order.status)
-                )} !important;`"
-              >
+              <div class="h-[24px] w-[24px] rounded-full flex items-center justify-center"
+                style="background-color: #10BB76 !important;">
                 <app-normal-text class="!text-[#ffffff] !font-[500]">
                   1
                 </app-normal-text>
@@ -93,93 +63,282 @@
           </div>
         </div>
 
-        <!-- Customer -->
-        <div class="w-full flex flex-row items-center py-4 px-4">
-          <div
-            class="w-full flex flex-row items-center px-4 py-4 border-[1.5px] border-[#F0F3F6] rounded-[12px]"
-          >
-            <div class="w-[48px] mr-3">
-              <div class="w-[48px]">
-                <app-image-loader
-                  :photoUrl="getUserAvatar(order)"
-                  class="h-[48px] w-[48px] rounded-full"
-                />
+        <!-- Tabs using AppTabs Component -->
+        <div class="w-full flex flex-col px-4 mt-4">
+          <app-tabs :tabs="orderTabs" v-model:activeTab="activeTab"
+            tabsClass="!w-full flex border-[1.5px] !border-veryLightGray rounded-full"
+            tabClass="!flex-1 text-center border-none !mr-0 py-3" customClass="!overflow-x-hidden" type="badge" />
+        </div>
+
+        <!-- Info Tab Content -->
+        <div v-if="activeTab === 'info'" class="w-full flex flex-col px-4 mt-4 pb-48">
+          <!-- Product Section - Grouped Card -->
+          <div class="w-full bg-white border border-[#F0F0F0] rounded-[12px] mb-4 overflow-hidden">
+            <!-- Product Header Row -->
+            <div
+              class="w-full flex flex-row items-center justify-between px-4 py-3 bg-[#F9F9F9] border-b border-[#F0F0F0]">
+              <app-normal-text class="!text-[#999999] !text-sm !font-[400]">
+                Product
+              </app-normal-text>
+              <div class="flex gap-12">
+                <app-normal-text class="!text-[#999999] !text-sm !font-[400]">
+                  Qty
+                </app-normal-text>
+                <app-normal-text class="!text-[#999999] !text-sm !font-[400]">
+                  Total Price
+                </app-normal-text>
               </div>
             </div>
-            <div class="w-full flex flex-col">
-              <div class="w-full flex flex-row justify-between item-center">
-                <app-normal-text
-                  class="!text-left !text-black !font-[500] !text-sm mb-[1px]"
-                >
-                  {{ getUserName(order) }}
+
+            <!-- Product Items Loop -->
+            <div v-for="(product, index) in getProducts(order)" :key="index"
+              class="w-full flex flex-row items-center px-4 py-3 border-b border-[#F0F0F0]"
+              :class="{ 'border-b-0': index === getProducts(order).length - 1 }">
+              <!-- Product Image -->
+              <div class="w-12 h-12 mr-3 flex-shrink-0 bg-gray-200 rounded-[8px] overflow-hidden">
+                <app-image-loader :photoUrl="getProductImageByIndex(order, index)" class="w-full h-full object-cover" />
+              </div>
+
+              <!-- Product Name -->
+              <div class="flex-1">
+                <app-normal-text class="!text-black !font-[600] !text-base">
+                  {{ getProductNameByIndex(order, index) }}
                 </app-normal-text>
               </div>
 
-              <div class="w-full flex flex-row items-center justify-between">
-                <app-normal-text class="!text-left !text-[#999999]">
-                  Customer
+              <!-- Qty and Price -->
+              <div class="flex items-center gap-12">
+                <app-normal-text class="!text-black !font-[600] !text-base">
+                  x{{ getProductQtyByIndex(order, index) }}
+                </app-normal-text>
+                <app-normal-text class="!text-black !font-[600] !text-base">
+                  {{ formatCurrency(getProductPriceByIndex(order, index), order.currency) }}
+                </app-normal-text>
+              </div>
+            </div>
+          </div>
+
+          <!-- Time Ordered + Order Status - Grouped Card -->
+          <div class="w-full bg-white border border-[#F0F0F0] rounded-[12px] mb-4 overflow-hidden">
+            <!-- Time Ordered -->
+            <div class="w-full flex flex-row justify-between items-center px-4 py-4 border-b border-[#F0F0F0]">
+              <app-normal-text class="!text-[#999999] !text-base !font-[400]">
+                Time Ordered
+              </app-normal-text>
+              <app-normal-text class="!text-black !font-[600] !text-base">
+                {{ formatFullDate(order.createdAt) }}
+              </app-normal-text>
+            </div>
+
+            <!-- Order Status -->
+            <div class="w-full flex flex-row justify-between items-center px-4 py-4">
+              <app-normal-text class="!text-[#999999] !text-base !font-[400]">
+                Order Status
+              </app-normal-text>
+              <div class="flex items-center gap-2">
+                <app-normal-text class="!text-base !font-[600]" :style="`color: ${getStatusColor(order.status)}`">
+                  {{ getStatusLabel(order.status) }}
+                </app-normal-text>
+                <div class="w-3 h-3 rounded-full" :style="`background-color: ${getStatusColor(order.status)}`"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Customer - Single Card -->
+          <div
+            class="w-full flex flex-row justify-between items-center px-4 py-4 bg-white border border-[#F0F0F0] rounded-[12px] mb-4">
+            <app-normal-text class="!text-[#999999] !text-base !font-[400]">
+              Customer
+            </app-normal-text>
+            <app-normal-text class="!text-black !font-[600] !text-base">
+              {{ getCustomerName(order) }}
+            </app-normal-text>
+          </div>
+
+          <!-- Delivery Rider + Rider Contact - Grouped Card -->
+          <div class="w-full bg-white border border-[#F0F0F0] rounded-[12px] overflow-hidden">
+            <!-- Delivery Rider -->
+            <div class="w-full flex flex-row justify-between items-center px-4 py-4 border-b border-[#F0F0F0]">
+              <app-normal-text class="!text-[#999999] !text-base !font-[400]">
+                Delivery Rider
+              </app-normal-text>
+              <app-normal-text class="!text-black !font-[600] !text-base">
+                Not Specified
+              </app-normal-text>
+            </div>
+
+            <!-- Rider Contact -->
+            <div class="w-full flex flex-row justify-between items-center px-4 py-4">
+              <app-normal-text class="!text-[#999999] !text-base !font-[400]">
+                Rider Contact
+              </app-normal-text>
+              <app-normal-text class="!text-black !font-[600] !text-base">
+                Not Specified
+              </app-normal-text>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tracking Tab Content -->
+        <div v-if="activeTab === 'tracking'" class="w-full flex flex-col px-4 mt-4 pb-48">
+          <!-- Timeline Container -->
+          <div class="w-full flex flex-col">
+            <!-- Order Received - Active -->
+            <div class="w-full flex flex-row mb-6">
+              <!-- Timeline Circle and Line -->
+              <div class="flex-shrink-0 mr-4">
+                <app-icon name="tracking-success" customClass="w-8 h-8" />
+              </div>
+
+              <!-- Content -->
+              <div class="flex-1">
+                <div class="w-full flex flex-row justify-between items-start mb-1">
+                  <app-normal-text class="!text-[#10BB76] !font-[600] !text-base">
+                    Order Received
+                  </app-normal-text>
+                  <app-normal-text class="!text-[#999999] !text-sm">
+                    Mar 12, 13:55
+                  </app-normal-text>
+                </div>
+                <app-normal-text class="!text-[#999999] !text-sm">
+                  Awaiting your confirmation
+                </app-normal-text>
+              </div>
+            </div>
+
+            <!-- Order Confirmed - Inactive -->
+            <div class="w-full flex flex-row mb-6 relative">
+              <!-- Timeline Circle and Line -->
+              <div class="flex-shrink-0 mr-4 relative z-10">
+                <app-icon name="tracking-pending" customClass="w-8 h-8" />
+              </div>
+
+              <!-- Content -->
+              <div class="flex-1">
+                <div class="w-full flex flex-row justify-between items-start mb-1">
+                  <app-normal-text class="!text-[#999999] !font-[500] !text-base">
+                    Order Confirmed
+                  </app-normal-text>
+                </div>
+                <app-normal-text class="!text-[#999999] !text-sm">
+                  You accepted this order
+                </app-normal-text>
+              </div>
+            </div>
+
+            <!-- Rider Accepted Order - Inactive -->
+            <div class="w-full flex flex-row mb-6 relative">
+              <!-- Timeline Circle and Line -->
+              <div class="flex-shrink-0 mr-4 relative z-10">
+                <app-icon name="tracking-pending" customClass="w-8 h-8" />
+              </div>
+
+              <!-- Content -->
+              <div class="flex-1">
+                <div class="w-full flex flex-row justify-between items-start mb-1">
+                  <app-normal-text class="!text-[#999999] !font-[500] !text-base">
+                    Rider Accepted Order
+                  </app-normal-text>
+                </div>
+                <app-normal-text class="!text-[#999999] !text-sm">
+                  Rider is coming for pickup
+                </app-normal-text>
+              </div>
+            </div>
+
+            <!-- Rider Has Arrived - Inactive -->
+            <div class="w-full flex flex-row mb-6 relative">
+              <!-- Timeline Circle and Line -->
+              <div class="flex-shrink-0 mr-4 relative z-10">
+                <app-icon name="tracking-pending" customClass="w-8 h-8" />
+              </div>
+
+              <!-- Content -->
+              <div class="flex-1">
+                <div class="w-full flex flex-row justify-between items-start mb-1">
+                  <app-normal-text class="!text-[#999999] !font-[500] !text-base">
+                    Rider Has Arrived
+                  </app-normal-text>
+                </div>
+                <app-normal-text class="!text-[#999999] !text-sm">
+                  Rider is waiting for pickup
+                </app-normal-text>
+              </div>
+            </div>
+
+            <!-- Order Shipped - Inactive -->
+            <div class="w-full flex flex-row mb-6 relative">
+              <!-- Timeline Circle and Line -->
+              <div class="flex-shrink-0 mr-4 relative z-10">
+                <app-icon name="tracking-pending" customClass="w-8 h-8" />
+              </div>
+
+              <!-- Content -->
+              <div class="flex-1">
+                <div class="w-full flex flex-row justify-between items-start mb-1">
+                  <app-normal-text class="!text-[#999999] !font-[500] !text-base">
+                    Order Shipped
+                  </app-normal-text>
+                </div>
+                <app-normal-text class="!text-[#999999] !text-sm">
+                  Rider takes item to deliver
+                </app-normal-text>
+              </div>
+            </div>
+
+            <!-- Order Arrived - Inactive -->
+            <div class="w-full flex flex-row mb-6 relative">
+              <div class="flex-shrink-0 mr-4 relative z-10">
+                <app-icon name="tracking-pending" customClass="w-8 h-8" />
+              </div>
+
+              <!-- Content -->
+              <div class="flex-1">
+                <div class="w-full flex flex-row justify-between items-start mb-1">
+                  <app-normal-text class="!text-[#999999] !font-[500] !text-base">
+                    Order Arrived
+                  </app-normal-text>
+                </div>
+                <app-normal-text class="!text-[#999999] !text-sm">
+                  Rider reaches delivery spot
+                </app-normal-text>
+              </div>
+            </div>
+
+            <!-- Order Delivered - Inactive (Last, no line) -->
+            <div class="w-full flex flex-row relative">
+              <div class="flex-shrink-0 mr-4 relative z-10">
+                <app-icon name="tracking-pending" customClass="w-8 h-8" />
+              </div>
+
+              <!-- Content -->
+              <div class="flex-1">
+                <div class="w-full flex flex-row justify-between items-start mb-1">
+                  <app-normal-text class="!text-[#999999] !font-[500] !text-base">
+                    Order Delivered
+                  </app-normal-text>
+                </div>
+                <app-normal-text class="!text-[#999999] !text-sm">
+                  Delivery reaches customer
                 </app-normal-text>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- Details -->
-        <template
-          v-for="(details, index) in getOrderDetails(order)"
-          :key="index"
-        >
-          <div class="w-full flex flex-col px-4 mb-4">
-            <app-details :details="details" :isVertical="false" />
-          </div>
-        </template>
-
-        <div class="pb-[200px]"></div>
+        <div class="pb-24"></div>
       </div>
 
-      <!-- Bottom button -->
-      <div
-        v-if="
-          order &&
-          order.status?.toLowerCase() !== 'completed' &&
-          order.status?.toLowerCase() !== 'accepted'
-        "
-        class="w-full fixed bg-white dark:bg-black bottom-0 left-0 pt-4 px-4 flex flex-col"
-        :style="`
-          ${getBottomPadding}
-        `"
-      >
-        <div
-          class="w-full flex flex-col pb-4"
-          v-if="currentPageContent === 'waiting' && isPendingOrder(order)"
-        >
-          <app-countdown-timer
-            :customText="`You must accept in`"
-            custom-class="!py-5"
-            :duration="600"
-          />
-        </div>
-        <div class="w-full grid grid-cols-12 gap-4">
-          <div class="col-span-6 flex flex-col">
-            <app-button
-              variant="primary-white"
-              :class="`!py-4 !border-red !text-red !border-[1.5px]`"
-              outlined
-              @click="declineOrder"
-            >
-              Decline
-            </app-button>
-          </div>
-          <div class="col-span-6 flex flex-col">
-            <app-button
-              variant="secondary"
-              :class="`!py-4`"
-              @click="acceptOrder"
-              :disabled="!isPendingOrder(order)"
-            >
-              {{ mainButtonLabel }}
-            </app-button>
-          </div>
+      <!-- Bottom Buttons -->
+      <div v-if="order" class="w-full fixed bg-white dark:bg-black bottom-0 left-0 pt-4 px-4 flex flex-col"
+        :style="`${getBottomPadding}`">
+        <div class="w-full grid grid-cols-2 gap-4 pb-4">
+          <app-button variant="primary-white" class="!py-4 !border-red-500 !text-red-500 !border-[1.5px]" outlined>
+            Cancel
+          </app-button>
+          <app-button variant="secondary" class="!py-4">
+            Accept
+          </app-button>
         </div>
       </div>
     </subpage-layout>
@@ -187,43 +346,101 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, onMounted } from "vue";
+import { defineComponent, ref, onMounted, computed } from "vue";
 import {
   AppNormalText,
   AppImageLoader,
   AppButton,
   AppDetails,
-  AppCountdownTimer,
+  AppTabs,
+  AppIcon,
+  AppSkeletonLoader,
 } from "@greep/ui-components";
 import { Logic } from "@greep/logic";
-import { ExchangeOrder } from "@greep/logic/src/gql/graphql";
-import { getBottomPadding } from "../../composable";
 import { useRoute } from "vue-router";
 
 export default defineComponent({
-  name: "OrderDetailsPage",
+  name: "CommerceOrderDetailsPage",
   components: {
     AppNormalText,
     AppImageLoader,
     AppButton,
     AppDetails,
-    AppCountdownTimer,
+    AppTabs,
+    AppIcon,
+    AppSkeletonLoader,
   },
   setup() {
     const route = useRoute();
-    const order = ref<ExchangeOrder | null>(null);
+    const order = ref<any>(null);
     const isLoading = ref(false);
     const error = ref<string | null>(null);
-    const currentPageContent = ref("waiting");
-    const mainButtonLabel = ref("Accept");
+    const activeTab = ref<"info" | "tracking">("info");
 
-    const colorByStatus = (status: "success" | "failed" | "pending") => {
-      if (status === "success") {
-        return "#10BB76";
-      } else if (status === "failed") {
-        return "#FA1919";
-      } else {
-        return "#FFAA1F";
+    // Order tabs using AppTabs component
+    const orderTabs = computed(() => {
+      return [
+        {
+          key: "info",
+          label: "Info",
+        },
+        {
+          key: "tracking",
+          label: "Tracking",
+        },
+      ];
+    });
+
+    // Get status color for UI
+    const getStatusColor = (status: string) => {
+      switch (status?.toLowerCase()) {
+        case "completed":
+        case "delivered":
+          return "#10BB76";
+        case "cancelled":
+        case "failed":
+          return "#FA1919";
+        case "pending":
+        case "processing":
+        case "confirmed":
+        case "accepted":
+        default:
+          return "#FF7B3B";
+      }
+    };
+
+    // Get business logo
+    const getBusinessLogo = (order: any) => {
+      return "/images/icons/logo-chat.png";
+    };
+
+    // Navigate to chat
+    const goToChat = () => {
+      // TODO: Implement navigation to chat conversation
+      console.log("Navigate to chat for order:", order.value?.uuid);
+      // Logic.Common.GoToRoute(`/chat/${conversationUuid}`);
+    };
+
+    // Get status label
+    const getStatusLabel = (status: string) => {
+      switch (status?.toLowerCase()) {
+        case "completed":
+          return "Completed";
+        case "delivered":
+          return "Delivered";
+        case "confirmed":
+          return "Confirmed";
+        case "accepted":
+          return "Accepted";
+        case "cancelled":
+          return "Cancelled";
+        case "failed":
+          return "Failed";
+        case "processing":
+          return "Processing";
+        case "pending":
+        default:
+          return "Pending";
       }
     };
 
@@ -239,7 +456,7 @@ export default defineComponent({
           return;
         }
 
-        const orderData = await Logic.Wallet.GetP2pOrder(orderId);
+        const orderData = await Logic.Commerce.GetOrder(orderId);
         if (orderData) {
           order.value = orderData;
         } else {
@@ -253,383 +470,298 @@ export default defineComponent({
       }
     };
 
-    // Format time
-    const formatTime = (dateString: string | null) => {
-      if (!dateString) return "";
-      const date = new Date(dateString);
-      return date.toLocaleTimeString("en-US", {
-        hour: "2-digit",
-        minute: "2-digit",
-        hour12: false,
-      });
-    };
-
-    // Get business logo
-    const getBusinessLogo = (order: ExchangeOrder) => {
-      return order.ad?.business?.logo || "/images/icons/logo-chat.png";
-    };
-
-    // Get business name
-    const getBusinessName = (order: ExchangeOrder) => {
-      return order.ad?.business?.business_name || "Business";
-    };
-
-    // Get user avatar
-    const getUserAvatar = (order: ExchangeOrder) => {
-      return (
-        order.user?.profile?.profile_picture || "/images/temps/customer.png"
-      );
-    };
-
-    // Get user name
-    const getUserName = (order: ExchangeOrder) => {
-      const user = order.user;
-      if (!user) return "Unknown User";
-
-      const firstName = user.first_name || "";
-      const lastName = user.last_name || "";
-      return `${firstName} ${lastName}`.trim() || user.email || "Unknown User";
-    };
-
-    // Get order status for UI
-    const getOrderStatus = (status: string | null) => {
-      switch (status?.toLowerCase()) {
-        case "completed":
-          return "success";
-        case "cancelled":
-        case "failed":
-          return "failed";
-        case "pending":
-        case "processing":
-        default:
-          return "pending";
-      }
-    };
-
-    // Check if order is pending
-    const isPendingOrder = (order: ExchangeOrder) => {
-      return order.status?.toLowerCase() === "pending";
-    };
-
-    // Get order details for display
-    const getOrderDetails = (order: ExchangeOrder) => {
-      const details = [];
-
-      // Order summary
-      details.push([
-        {
-          title: "Order",
-          content: formatOrderTitle(order),
-        },
-      ]);
-
-      // Time and status
-      details.push([
-        {
-          title: "Ordered at",
-          content: `<span class="flex flex-row items-center">
-           <span> ${formatTime(order.created_at)} </span>
-            <span class="h-[4px] w-[4px] rounded-full !bg-black mx-[5px]"> </span>
-           <span> ${formatDate(order.created_at)} </span>
-          </span>`,
-        },
-        {
-          title: "Order status",
-          content: `<span class="flex flex-row items-center">
-           <span style="color:${colorByStatus(
-             getOrderStatus(order.status)
-           )};" class="mr-1"> ${getOrderStatusLabel(order.status)} </span>
-           <span class="h-[6px] w-[6px] rounded-full" style="background-color:${colorByStatus(
-             getOrderStatus(order.status)
-           )};"></span>
-          </span>`,
-        },
-      ]);
-
-      // Order details
-      details.push([
-        {
-          title: order.ad?.ad_type == "buy" ? "You sell" : "You buy",
-          content: `${Logic.Common.convertToMoney(order.amount, false, "")} ${
-            order.ad?.to_currency || "USD"
-          }`,
-        },
-        {
-          title: order?.ad?.ad_type == "buy" ? "You receive" : "You give",
-          content: `${Logic.Common.convertToMoney(
-            order.expected_amount,
-            false,
-            ""
-          )} ${order.ad?.from_currency || "TRY"}`,
-        },
-        {
-          title: "Payment type",
-          content: order.payment_type || "Cash",
-        },
-        {
-          title: "Payout option",
-          content: order.payout_option || "In-Person Pickup",
-        },
-      ]);
-
-      return details;
-    };
-
-    // Format order title
-    const formatOrderTitle = (order: ExchangeOrder) => {
-      if (!order.ad) return "Unknown Order";
-
-      const fromCurrency = order.ad.from_currency;
-      const toCurrency = order.ad.to_currency;
-      const amount = order.amount;
-      const expectedAmount = order.expected_amount;
-
-      return `${Logic.Common.convertToMoney(
-        amount,
-        false,
-        ""
-      )} ${toCurrency} to ${Logic.Common.convertToMoney(
-        expectedAmount,
-        false,
-        ""
-      )} ${fromCurrency}`;
-    };
-
-    // Format date
-    const formatDate = (dateString: string | null) => {
-      if (!dateString) return "";
-      const date = new Date(dateString);
-      return date.toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-      });
-    };
-
-    // Get order status label
-    const getOrderStatusLabel = (status: string | null) => {
-      switch (status?.toLowerCase()) {
-        case "completed":
-          return "Completed";
-        case "cancelled":
-          return "Cancelled";
-        case "failed":
-          return "Failed";
-        case "processing":
-          return "Processing";
-        case "pending":
-        default:
-          return "Pending";
-      }
-    };
-
-    // Navigate to chat
-    const goToChat = () => {
-      if (order.value?.conversation_uuid) {
-        Logic.Common.GoToRoute(
-          `/chat/${order.value.conversation_uuid}?p2p=true&method=${
-            order.value.payment_type || "cash"
-          }`
-        );
-      }
-    };
-
-    // Accept order
-    const acceptOrder = async () => {
-      if (!order.value) return;
-
+    // Get product from sales
+    const getProduct = (order: any) => {
       try {
-        // Send structured response to trigger business acceptance
-        const structuredResponse = {
-          selected_option: "business_accept",
-          order_uuid: order.value.uuid,
-          business_id: order.value.ad?.business?.uuid,
-          user_id: Logic.Auth.AuthUser?.id,
-        };
-
-        // This would trigger the handleBusinessOrderAcceptance flow
-        Logic.Common.showAlert({
-          show: true,
-          message: "Order accepted successfully! Redirecting to chat...",
-          type: "success",
-        });
-
-        // ✅ NEW: Get existing conversation and add business as participant
-        try {
-          console.log(
-            "🔧 Looking for existing conversation for order:",
-            order.value.uuid
-          );
-
-          // ✅ FIX: Use conversation_uuid from the order
-          const conversationUuid = order.value.conversation_uuid;
-
-          if (!conversationUuid) {
-            throw new Error("No conversation UUID found for this order");
+        if (order.sales && Array.isArray(order.sales) && order.sales.length > 0) {
+          const sale = order.sales[0];
+          if (sale.products && Array.isArray(sale.products) && sale.products.length > 0) {
+            return sale.products[0];
           }
+        }
+      } catch (e) {
+        console.error("Error getting product:", e);
+      }
+      return null;
+    };
 
-          console.log(
-            "🔧 Using conversation UUID from order:",
-            conversationUuid
-          );
-
-          let existingConversation = null;
-
-          try {
-            // Get the existing conversation using its UUID
-            existingConversation = await Logic.Messaging.GetSingleConversation(
-              conversationUuid
-            );
-            console.log(
-              "✅ Found existing conversation:",
-              existingConversation?.uuid
-            );
-          } catch (error) {
-            console.log(
-              "❌ No conversation found with UUID:",
-              conversationUuid
-            );
-            console.log("❌ Error:", error);
-            throw new Error(
-              `No conversation found with UUID: ${conversationUuid}`
-            );
-          }
-
-          if (existingConversation) {
-            console.log(
-              "✅ Using existing conversation:",
-              existingConversation.uuid
-            );
-
-            // ✅ NEW: Add business as participant to the existing conversation
-            try {
-              // ✅ FIX: Get business user ID from the business UUID
-              const businessUuid = order.value.ad?.business?.uuid;
-              console.log("🔧 Adding business as participant:", {
-                conversationId: existingConversation.id,
-                businessUuid: businessUuid,
-                businessId: order.value.ad?.business?.id,
-                businessName: order.value.ad?.business?.business_name,
-              });
-
-              if (businessUuid) {
-                // ✅ FIX: Get the business user ID from the business object
-                const businessUserId = parseInt(
-                  order.value.ad?.business?.user?.id?.toString() || "0"
-                );
-
-                if (businessUserId > 0) {
-                  await Logic.Messaging.AddParticipant(
-                    existingConversation.id,
-                    businessUserId, // user_id: the business user ID
-                    0 // added_by: 0 (bot adding)
-                  );
-                  console.log(
-                    "✅ Business added as participant to existing conversation"
-                  );
-                  console.log(
-                    "📋 Order UUID for this conversation:",
-                    order.value.uuid
-                  );
-                } else {
-                  console.error("❌ Invalid business user ID:", businessUserId);
-                  console.log("🔧 Trying with AuthUser ID instead...");
-
-                  // Fallback: Use the current authenticated user ID
-                  const authUserId = Logic.Auth.AuthUser?.id;
-                  if (authUserId && authUserId > 0) {
-                    await Logic.Messaging.AddParticipant(
-                      existingConversation.id,
-                      authUserId, // user_id: the authenticated user ID
-                      0 // added_by: 0 (bot adding)
-                    );
-                    console.log(
-                      "✅ Business added as participant using AuthUser ID"
-                    );
-                  } else {
-                    console.error("❌ No valid user ID found");
-                  }
-                }
-              } else {
-                console.error("❌ No business UUID found");
-              }
-            } catch (participantError) {
-              console.error(
-                "❌ Error adding business as participant:",
-                participantError
-              );
-              // Continue anyway - the conversation exists
+    // Get all products from sales
+    const getProducts = (order: any) => {
+      try {
+        let allProducts: any[] = [];
+        if (order.sales && Array.isArray(order.sales)) {
+          // Loop through all sales entries
+          order.sales.forEach((sale: any) => {
+            if (sale.products && Array.isArray(sale.products)) {
+              allProducts.push(...sale.products);
             }
-
-            // Navigate to existing chat
-            setTimeout(() => {
-              // Extract pickup address from order
-              const pickupAddress =
-                order.value?.pickup_location_address_line ||
-                "Pickup location to be confirmed";
-
-              console.log("📍 Pickup address from order:", pickupAddress);
-
-              Logic.Common.GoToRoute(
-                `/chat/${existingConversation.uuid}?p2p=true&method=${
-                  order.value?.payment_type || "cash"
-                }&order_uuid=${
-                  order.value?.uuid
-                }&pickup_address=${encodeURIComponent(pickupAddress)}`
-              );
-            }, 1500);
-          } else {
-            console.log("❌ No existing conversation found, cannot proceed");
-            throw new Error("No existing conversation found for this order");
-          }
-        } catch (conversationError: any) {
-          console.error("Error handling conversation:", conversationError);
-          Logic.Common.showAlert({
-            show: true,
-            message:
-              conversationError?.message ||
-              "Failed to find the conversation for this order. Please contact support.",
-            type: "error",
           });
         }
-      } catch (err) {
-        Logic.Common.showAlert({
-          show: true,
-          message: "Failed to accept order. Please try again.",
-          type: "error",
-        });
-        console.error("Error accepting order:", err);
+        return allProducts;
+      } catch (e) {
+        console.error("Error getting products:", e);
+      }
+      return [];
+    };
+
+    // Get product by index
+    const getProductByIndex = (order: any, index: number) => {
+      const products = getProducts(order);
+      return products[index] || null;
+    };
+
+    // Get product name by index
+    const getProductNameByIndex = (order: any, index: number) => {
+      const product = getProductByIndex(order, index);
+      if (product) {
+        return product.name || "Unknown Product";
+      }
+      return "Unknown Product";
+    };
+
+    // Get product image by index
+    const getProductImageByIndex = (order: any, index: number) => {
+      try {
+        const product = getProductByIndex(order, index);
+        if (product && product.images) {
+          let images: any[] = [];
+          if (typeof product.images === 'string') {
+            images = JSON.parse(product.images);
+          } else if (Array.isArray(product.images)) {
+            images = product.images;
+          }
+
+          if (images.length > 0) {
+            // Find primary image or use first image
+            const primaryImage = images.find((img: any) => img.isPrimary);
+            if (primaryImage && primaryImage.url) {
+              return primaryImage.url;
+            }
+            if (images[0] && images[0].url) {
+              return images[0].url;
+            }
+          }
+        }
+      } catch (e) {
+        console.error("Error parsing product images:", e);
+      }
+      return "/images/placeholder-product.png";
+    };
+
+    // Get product quantity by index
+    const getProductQtyByIndex = (order: any, index: number) => {
+      try {
+        let productIndex = index;
+        if (order.sales && Array.isArray(order.sales)) {
+          // Loop through sales to find the right product and its quantity
+          for (let saleIdx = 0; saleIdx < order.sales.length; saleIdx++) {
+            const sale = order.sales[saleIdx];
+            let items: any[] = [];
+            const itemsData = sale.items;
+
+            if (typeof itemsData === 'string') {
+              items = JSON.parse(itemsData);
+            } else if (Array.isArray(itemsData)) {
+              items = itemsData;
+            }
+
+            // If this sale has products that cover our index
+            if (sale.products && Array.isArray(sale.products)) {
+              if (productIndex < sale.products.length) {
+                // Found the right sale
+                if (items.length > productIndex && items[productIndex].quantity) {
+                  return items[productIndex].quantity;
+                }
+              }
+              // Subtract the number of products in this sale from our index
+              productIndex -= sale.products.length;
+            }
+          }
+        }
+      } catch (e) {
+        console.error("Error getting product quantity:", e);
+      }
+      return 1;
+    };
+
+    // Get product price by index
+    const getProductPriceByIndex = (order: any, index: number) => {
+      try {
+        let productIndex = index;
+        if (order.sales && Array.isArray(order.sales)) {
+          // Loop through sales to find the right product and its price
+          for (let saleIdx = 0; saleIdx < order.sales.length; saleIdx++) {
+            const sale = order.sales[saleIdx];
+            let items: any[] = [];
+            const itemsData = sale.items;
+
+            if (typeof itemsData === 'string') {
+              items = JSON.parse(itemsData);
+            } else if (Array.isArray(itemsData)) {
+              items = itemsData;
+            }
+
+            // If this sale has products that cover our index
+            if (sale.products && Array.isArray(sale.products)) {
+              if (productIndex < sale.products.length) {
+                // Found the right sale
+                if (items.length > productIndex) {
+                  if (items[productIndex].total) {
+                    return items[productIndex].total;
+                  }
+                  if (items[productIndex].price) {
+                    return items[productIndex].price;
+                  }
+                }
+              }
+              // Subtract the number of products in this sale from our index
+              productIndex -= sale.products.length;
+            }
+          }
+        }
+      } catch (e) {
+        console.error("Error getting product price:", e);
+      }
+      return order.totalAmount || 0;
+    };
+
+    // Get order items (from sales items JSON)
+    const getOrderItems = (order: any) => {
+      try {
+        if (order.sales && Array.isArray(order.sales) && order.sales.length > 0) {
+          let items: any[] = [];
+          const sale = order.sales[0];
+          if (sale.items && typeof sale.items === 'string') {
+            items = JSON.parse(sale.items);
+          } else if (Array.isArray(sale.items)) {
+            items = sale.items;
+          }
+          return items;
+        }
+        return [];
+      } catch (e) {
+        return [];
       }
     };
 
-    // Decline order
-    const declineOrder = async () => {
-      if (!order.value) return;
+    // Get first product name
+    const getProductName = (order: any) => {
+      const product = getProduct(order);
+      if (product) {
+        return product.name || "Unknown Product";
+      }
+      return "Unknown Product";
+    };
 
+    // Get product image from images JSON array
+    const getProductImage = (order: any) => {
       try {
-        // Send structured response to trigger order decline
-        const structuredResponse = {
-          selected_option: "decline",
-          order_uuid: order.value.uuid,
-          business_id: order.value.ad?.business?.uuid,
-          user_id: Logic.Auth.AuthUser?.id,
-        };
+        const product = getProduct(order);
+        if (product && product.images) {
+          let images: any[] = [];
+          if (typeof product.images === 'string') {
+            images = JSON.parse(product.images);
+          } else if (Array.isArray(product.images)) {
+            images = product.images;
+          }
 
-        // This would trigger the order decline flow
-        Logic.Common.showAlert({
-          show: true,
-          message: "Order declined successfully!",
-          type: "success",
-        });
+          if (images.length > 0) {
+            // Find primary image or use first image
+            const primaryImage = images.find((img: any) => img.isPrimary);
+            if (primaryImage && primaryImage.url) {
+              return primaryImage.url;
+            }
+            if (images[0] && images[0].url) {
+              return images[0].url;
+            }
+          }
+        }
+      } catch (e) {
+        console.error("Error parsing product images:", e);
+      }
+      return "/images/placeholder-product.png";
+    };
 
-        // Reload order to get updated status
-        await loadOrder();
-      } catch (err) {
-        Logic.Common.showAlert({
-          show: true,
-          message: "Failed to decline order. Please try again.",
-          type: "error",
-        });
-        console.error("Error declining order:", err);
+    // Get product quantity
+    const getProductQty = (order: any) => {
+      const items = getOrderItems(order);
+      if (items.length > 0 && items[0].quantity) {
+        return items[0].quantity;
+      }
+      return 1;
+    };
+
+    // Get product price
+    const getProductPrice = (order: any) => {
+      const items = getOrderItems(order);
+      if (items.length > 0 && items[0].total) {
+        return items[0].total;
+      }
+      if (items.length > 0 && items[0].price) {
+        return items[0].price;
+      }
+      return order.totalAmount || 0;
+    };
+
+    // Get customer name
+    const getCustomerName = (order: any) => {
+      if (order.user) {
+        const firstName = order.user.first_name || "";
+        const lastName = order.user.last_name || "";
+        return `${firstName} ${lastName}`.trim() || order.user.email || "Unknown Customer";
+      }
+      return "Unknown Customer";
+    };
+
+    // Format currency
+    const formatCurrency = (amount: number, currency: string) => {
+      const currencySymbols: { [key: string]: string } = {
+        'USD': '$',
+        'EUR': '€',
+        'GBP': '£',
+        'NGN': '₦',
+        'KES': 'KSh',
+        'ZAR': 'R',
+      };
+      const symbol = currencySymbols[currency] || currency;
+      return `${symbol}${amount.toFixed(2)}`;
+    };
+
+    // Format time HH:MM
+    const formatTime = (dateString: string) => {
+      if (!dateString) return "";
+      try {
+        const date = new Date(dateString);
+        return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+      } catch (e) {
+        return "";
+      }
+    };
+
+    // Format date as "Mar 12"
+    const formatDate = (dateString: string) => {
+      if (!dateString) return "";
+      try {
+        const date = new Date(dateString);
+        const month = date.toLocaleString('default', { month: 'short' });
+        const day = date.getDate();
+        return `${month} ${day}`;
+      } catch (e) {
+        return "";
+      }
+    };
+
+    // Format full date as "HH:MM • Mar 12"
+    const formatFullDate = (dateString: string) => {
+      if (!dateString) return "";
+      try {
+        const date = new Date(dateString);
+        const time = date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+        const month = date.toLocaleString('default', { month: 'short' });
+        const day = date.getDate();
+        return `${time} • ${month} ${day}`;
+      } catch (e) {
+        return "";
       }
     };
 
@@ -643,34 +775,32 @@ export default defineComponent({
       order,
       isLoading,
       error,
-      getBottomPadding,
-      colorByStatus,
-      currentPageContent,
-      mainButtonLabel,
-      loadOrder,
-      goToChat,
+      activeTab,
+      orderTabs,
+      getBottomPadding: ref(""),
+      getStatusColor,
+      getStatusLabel,
       getBusinessLogo,
-      getBusinessName,
-      getUserAvatar,
-      getUserName,
-      getOrderStatus,
-      isPendingOrder,
-      getOrderDetails,
+      goToChat,
+      loadOrder,
       formatTime,
       formatDate,
-      getOrderStatusLabel,
-      acceptOrder,
-      declineOrder,
+      formatFullDate,
+      getProduct,
+      getProducts,
+      getProductByIndex,
+      getProductNameByIndex,
+      getProductImageByIndex,
+      getProductQtyByIndex,
+      getProductPriceByIndex,
+      getOrderItems,
+      getProductName,
+      getProductImage,
+      getProductQty,
+      getProductPrice,
+      getCustomerName,
+      formatCurrency,
     };
-  },
-  data() {
-    return {
-      parentRefs: [],
-    };
-  },
-  mounted() {
-    const parentRefs: any = this.$refs;
-    this.parentRefs = parentRefs;
   },
 });
 </script>

@@ -1,10 +1,24 @@
 <template>
     <!-- Card Content -->
-    <div class="w-full flex flex-col p-4 mb-0 bg-white">
+    <div class="w-full flex flex-col p-4 mb-0 bg-white rounded-[16px] border-[1.5px] border-[#E0E2E4]">
 
-        <!-- Price and Item Details -->
-        <div class="w-full flex flex-row items-center justify-between mb-3 pb-3">
-            <app-normal-text class="!text-left !text-black !font-[600] !text-[18px] !leading-[20px]">
+        <!-- Status Header -->
+        <div class="w-full flex flex-row items-center justify-between mb-4 pb-3">
+            <app-normal-text class="!text-left !text-black !font-[500] !text-[14px] !leading-[20px]">
+                Status
+            </app-normal-text>
+            <div class="flex flex-row items-center gap-2">
+                <app-normal-text class="!text-right !text-[#FF9500] !font-[600] !text-[14px] !leading-[20px]">
+                    {{ getDeliveryStatusLabel(delivery.status) }}
+                </app-normal-text>
+                <app-icon :name="`order-delivery-${getDeliveryStatus(delivery.status)}`"
+                    custom-class="!h-[20px] !w-[20px]" />
+            </div>
+        </div>
+
+        <!-- Price and Description -->
+        <div class="w-full flex flex-row items-center justify-between pb-4">
+            <app-normal-text class="!text-left !text-[#050709] !font-[600] !text-[20px] !leading-[32px]">
                 {{ formatPrice(delivery) }}
             </app-normal-text>
             <app-normal-text class="!text-right !text-gray-500 !font-[400] !text-[14px] !leading-[20px] !tracking-[1%]">
@@ -16,14 +30,12 @@
         <div class="w-full flex flex-col mb-4">
             <!-- Pickup Location -->
             <div class="flex flex-row items-start mb-3">
-                <!-- Connecting Line -->
-
                 <app-icon name="pickup" custom-class="!h-[24px] !w-[24px] mr-3 flex-shrink-0" />
                 <div class="flex flex-col flex-1">
-                    <app-normal-text class="!text-left !text-black !font-[600] !text-base mb-2">
+                    <app-normal-text class="!text-left !text-black !font-[500] !text-base mb-2">
                         Pickup
                     </app-normal-text>
-                    <div class="!text-left !text-gray-500 !text-sm leading-relaxed" v-html="getPickupAddress(delivery)">
+                    <div class="!text-left !text-gray-500 !text-[14px] leading-relaxed" v-html="getPickupAddress(delivery)">
                     </div>
                 </div>
             </div>
@@ -32,24 +44,13 @@
             <div class="flex flex-row items-start">
                 <app-icon name="dropoff" custom-class="!h-[24px] !w-[24px] !text-teal mr-3 flex-shrink-0" />
                 <div class="flex flex-col flex-1">
-                    <app-normal-text class="!text-left !text-black !font-[600] !text-base mb-2">
+                    <app-normal-text class="!text-left !text-black !font-[500] !text-base mb-2">
                         Dropoff
                     </app-normal-text>
-                    <div class="!text-left !text-gray-500 !text-sm leading-relaxed"
+                    <div class="!text-left !text-gray-500 !text-[14px] leading-relaxed"
                         v-html="getDropoffAddress(delivery)">
                     </div>
                 </div>
-            </div>
-            <!-- Action Buttons -->
-            <div class="w-full flex flex-row gap-3 pt-5">
-                <app-button outlined class="!flex-1 !border-2 !border-red-500 !text-red-500 !rounded-full !py-3 !px-4"
-                    @click="$emit('ignore', delivery)">
-                    Ignore
-                </app-button>
-                <app-button class="!flex-1 !bg-black !text-white !rounded-full !py-3 !px-4"
-                    @click="$emit('accept', delivery)">
-                    Take Order
-                </app-button>
             </div>
         </div>
     </div>
@@ -60,15 +61,13 @@ import { defineComponent, PropType } from "vue";
 import {
     AppNormalText,
     AppIcon,
-    AppButton,
 } from "@greep/ui-components";
 
 export default defineComponent({
-    name: "TaskCard",
+    name: "DeliveryDetailCard",
     components: {
         AppNormalText,
         AppIcon,
-        AppButton,
     },
     props: {
         delivery: {
@@ -76,16 +75,13 @@ export default defineComponent({
             required: true,
         },
     },
-    emits: ["ignore", "accept"],
     setup() {
         // Format price
-        const formatPrice = (task: any) => {
-            if (task.price) {
-                return `$${task.price}`;
-            }
+        const formatPrice = (delivery: any) => {
+            return `$${delivery.price}`;
         };
 
-        // Get delivery item name
+        // Get item details with description
         const getDeliveryItemName = (delivery: any) => {
             try {
                 if (delivery.metadata && typeof delivery.metadata === 'string') {
@@ -123,10 +119,10 @@ export default defineComponent({
         };
 
         // Get dropoff address
-        const getDropoffAddress = (task: any) => {
+        const getDropoffAddress = (delivery: any) => {
             try {
-                if (task.metadata && typeof task.metadata === 'string') {
-                    const metadata = JSON.parse(task.metadata);
+                if (delivery.metadata && typeof delivery.metadata === 'string') {
+                    const metadata = JSON.parse(delivery.metadata);
                     if (metadata.dropoffAddress) {
                         return metadata.dropoffAddress;
                     }
@@ -134,7 +130,51 @@ export default defineComponent({
             } catch (e) {
                 // continue
             }
-            return task.deliveryAddress || "Not specified";
+            return delivery.deliveryAddress || delivery.toAddress || "Not specified";
+        };
+
+        // Get delivery status for UI
+        const getDeliveryStatus = (status: string) => {
+            switch (status?.toLowerCase()) {
+                case "completed":
+                case "delivered":
+                    return "success";
+                case "cancelled":
+                case "failed":
+                    return "failed";
+                case "pending":
+                case "processing":
+                case "confirmed":
+                case "picked_up":
+                case "in_transit":
+                default:
+                    return "pending";
+            }
+        };
+
+        // Get delivery status label
+        const getDeliveryStatusLabel = (status: string) => {
+            switch (status?.toLowerCase()) {
+                case "completed":
+                    return "Completed";
+                case "delivered":
+                    return "Delivered";
+                case "confirmed":
+                    return "Confirmed";
+                case "picked_up":
+                    return "Picked Up";
+                case "in_transit":
+                    return "In Transit";
+                case "cancelled":
+                    return "Cancelled";
+                case "failed":
+                    return "Failed";
+                case "processing":
+                    return "Processing";
+                case "pending":
+                default:
+                    return "Pending";
+            }
         };
 
         return {
@@ -142,6 +182,8 @@ export default defineComponent({
             getDeliveryItemName,
             getPickupAddress,
             getDropoffAddress,
+            getDeliveryStatus,
+            getDeliveryStatusLabel,
         };
     },
 });

@@ -124,9 +124,9 @@ export default defineComponent({
                 name: "P2P",
               },
               {
-                path: "/orders",
+                path: "/exchange-orders",
                 icon: "order",
-                routeTag: "orders",
+                routeTag: "exchange-orders",
                 name: "Orders",
               },
             ]
