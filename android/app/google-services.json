@@ -50,6 +50,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "209656620172-ueihoi5k1kk0vva1oa9aojk3hesgepvb.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "io.greep.merchant",
+            "certificate_hash": "39a15f6046d4d782fa3463c1d94be5ee84f57e7c"
+          }
+        },
+        {
           "client_id": "209656620172-2p7b35r1h46t7oa2b4k6mj8bq8t8dqho.apps.googleusercontent.com",
           "client_type": 3
         }
@@ -85,6 +93,14 @@
         }
       },
       "oauth_client": [
+        {
+          "client_id": "209656620172-ahj5rmfruvdkia40bhhg5poansc33rns.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "io.greep.pay",
+            "certificate_hash": "dc581dac5fef25d9f7dcfee68ed9aeecd91035ad"
+          }
+        },
         {
           "client_id": "209656620172-2p7b35r1h46t7oa2b4k6mj8bq8t8dqho.apps.googleusercontent.com",
           "client_type": 3
