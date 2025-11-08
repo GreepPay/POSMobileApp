@@ -65,7 +65,7 @@
 
         <!-- Orders Section -->
         <div v-if="recentOrders.length > 0 && Logic.Auth.GetDefaultBusiness()?.business_type == 'vendor'"
-          class="w-full px-4 !border-b-[11px] !border-[#F0F3F6]">
+          class="w-full px-4 !border-b-[11px] !border-[#F0F3F6] mt-4">
           <div class="w-full flex justify-between items-center px-4">
             <app-normal-text class="font-semibold !text-gray-800 !text-sm">
               Orders
