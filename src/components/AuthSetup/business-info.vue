@@ -146,7 +146,6 @@
         v-model="formData.address_note"
         usePermanentFloatingLabel
         is-textarea
-        :rules="[FormValidations.RequiredRule]"
       >
       </app-text-field>
 
