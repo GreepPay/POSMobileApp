@@ -1,7 +1,5 @@
 <template>
-  <div
-    class="w-full flex flex-col items-center justify-start h-full space-y-6 pt-1"
-  >
+  <div class="w-full flex flex-col items-center justify-start space-y-6 pt-1">
     <!-- Form -->
     <app-form-wrapper
       ref="formComponent"
@@ -95,7 +93,7 @@
 
       <div class="w-full flex flex-col mt-2">
         <!-- All tickets -->
-        <div class="w-full flex flex-col mb-4">
+        <div class="w-full flex flex-col mb-4 z-30">
           <div
             v-for="(item, index) in allTickets"
             :key="index"
@@ -265,13 +263,15 @@
 
         <div
           @click="addNewTicket"
-          class="w-full px-4 flex flex-row space-x-1 items-center border-[1.5px] border-primary py-3 rounded-[12px]"
+          class="w-full px-4 flex flex-row space-x-1 items-center border-[1.5px] border-primary py-3 rounded-[12px] z-30"
         >
           <app-icon name="add-green" custom-class="!h-[24px]" />
           <app-normal-text class="!text-primary !font-[500]">
             Add Ticket
           </app-normal-text>
         </div>
+
+        <div class="!h-[50px] py-4"></div>
       </div>
     </app-form-wrapper>
   </div>
