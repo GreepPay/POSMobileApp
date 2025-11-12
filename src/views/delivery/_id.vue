@@ -1,6 +1,6 @@
 <template>
     <app-wrapper>
-        <subpage-layout title="Delivery Details" :hasBottomButton="true">
+        <subpage-layout title="Delivery Order" :hasBottomButton="true">
             <!-- Loading State -->
             <div v-if="isLoading" class="w-full flex flex-col items-center py-8">
                 <app-normal-text class="!text-center !text-gray-500">
@@ -59,7 +59,8 @@
                             </app-normal-text>
                         </div>
 
-                        <div class="w-full flex flex-row items-center justify-between">
+                        <div v-if="!showActionButtons(delivery)"
+                            class="w-full flex flex-row items-center justify-between">
                             <app-normal-text class="!text-left !text-[#999999]">
                                 Delivery Chat
                             </app-normal-text>
@@ -113,7 +114,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, onMounted, computed } from "vue";
+import { defineComponent, ref, computed, watch, onMounted } from "vue";
 import {
     AppNormalText,
     AppImageLoader,
@@ -135,7 +136,17 @@ export default defineComponent({
         AppCountdownTimer,
     },
     middlewares: {
-        fetchRules: [],
+        fetchRules: [
+            {
+                domain: "Commerce",
+                property: "SingleDelivery",
+                method: "GetDeliveryByUuid",
+                params: [],
+                requireAuth: true,
+                ignoreProperty: false,
+                useRouteId: true,
+            },
+        ],
     },
     setup() {
         const route = useRoute();
@@ -143,6 +154,19 @@ export default defineComponent({
         const isLoading = ref(false);
         const error = ref<string | null>(null);
         const currentPageContent = ref("waiting");
+
+        // Watch for middleware-loaded delivery data
+        watch(
+            () => Logic.Commerce.SingleDelivery,
+            (newDelivery) => {
+                if (newDelivery) {
+                    delivery.value = newDelivery;
+                    error.value = null;
+                    console.log("Middleware loaded delivery:", newDelivery);
+                }
+            },
+            { deep: true, immediate: true }
+        );
 
         const colorByStatus = (status: "success" | "failed" | "pending") => {
             if (status === "success") {
@@ -154,34 +178,14 @@ export default defineComponent({
             }
         };
 
-        // Load delivery details
-        const loadDelivery = async () => {
-            try {
-                isLoading.value = true;
-                error.value = null;
-
-                const deliveryId = route.params.id as string;
-                if (!deliveryId) {
-                    error.value = "Delivery ID not found";
-                    return;
-                }
-
-                console.log("Loading delivery with UUID:", deliveryId);
-
-                // Use the new GetDeliveryByUuid method
-                const deliveryData = await Logic.Commerce.GetDeliveryByUuid(deliveryId);
-
-                if (deliveryData) {
-                    delivery.value = deliveryData;
-                    console.log("Found delivery:", deliveryData);
-                } else {
-                    error.value = "Delivery not found";
-                }
-            } catch (err) {
-                error.value = "Failed to load delivery details. Please try again.";
-                console.error("Error loading delivery:", err);
-            } finally {
-                isLoading.value = false;
+        // Refresh delivery from middleware data (for manual refresh/retry)
+        const loadDelivery = () => {
+            error.value = null;
+            const singleDelivery = Logic.Commerce.SingleDelivery;
+            if (singleDelivery) {
+                delivery.value = singleDelivery;
+            } else {
+                error.value = "Delivery not found";
             }
         };
 
@@ -354,7 +358,7 @@ export default defineComponent({
             const status = delivery.status?.toLowerCase();
             switch (status) {
                 case "pending":
-                    return "Accept";
+                    return "Take Order";
                 case "confirmed":
                     return "Pick Up";
                 case "picked_up":
@@ -370,7 +374,7 @@ export default defineComponent({
         const getDeclineButtonText = (delivery: any) => {
             const status = delivery.status?.toLowerCase();
             if (status === "pending") {
-                return "Decline";
+                return "Ignore";
             } else {
                 return "Cancel";
             }
@@ -834,9 +838,9 @@ export default defineComponent({
             }
         };
 
-        // Load delivery on mount
+        // Setup watchProperty to sync middleware data with component ref
         onMounted(() => {
-            loadDelivery();
+            Logic.Commerce.watchProperty("SingleDelivery", delivery);
         });
 
         return {

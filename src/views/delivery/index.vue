@@ -1,7 +1,8 @@
 <template>
     <app-wrapper mobilePadding="!pt-0">
-        <default-page-layout title="Deliveries"
-            :photoUrl="AuthUser?.profile?.business?.logo || '/images/profile-image.svg'">
+        <default-page-layout :title="Logic.Auth.GetDefaultBusiness()?.business_name" :photoUrl="Logic.Auth.GetDefaultBusiness()?.logo || '/images/profile-image.svg'
+            " icon="drop" :title-click-action="() => Logic.Common.GoToRoute('/auth/switch-business')
+                ">
             <template #extra-top-section>
                 <div class="w-full flex flex-col pt-4">
                     <app-tabs :tabs="deliveryTabs" v-model:activeTab="activeTab"
@@ -24,54 +25,15 @@
                     <app-normal-text class="!text-center !text-red-500">
                         {{ error }}
                     </app-normal-text>
-                    <button @click="loadDeliveries" class="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg">
-                        Retry
-                    </button>
                 </div>
 
                 <!-- Deliveries List -->
                 <div v-else class="w-full flex flex-col px-4">
-                    <div v-for="(delivery, index) in currentDeliveries" :key="delivery.uuid || index"
-                        class="w-full flex flex-row items-center pt-4 pb-4 !border-b-[1.5px] !border-[#F0F3F6] cursor-pointer"
-                        @click="goToDelivery(delivery.uuid)">
-                        <div class="w-[48px] mr-3">
-                            <div class="w-[48px]">
-                                <app-icon :name="`order-${getDeliveryStatus(delivery.status)}`"
-                                    custom-class="!h-[48px]" />
-                            </div>
+                    <template v-for="(delivery, index) in currentDeliveries" :key="delivery.uuid || index">
+                        <div @click="goToDelivery(delivery.uuid)" class="cursor-pointer">
+                            <delivery-detail-card :delivery="delivery" />
                         </div>
-
-                        <div class="w-full flex flex-col">
-                            <app-normal-text class="!text-left !text-black !font-[500] !text-sm mb-[3px]">
-                                {{ formatDeliveryTitle(delivery) }}
-                            </app-normal-text>
-
-                            <div class="w-full flex flex-row items-center">
-                                <app-normal-text class="!text-left !text-[#616161]">
-                                    {{ getDeliveryTypeLabel(delivery) }}
-                                </app-normal-text>
-
-                                <div class="h-[4px] w-[4px] rounded-full mx-[6px]"
-                                    :style="`background-color: ${colorByStatus(getDeliveryStatus(delivery.status))} !important;`">
-                                </div>
-
-                                <app-normal-text class="!text-left"
-                                    :style="`color: ${colorByStatus(getDeliveryStatus(delivery.status))} !important;`">
-                                    {{ getDeliveryStatusLabel(delivery.status) }}
-                                </app-normal-text>
-                            </div>
-
-                            <!-- Additional delivery info -->
-                            <div v-if="delivery.fromAddress || delivery.toAddress" class="w-full flex flex-col mt-2">
-                                <app-normal-text class="!text-left !text-[#616161] !text-xs">
-                                    <span v-if="delivery.fromAddress">From: {{ truncateAddress(delivery.fromAddress)
-                                        }}</span>
-                                    <span v-if="delivery.fromAddress && delivery.toAddress"> → </span>
-                                    <span v-if="delivery.toAddress">To: {{ truncateAddress(delivery.toAddress) }}</span>
-                                </app-normal-text>
-                            </div>
-                        </div>
-                    </div>
+                    </template>
 
                     <!-- Empty State -->
                     <div v-if="currentDeliveries.length === 0" class="w-full flex flex-col items-center py-8">
@@ -93,6 +55,7 @@ import {
     AppIcon,
     AppNormalText,
 } from "@greep/ui-components";
+import DeliveryDetailCard from "@/components/DeliveryDetailCard.vue";
 import { Logic } from "@greep/logic";
 import { User } from "@greep/logic/src/gql/graphql";
 
@@ -103,23 +66,37 @@ export default defineComponent({
         AppTabs,
         AppIcon,
         AppNormalText,
+        DeliveryDetailCard,
     },
     layout: "Dashboard",
     middlewares: {
-        fetchRules: [],
+        fetchRules: [
+            {
+                domain: "Commerce",
+                property: "ManyDeliveries",
+                method: "GetCustomDeliveryRequests",
+                params: [1, 50],
+                requireAuth: true,
+                ignoreProperty: false,
+            },
+            {
+                domain: "Commerce",
+                property: "ManyBusinessDeliveries",
+                method: "GetBusinessDeliveries",
+                params: [1, 50],
+                requireAuth: true,
+                ignoreProperty: false,
+            },
+        ],
     },
     setup() {
         const AuthUser = ref<User>(Logic.Auth.AuthUser);
-        const activeTab = ref("requests");
+        const activeTab = ref("active");
         const isLoading = ref(false);
         const error = ref<string | null>(null);
 
         // Delivery tabs
         const deliveryTabs = ref([
-            {
-                key: "requests",
-                label: "Requests",
-            },
             {
                 key: "active",
                 label: "Active",
@@ -140,33 +117,6 @@ export default defineComponent({
             }
         };
 
-        // Load deliveries from GraphQL
-        const loadDeliveries = async () => {
-            try {
-                isLoading.value = true;
-                error.value = null;
-
-                // Load different data based on active tab
-                if (activeTab.value === "requests") {
-                    // Load custom delivery requests (pending requests)
-                    await Logic.Commerce.GetCustomDeliveryRequests(1, 50);
-                } else {
-                    // Load business deliveries for active and history tabs
-                    await Logic.Commerce.GetBusinessDeliveries(1, 50);
-                }
-
-                // Force a reactive update
-                await nextTick();
-                updateTrigger.value++;
-
-            } catch (err) {
-                error.value = "Failed to load deliveries. Please try again.";
-                console.error("Error loading deliveries:", err);
-            } finally {
-                isLoading.value = false;
-            }
-        };
-
         // Format delivery title
         const formatDeliveryTitle = (delivery: any) => {
             if (delivery.trackingNumber) {
@@ -175,6 +125,30 @@ export default defineComponent({
                 return `Order #${delivery.orderNumber}`;
             } else if (delivery.uuid) {
                 return `Delivery #${delivery.uuid.slice(-8)}`;
+            }
+            return "Delivery Request";
+        };
+
+        // Get delivery item name/description
+        const getDeliveryItemName = (delivery: any) => {
+            try {
+                if (delivery.metadata && typeof delivery.metadata === 'string') {
+                    const metadata = JSON.parse(delivery.metadata);
+                    if (metadata.itemDescription) {
+                        return metadata.itemDescription;
+                    }
+                }
+            } catch (e) {
+                // If metadata is not valid JSON, continue
+            }
+
+            // Fallback to tracking number or default
+            if (delivery.trackingNumber) {
+                return `Delivery #${delivery.trackingNumber}`;
+            } else if (delivery.type === 'custom') {
+                return "Custom Delivery";
+            } else if (delivery.type === 'order') {
+                return "Order Delivery";
             }
             return "Delivery Request";
         };
@@ -242,9 +216,7 @@ export default defineComponent({
 
         // Get empty state text based on active tab
         const getEmptyStateText = () => {
-            if (activeTab.value === "requests") {
-                return "delivery requests";
-            } else if (activeTab.value === "active") {
+            if (activeTab.value === "active") {
                 return "active deliveries";
             } else {
                 return "completed deliveries";
@@ -268,15 +240,14 @@ export default defineComponent({
 
             let deliveries: any[] = [];
 
-            if (activeTab.value === "requests") {
-                // Requests tab: Show custom pending delivery requests
-                deliveries = Logic.Commerce.ManyDeliveries?.data || [];
-                console.log('Custom delivery requests (pending):', deliveries.length);
-            } else {
-                // Active and History tabs: Show business deliveries
-                deliveries = Logic.Commerce.ManyBusinessDeliveries?.data || [];
-                console.log('Business deliveries:', deliveries.length);
+            // Active and History tabs: Show business deliveries
+            const manyBusinessDeliveries = Logic.Commerce.ManyBusinessDeliveries;
+            if (manyBusinessDeliveries?.data) {
+                deliveries = manyBusinessDeliveries.data;
+            } else if (Array.isArray(manyBusinessDeliveries)) {
+                deliveries = manyBusinessDeliveries;
             }
+            console.log('Business deliveries:', deliveries.length, manyBusinessDeliveries);
 
             // Sort deliveries by created_at descending (recent first)
             const sortedDeliveries = [...deliveries].sort((a: any, b: any) => {
@@ -286,11 +257,7 @@ export default defineComponent({
             });
 
             // Filter based on tab
-            if (activeTab.value === "requests") {
-                // Requests: Custom deliveries with pending status (already filtered by API)
-                console.log('Request deliveries:', sortedDeliveries.length);
-                return sortedDeliveries;
-            } else if (activeTab.value === "active") {
+            if (activeTab.value === "active") {
                 // Active: Any status except "delivered" and "completed"
                 const activeDeliveries = sortedDeliveries.filter((delivery: any) => {
                     const status = delivery.status?.toLowerCase() || "";
@@ -307,16 +274,6 @@ export default defineComponent({
                 console.log('History deliveries:', historyDeliveries.length);
                 return historyDeliveries;
             }
-        });
-
-        // Load deliveries on mount and when tab changes
-        onMounted(() => {
-            loadDeliveries();
-        });
-
-        // Watch for tab changes
-        watch(activeTab, () => {
-            loadDeliveries();
         });
 
         // Watch for delivery changes
@@ -338,9 +295,9 @@ export default defineComponent({
             error,
             currentDeliveries,
             colorByStatus,
-            loadDeliveries,
             goToDelivery,
             formatDeliveryTitle,
+            getDeliveryItemName,
             getDeliveryTypeLabel,
             getDeliveryStatus,
             getDeliveryStatusLabel,
