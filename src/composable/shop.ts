@@ -22,4 +22,6 @@ export interface BaseProductSummary {
   currency: string;
   variants: VariantAttribute[];
   type: string;
+  cuisineCountry?: string;
+  isNationalCuisine?: boolean;
 }

@@ -1,106 +1,66 @@
 <template>
   <div class="w-full flex flex-col items-center justify-start h-full space-y-6">
     <!-- Form -->
-    <app-form-wrapper
-      ref="formComponent"
-      :parent-refs="parentRefs"
-      class="w-full flex flex-col space-y-[23px] h-full"
-      v-if="!hideContent"
-    >
-      <div
-        class="w-full flex no-scrollbar flex-row space-x-3 flex-nowrap overflow-x-auto scrollbar-hide"
-      >
+    <app-form-wrapper ref="formComponent" :parent-refs="parentRefs" class="w-full flex flex-col space-y-[23px] h-full"
+      v-if="!hideContent">
+      <div class="w-full flex no-scrollbar flex-row space-x-3 flex-nowrap overflow-x-auto scrollbar-hide">
         <div class="flex flex-row py-2">
           <div class="pr-3 flex flex-col">
-            <app-file-attachment
-              :is-wrapper="true"
-              @update:files-and-url="
-                (newPhotos: any[]) => {
-                  formData.photos.push(...newPhotos);
-                }
-              "
-              :accept="`image/png, image/gif, image/jpeg, image/webp`"
-              is-multiple
-              class="flex flex-row items-center justify-start !w-auto"
-            >
+            <app-file-attachment :is-wrapper="true" @update:files-and-url="
+              (newPhotos: any[]) => {
+                formData.photos.push(...newPhotos);
+              }
+            " :accept="`image/png, image/gif, image/jpeg, image/webp`" is-multiple
+              class="flex flex-row items-center justify-start !w-auto">
               <template v-slot:content>
                 <div
-                  class="w-[96px] h-[96px] !border-[1.5px] border-[#E0E2E4] rounded-[16px] flex flex-row items-center justify-center"
-                >
+                  class="w-[96px] h-[96px] !border-[1.5px] border-[#E0E2E4] rounded-[16px] flex flex-row items-center justify-center">
                   <app-icon name="gallery-add" custom-class="!h-[32px]" />
                 </div>
               </template>
             </app-file-attachment>
           </div>
 
-          <div
-            class="pr-3 flex flex-col relative"
-            v-for="(item, index) in formData.photos"
-            :key="index"
-          >
-            <span
-              class="absolute top-0 right-0 py-1 px-1 bg-white rounded-full"
-              @click="formData.photos.splice(index, 1)"
-            >
+          <div class="pr-3 flex flex-col relative" v-for="(item, index) in formData.photos" :key="index">
+            <span class="absolute top-0 right-0 py-1 px-1 bg-white rounded-full"
+              @click="formData.photos.splice(index, 1)">
               <app-icon name="remove-image" custom-class="!h-[28px]" />
             </span>
-            <app-image-loader
-              :photo-url="item.url"
-              class="w-[96px] h-[96px] !border-[1.5px] border-[#E0E2E4] rounded-[16px]"
-            >
+            <app-image-loader :photo-url="item.url"
+              class="w-[96px] h-[96px] !border-[1.5px] border-[#E0E2E4] rounded-[16px]">
             </app-image-loader>
           </div>
         </div>
       </div>
 
-      <app-text-field
-        :has-title="false"
-        type="text"
-        placeholder="Product name"
-        ref="productName"
-        name="Name"
-        v-model="formData.name"
-        usePermanentFloatingLabel
-        :rules="[FormValidations.RequiredRule]"
-      >
+      <app-text-field :has-title="false" type="text" placeholder="Product name" ref="productName" name="Name"
+        v-model="formData.name" usePermanentFloatingLabel :rules="[FormValidations.RequiredRule]">
       </app-text-field>
 
-      <app-text-field
-        :has-title="false"
-        type="text"
-        placeholder="Type to ‘add new’ or ‘search’"
-        ref="productCategory"
-        name="Catgory"
-        v-model="formData.category"
-        usePermanentFloatingLabel
-        :rules="[FormValidations.RequiredRule]"
-      >
+      <app-text-field :has-title="false" type="text" placeholder="Type to ‘add new’ or ‘search’" ref="productCategory"
+        name="Catgory" v-model="formData.category" usePermanentFloatingLabel :rules="[FormValidations.RequiredRule]">
       </app-text-field>
 
-      <app-select
-        :placeholder="'Product Type'"
-        :hasTitle="false"
-        :paddings="'py-4 !px-3'"
-        :options="productTypeOptions"
-        ref="country"
-        use-floating-label
-        v-model="formData.type"
-      >
+      <app-select :placeholder="'Product Type'" :hasTitle="false" :paddings="'py-4 !px-3'" :options="productTypeOptions"
+        ref="country" use-floating-label v-model="formData.type">
       </app-select>
 
-      <app-text-field
-        :has-title="false"
-        type="text"
-        placeholder="Full details of the product"
-        ref="productDescription"
-        name="Description"
-        v-model="formData.descriptions"
-        usePermanentFloatingLabel
-        is-textarea
-        :max-character="10000"
-        :rules="[FormValidations.RequiredRule]"
-      >
+      <app-text-field :has-title="false" type="text" placeholder="Full details of the product" ref="productDescription"
+        name="Description" v-model="formData.descriptions" usePermanentFloatingLabel is-textarea :max-character="10000"
+        :rules="[FormValidations.RequiredRule]">
       </app-text-field>
+
+      <div class="w-full flex flex-col space-y-3">
+        <div class="w-40 flex flex-row items-center">
+          <app-checkbox v-model="formData.isNationalCuisine" variant="switch" class="transform scale-150" />
+          <span class="text-sm font-medium whitespace-nowrap ml-2">National Cuisine</span>
+        </div>
+
+        <app-select v-if="formData.isNationalCuisine" :placeholder="'Select the cuisine\'s country'" :hasTitle="true"
+          :title="'Country'" :paddings="'py-4 !px-3'" :options="cuisineCountryOptions" ref="cuisineCountry"
+          use-floating-label v-model="formData.cuisineCountry" auto-complete>
+        </app-select>
+      </div>
 
       <!-- Spacer -->
       <div class="h-[30px]"></div>
@@ -117,11 +77,13 @@ import {
   AppFileAttachment,
   AppImageLoader,
   AppSelect,
+  AppCheckbox,
 } from "@greep/ui-components";
 import { Logic } from "@greep/logic";
 import { User } from "@greep/logic/src/gql/graphql";
 import { BaseProductSummary } from "../../composable/shop";
 import { SelectOption } from "@greep/ui-components/src/types";
+import { Country } from "country-state-city";
 
 export default defineComponent({
   components: {
@@ -131,6 +93,7 @@ export default defineComponent({
     AppFileAttachment,
     AppImageLoader,
     AppSelect,
+    AppCheckbox,
   },
   props: {
     authUser: {
@@ -155,12 +118,16 @@ export default defineComponent({
         rawValue: string;
       }[];
       type: string;
+      cuisineCountry: string;
+      isNationalCuisine: boolean;
     }>({
       name: "",
       category: "",
       descriptions: "",
       photos: [],
       type: "physical",
+      cuisineCountry: "",
+      isNationalCuisine: false,
     });
 
     const formComponent = ref<any>(null);
@@ -175,6 +142,23 @@ export default defineComponent({
         value: "Digital",
       },
     ]);
+
+    const cuisineCountryOptions = reactive<SelectOption[]>([]);
+
+    const initializeCountries = () => {
+      try {
+        const allCountries = Country.getAllCountries();
+        cuisineCountryOptions.length = 0;
+        cuisineCountryOptions.push(
+          ...allCountries.map((country) => ({
+            key: country.isoCode,
+            value: country.name,
+          }))
+        );
+      } catch (error) {
+        console.error("Error loading countries:", error);
+      }
+    };
 
     const continueWithForm = () => {
       const state = formComponent.value?.validate();
@@ -201,6 +185,8 @@ export default defineComponent({
         formData.descriptions = props.data.descriptions;
         formData.photos = props.data.photos;
         formData.type = props.data.type;
+        formData.cuisineCountry = props.data.cuisineCountry || "";
+        formData.isNationalCuisine = props.data.isNationalCuisine || false;
 
         setTimeout(() => {
           hideContent.value = false;
@@ -216,6 +202,7 @@ export default defineComponent({
     );
 
     onMounted(() => {
+      initializeCountries();
       setDefaultValues();
     });
 
@@ -227,6 +214,8 @@ export default defineComponent({
       continueWithForm,
       hideContent,
       productTypeOptions,
+      cuisineCountryOptions,
+      initializeCountries,
     };
   },
   data() {
