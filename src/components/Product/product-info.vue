@@ -36,10 +36,19 @@
       <app-text-field :has-title="false" type="text" placeholder="Product name" ref="productName" name="Name"
         v-model="formData.name" usePermanentFloatingLabel :rules="[FormValidations.RequiredRule]">
       </app-text-field>
-
-      <app-text-field :has-title="false" type="text" placeholder="Type to ‘add new’ or ‘search’" ref="productCategory"
-        name="Catgory" v-model="formData.category" usePermanentFloatingLabel :rules="[FormValidations.RequiredRule]">
-      </app-text-field>
+      
+      
+      <app-select 
+        :placeholder="'Product Category'" 
+        :hasTitle="false" 
+        :paddings="'py-4 !px-3'" 
+        :options="categoryOptions"
+        ref="categorySelect" 
+        use-floating-label 
+        v-model="formData.category"
+        :rules="[FormValidations.RequiredRule]"
+      >
+      </app-select>
 
       <app-select :placeholder="'Product Type'" :hasTitle="false" :paddings="'py-4 !px-3'" :options="productTypeOptions"
         ref="country" use-floating-label v-model="formData.type">
@@ -108,10 +117,10 @@ export default defineComponent({
     const FormValidations = Logic.Form;
 
     const hideContent = ref(false);
-
+    
     const formData = reactive<{
       name: string;
-      category: string;
+      category: string; 
       descriptions: string;
       photos: {
         url: string;
@@ -122,7 +131,7 @@ export default defineComponent({
       isNationalCuisine: boolean;
     }>({
       name: "",
-      category: "",
+      category: "", 
       descriptions: "",
       photos: [],
       type: "physical",
@@ -132,6 +141,7 @@ export default defineComponent({
 
     const formComponent = ref<any>(null);
 
+    // Product Type Options
     const productTypeOptions = reactive<SelectOption[]>([
       {
         key: "physical",
@@ -143,8 +153,29 @@ export default defineComponent({
       },
     ]);
 
+    // Category Options
+    const categoryOptions = ref<SelectOption[]>([]);
+
+    // Cuisine Country Options
     const cuisineCountryOptions = reactive<SelectOption[]>([]);
 
+    // Load categories from API
+    const loadCategories = async () => {
+      try {
+        const categories = await Logic.Product.GetCategories();
+        console.log(categories)
+        
+        if (categories && categories.length > 0) {
+          // Use .value with ref
+          categoryOptions.value = categories.map(category => ({
+            key: category.name,
+            value: category.name
+          }));
+        }
+      } catch (error) {
+        console.error("Failed to load categories:", error);
+      }
+    };
     const initializeCountries = () => {
       try {
         const allCountries = Country.getAllCountries();
@@ -181,7 +212,7 @@ export default defineComponent({
       if (props.data) {
         hideContent.value = true;
         formData.name = props.data.name;
-        formData.category = props.data.category;
+        formData.category = props.data.category; // This should match your existing data structure
         formData.descriptions = props.data.descriptions;
         formData.photos = props.data.photos;
         formData.type = props.data.type;
@@ -203,6 +234,7 @@ export default defineComponent({
 
     onMounted(() => {
       initializeCountries();
+      loadCategories(); // Load categories when component mounts
       setDefaultValues();
     });
 
@@ -214,8 +246,10 @@ export default defineComponent({
       continueWithForm,
       hideContent,
       productTypeOptions,
+      categoryOptions, 
       cuisineCountryOptions,
       initializeCountries,
+      loadCategories,
     };
   },
   data() {
