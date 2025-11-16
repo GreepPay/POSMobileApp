@@ -1,6 +1,6 @@
 <template>
   <div
-    class="w-full flex flex-col items-center justify-start h-full space-y-6 !mb-[130px]"
+    class="w-full flex flex-col items-center justify-start h-full space-y-3 !mb-[130px]"
   >
     <!-- Form -->
     <app-form-wrapper
@@ -148,7 +148,6 @@
         v-model="formData.address_note"
         usePermanentFloatingLabel
         is-textarea
-        :rules="[FormValidations.RequiredRule]"
       >
       </app-text-field>
 
