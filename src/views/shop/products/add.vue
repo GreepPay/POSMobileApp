@@ -1,30 +1,17 @@
 <template>
   <app-wrapper mobilePadding="!pt-0">
-    <app-onboarding-layout
-      v-model="currentPage"
-      :page-setting="pageSettings"
-      :topPadding="`${currentPlatform === 'android' ? '!pt-6 !pb-0' : '!pb-0'}`"
-      variant="white"
-      :hideElements="showSummary"
-      fallBackTitle="Product Preview"
-      :fall-back-page="summaryCurrentPage"
-    >
+    <app-onboarding-layout v-model="currentPage" :page-setting="pageSettings"
+      :topPadding="`${currentPlatform === 'android' ? '!pt-6 !pb-0' : '!pb-0'}`" variant="white"
+      :hideElements="showSummary" fallBackTitle="Product Preview" :fall-back-page="summaryCurrentPage">
       <template #top-right-section v-if="isEdit">
         <div class="flex flex-col">
-          <app-button
-            variant="secondary"
-            :outlined="SingleProduct?.status == 'active'"
-            :class="`!py-1 !font-[500] !border-[1.5px] !w-fit`"
-            @click="toggleProductStatus()"
-          >
+          <app-button variant="secondary" :outlined="SingleProduct?.status == 'active'"
+            :class="`!py-1 !font-[500] !border-[1.5px] !w-fit`" @click="toggleProductStatus()">
             {{ SingleProduct?.status == "active" ? "Archive" : "Activate" }}
           </app-button>
         </div>
       </template>
-      <div
-        class="w-full flex flex-col items-center justify-start h-full px-4 py-3 pt-2"
-        v-if="!hidePageContent"
-      >
+      <div class="w-full flex flex-col items-center justify-start h-full px-4 py-3 pt-2" v-if="!hidePageContent">
         <template v-if="!showSummary">
           <div class="w-full flex flex-col mb-2">
             <app-normal-text class="!text-sm">
@@ -44,10 +31,7 @@
           </template>
 
           <template v-if="currentPage == 'product_inventory'">
-            <product-inventory
-              ref="productInventoryRef"
-              :data="fullProductData"
-            />
+            <product-inventory ref="productInventoryRef" :data="fullProductData" />
           </template>
         </template>
 
@@ -141,6 +125,8 @@ export default defineComponent({
       variants: [],
       currency: "",
       type: "physical",
+      cuisineCountry: "",
+      isNationalCuisine: false,
     });
 
     const productInfoRef = ref<any>(null);
@@ -165,6 +151,8 @@ export default defineComponent({
                 fullProductData.descriptions = formData.descriptions;
                 fullProductData.photos = formData.photos;
                 fullProductData.type = formData.type;
+                fullProductData.cuisineCountry = formData.cuisineCountry;
+                fullProductData.isNationalCuisine = formData.isNationalCuisine;
 
                 currentPage.value = "product_variant";
               }
@@ -300,6 +288,8 @@ export default defineComponent({
                     ? digitalGoodData
                     : undefined,
                 inventoryCount: parseInt(fullProductData.stock?.toString()),
+                national_cuisine: fullProductData.isNationalCuisine || false,
+                national_cuisine_country: fullProductData.cuisineCountry || null,
               },
             };
           } else {
@@ -332,6 +322,8 @@ export default defineComponent({
                     ? digitalGoodData
                     : undefined,
                 inventoryCount: parseInt(fullProductData.stock?.toString()),
+                national_cuisine: fullProductData.isNationalCuisine || false,
+                national_cuisine_country: fullProductData.cuisineCountry || null,
               },
             };
           }
@@ -459,6 +451,9 @@ export default defineComponent({
             } as VariantAttribute;
           }) || [];
 
+        fullProductData.isNationalCuisine = productData?.national_cuisine || false;
+        fullProductData.cuisineCountry = productData?.national_cuisine_country || "";
+
         setTimeout(() => {
           hidePageContent.value = false;
         }, 200);
@@ -473,6 +468,8 @@ export default defineComponent({
         fullProductData.currency =
           Logic.Auth.GetDefaultBusiness().default_currency || "USD";
         fullProductData.variants = [];
+        fullProductData.cuisineCountry = "";
+        fullProductData.isNationalCuisine = false;
       }
     };
 
