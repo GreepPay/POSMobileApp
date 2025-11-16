@@ -1,12 +1,10 @@
 <template>
-  <div
-    class="w-full flex flex-col items-center justify-start h-full space-y-3 !mb-[130px]"
-  >
+  <div class="w-full flex flex-col items-center justify-start space-y-6">
     <!-- Form -->
     <app-form-wrapper
       ref="formComponent"
       :parent-refs="parentRefs"
-      class="w-full flex flex-col space-y-[23px] h-full"
+      class="w-full flex flex-col space-y-[23px]"
       v-if="!hideContent"
     >
       <div class="w-full flex flex-row pb-3">
@@ -152,7 +150,7 @@
       </app-text-field>
 
       <!-- Spacer -->
-      <div class="h-[30px]"></div>
+      <div class="h-[80px]"></div>
 
       <!-- Spacer -->
     </app-form-wrapper>

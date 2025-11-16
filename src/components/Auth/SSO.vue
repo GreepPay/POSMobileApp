@@ -76,6 +76,7 @@ export default defineComponent({
     });
 
     const authenticateUser = async (userId: string) => {
+      localStorage.setItem("sso_id", userId);
       if (props.fromAction == "signUp") {
         const password = Logic.Common.makeid(12);
 

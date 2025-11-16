@@ -3,7 +3,7 @@
     <app-onboarding-layout
       v-model="currentPage"
       :page-setting="pageSettings"
-      :topPadding="`${currentPlatform === 'android' ? '!pt-6 !pb-0' : '!pb-0'}`"
+      :topPadding="`${currentPlatform === 'android' ? '!pb-0' : '!pb-0'}`"
       variant="white"
     >
       <div

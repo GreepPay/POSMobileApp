@@ -121,6 +121,7 @@ export default defineComponent({
           const authLoginData = {
             email: localStorage.getItem("auth_email"),
             password: localStorage.getItem("auth_pass"),
+            sso_id: localStorage.getItem("sso_id"),
           };
 
           if (localStorage.getItem("auth_email")) {
@@ -150,6 +151,7 @@ export default defineComponent({
             // Clear auth data from local storage
             localStorage.removeItem("auth_email");
             localStorage.removeItem("auth_pass");
+            localStorage.removeItem("sso_id");
 
             Logic.Common.GoToRoute("/");
           }

@@ -49,7 +49,7 @@ export default defineComponent({
     },
     mobilePadding: {
       type: String,
-      default: "!pt-6",
+      default: "!pt-4",
     },
   },
   components: {
