@@ -18,30 +18,23 @@ export default defineConfig({
       registerType: "autoUpdate",
       includeAssets: ["favicon.ico", "apple-touch-icon.png", "mask-icon.svg"],
       workbox: {
+        skipWaiting: true,
+        clientsClaim: true,
         maximumFileSizeToCacheInBytes: 10000000,
         runtimeCaching: [
           {
-            urlPattern: ({ request }) => request.destination === 'document', // all HTML pages
-            handler: 'NetworkFirst', // <-- key: Network first
+            urlPattern: ({ request }) => request.mode === "navigate",
+            handler: "NetworkFirst",
             options: {
-              cacheName: 'html-cache',
-              networkTimeoutSeconds: 10, // fallback to cache if network is slow
-              expiration: {
-                maxEntries: 50,
-                maxAgeSeconds: 24 * 60 * 60, // 1 day
-              },
+              cacheName: "html-cache",
+              networkTimeoutSeconds: 3,
             },
           },
           {
-            urlPattern: ({ request }) =>
-              ['script', 'style', 'image', 'font'].includes(request.destination),
-            handler: 'StaleWhileRevalidate', // for static assets
+            urlPattern: /\.(?:js|css|png|jpg|jpeg|svg|gif)$/,
+            handler: "StaleWhileRevalidate",
             options: {
-              cacheName: 'assets-cache',
-              expiration: {
-                maxEntries: 100,
-                maxAgeSeconds: 7 * 24 * 60 * 60, // 7 days
-              },
+              cacheName: "asset-cache",
             },
           },
         ],
