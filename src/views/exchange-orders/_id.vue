@@ -1,28 +1,11 @@
 <template>
   <app-wrapper>
     <subpage-layout title="Order Details" :hasBottomButton="true">
-      <!-- Loading State -->
-      <div v-if="isLoading" class="w-full flex flex-col items-center py-8">
-        <app-normal-text class="!text-center !text-gray-500">
-          Loading order details...
-        </app-normal-text>
-      </div>
-
-      <!-- Error State -->
-      <div v-else-if="error" class="w-full flex flex-col items-center py-8">
-        <app-normal-text class="!text-center !text-red-500">
-          {{ error }}
-        </app-normal-text>
-        <button
-          @click="loadOrder"
-          class="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg"
-        >
-          Retry
-        </button>
-      </div>
-
       <!-- Order Details -->
-      <div v-else-if="order" class="w-full flex flex-col justify-start pt-1">
+      <div
+        v-if="SingleP2pOrder"
+        class="w-full flex flex-col justify-start pt-1"
+      >
         <!-- Order ID -->
         <div class="w-full flex flex-col px-4">
           <app-image-loader
@@ -42,7 +25,7 @@
               </app-normal-text>
 
               <app-normal-text class="!text-white !font-semibold !uppercase">
-                #{{ order.uuid.slice(0, 8) }}
+                #{{ SingleP2pOrder.uuid.slice(0, 8) }}
               </app-normal-text>
             </div>
           </app-image-loader>
@@ -56,8 +39,8 @@
           <div class="w-[48px] mr-3">
             <div class="w-[48px]">
               <app-image-loader
-                :photoUrl="getBusinessLogo(order)"
-                class="h-[48px] w-[48px] rounded-full"
+                :photoUrl="getBusinessLogo(SingleP2pOrder)"
+                class="h-[48px] w-[48px] rounded-full border-[1px]"
               />
             </div>
           </div>
@@ -66,11 +49,11 @@
               <app-normal-text
                 class="!text-left !text-black !font-[500] !text-sm mb-[1px]"
               >
-                {{ getBusinessName(order) }}
+                {{ getBusinessName(SingleP2pOrder) }}
               </app-normal-text>
 
               <app-normal-text class="!text-right !text-[#999999] mb-[1px]">
-                {{ formatTime(order.created_at) }}
+                {{ formatTime(SingleP2pOrder.created_at) }}
               </app-normal-text>
             </div>
 
@@ -82,7 +65,7 @@
               <div
                 class="h-[24px] w-[24px] rounded-full flex items-center justify-center"
                 :style="`background-color: ${colorByStatus(
-                  getOrderStatus(order.status)
+                  getOrderStatus(SingleP2pOrder.status)
                 )} !important;`"
               >
                 <app-normal-text class="!text-[#ffffff] !font-[500]">
@@ -101,7 +84,7 @@
             <div class="w-[48px] mr-3">
               <div class="w-[48px]">
                 <app-image-loader
-                  :photoUrl="getUserAvatar(order)"
+                  :photoUrl="getUserAvatar(SingleP2pOrder)"
                   class="h-[48px] w-[48px] rounded-full"
                 />
               </div>
@@ -111,7 +94,7 @@
                 <app-normal-text
                   class="!text-left !text-black !font-[500] !text-sm mb-[1px]"
                 >
-                  {{ getUserName(order) }}
+                  {{ getUserName(SingleP2pOrder) }}
                 </app-normal-text>
               </div>
 
@@ -126,7 +109,7 @@
 
         <!-- Details -->
         <template
-          v-for="(details, index) in getOrderDetails(order)"
+          v-for="(details, index) in getOrderDetails(SingleP2pOrder)"
           :key="index"
         >
           <div class="w-full flex flex-col px-4 mb-4">
@@ -140,9 +123,9 @@
       <!-- Bottom button -->
       <div
         v-if="
-          order &&
-          order.status?.toLowerCase() !== 'completed' &&
-          order.status?.toLowerCase() !== 'accepted'
+          SingleP2pOrder &&
+          SingleP2pOrder.status?.toLowerCase() !== 'completed' &&
+          SingleP2pOrder.status?.toLowerCase() !== 'accepted'
         "
         class="w-full fixed bg-white dark:bg-black bottom-0 left-0 pt-4 px-4 flex flex-col"
         :style="`
@@ -151,7 +134,9 @@
       >
         <div
           class="w-full flex flex-col pb-4"
-          v-if="currentPageContent === 'waiting' && isPendingOrder(order)"
+          v-if="
+            currentPageContent === 'waiting' && isPendingOrder(SingleP2pOrder)
+          "
         >
           <app-countdown-timer
             :customText="`You must accept in`"
@@ -175,7 +160,7 @@
               variant="secondary"
               :class="`!py-4`"
               @click="acceptOrder"
-              :disabled="!isPendingOrder(order)"
+              :disabled="!isPendingOrder(SingleP2pOrder)"
             >
               {{ mainButtonLabel }}
             </app-button>
@@ -202,6 +187,7 @@ import { useRoute } from "vue-router";
 
 export default defineComponent({
   name: "OrderDetailsPage",
+
   components: {
     AppNormalText,
     AppImageLoader,
@@ -209,11 +195,23 @@ export default defineComponent({
     AppDetails,
     AppCountdownTimer,
   },
+  middlewares: {
+    fetchRules: [
+      {
+        domain: "Wallet",
+        property: "SingleP2pOrder",
+        method: "GetP2pOrder",
+        params: [],
+        requireAuth: true,
+        ignoreProperty: true,
+        useRouteId: true,
+      },
+    ],
+  },
   setup() {
     const route = useRoute();
-    const order = ref<ExchangeOrder | null>(null);
-    const isLoading = ref(false);
-    const error = ref<string | null>(null);
+    const SingleP2pOrder = ref(Logic.Wallet.SingleP2pOrder);
+
     const currentPageContent = ref("waiting");
     const mainButtonLabel = ref("Accept");
 
@@ -224,32 +222,6 @@ export default defineComponent({
         return "#FA1919";
       } else {
         return "#FFAA1F";
-      }
-    };
-
-    // Load order details
-    const loadOrder = async () => {
-      try {
-        isLoading.value = true;
-        error.value = null;
-
-        const orderId = route.params.id as string;
-        if (!orderId) {
-          error.value = "Order ID not found";
-          return;
-        }
-
-        const orderData = await Logic.Wallet.GetP2pOrder(orderId);
-        if (orderData) {
-          order.value = orderData;
-        } else {
-          error.value = "Order not found";
-        }
-      } catch (err) {
-        error.value = "Failed to load order details. Please try again.";
-        console.error("Error loading order:", err);
-      } finally {
-        isLoading.value = false;
       }
     };
 
@@ -424,10 +396,10 @@ export default defineComponent({
 
     // Navigate to chat
     const goToChat = () => {
-      if (order.value?.conversation_uuid) {
+      if (SingleP2pOrder.value?.conversation_uuid) {
         Logic.Common.GoToRoute(
-          `/chat/${order.value.conversation_uuid}?p2p=true&method=${
-            order.value.payment_type || "cash"
+          `/chat/${SingleP2pOrder.value.conversation_uuid}?p2p=true&method=${
+            SingleP2pOrder.value.payment_type || "cash"
           }`
         );
       }
@@ -435,14 +407,14 @@ export default defineComponent({
 
     // Accept order
     const acceptOrder = async () => {
-      if (!order.value) return;
+      if (!SingleP2pOrder.value) return;
 
       try {
         // Send structured response to trigger business acceptance
         const structuredResponse = {
           selected_option: "business_accept",
-          order_uuid: order.value.uuid,
-          business_id: order.value.ad?.business?.uuid,
+          order_uuid: SingleP2pOrder.value.uuid,
+          business_id: SingleP2pOrder.value.ad?.business?.uuid,
           user_id: Logic.Auth.AuthUser?.id,
         };
 
@@ -457,12 +429,11 @@ export default defineComponent({
         try {
           console.log(
             "🔧 Looking for existing conversation for order:",
-            order.value.uuid
+            SingleP2pOrder.value.uuid
           );
 
           // ✅ FIX: Use conversation_uuid from the order
-          const conversationUuid = order.value.conversation_uuid;
-
+          const conversationUuid = SingleP2pOrder.value.conversation_uuid;
           if (!conversationUuid) {
             throw new Error("No conversation UUID found for this order");
           }
@@ -503,18 +474,18 @@ export default defineComponent({
             // ✅ NEW: Add business as participant to the existing conversation
             try {
               // ✅ FIX: Get business user ID from the business UUID
-              const businessUuid = order.value.ad?.business?.uuid;
+              const businessUuid = SingleP2pOrder.value.ad?.business?.uuid;
               console.log("🔧 Adding business as participant:", {
                 conversationId: existingConversation.id,
                 businessUuid: businessUuid,
-                businessId: order.value.ad?.business?.id,
-                businessName: order.value.ad?.business?.business_name,
+                businessId: SingleP2pOrder.value.ad?.business?.id,
+                businessName: SingleP2pOrder.value.ad?.business?.business_name,
               });
 
               if (businessUuid) {
                 // ✅ FIX: Get the business user ID from the business object
                 const businessUserId = parseInt(
-                  order.value.ad?.business?.user?.id?.toString() || "0"
+                  SingleP2pOrder.value.ad?.business?.user?.id?.toString() || "0"
                 );
 
                 if (businessUserId > 0) {
@@ -528,7 +499,7 @@ export default defineComponent({
                   );
                   console.log(
                     "📋 Order UUID for this conversation:",
-                    order.value.uuid
+                    SingleP2pOrder.value.uuid
                   );
                 } else {
                   console.error("❌ Invalid business user ID:", businessUserId);
@@ -564,16 +535,16 @@ export default defineComponent({
             setTimeout(() => {
               // Extract pickup address from order
               const pickupAddress =
-                order.value?.pickup_location_address_line ||
+                SingleP2pOrder.value?.pickup_location_address_line ||
                 "Pickup location to be confirmed";
 
               console.log("📍 Pickup address from order:", pickupAddress);
 
               Logic.Common.GoToRoute(
                 `/chat/${existingConversation.uuid}?p2p=true&method=${
-                  order.value?.payment_type || "cash"
+                  SingleP2pOrder.value?.payment_type || "cash"
                 }&order_uuid=${
-                  order.value?.uuid
+                  SingleP2pOrder.value?.uuid
                 }&pickup_address=${encodeURIComponent(pickupAddress)}`
               );
             }, 1500);
@@ -603,14 +574,14 @@ export default defineComponent({
 
     // Decline order
     const declineOrder = async () => {
-      if (!order.value) return;
+      if (!SingleP2pOrder.value) return;
 
       try {
         // Send structured response to trigger order decline
         const structuredResponse = {
           selected_option: "decline",
-          order_uuid: order.value.uuid,
-          business_id: order.value.ad?.business?.uuid,
+          order_uuid: SingleP2pOrder.value.uuid,
+          business_id: SingleP2pOrder.value.ad?.business?.uuid,
           user_id: Logic.Auth.AuthUser?.id,
         };
 
@@ -621,8 +592,7 @@ export default defineComponent({
           type: "success",
         });
 
-        // Reload order to get updated status
-        await loadOrder();
+        Logic.Wallet.GetP2pOrder(SingleP2pOrder.value.uuid);
       } catch (err) {
         Logic.Common.showAlert({
           show: true,
@@ -635,19 +605,16 @@ export default defineComponent({
 
     // Load order on mount
     onMounted(() => {
-      loadOrder();
+      Logic.Wallet.watchProperty("SingleP2pOrder", SingleP2pOrder);
     });
 
     return {
       Logic,
-      order,
-      isLoading,
-      error,
+      SingleP2pOrder,
       getBottomPadding,
       colorByStatus,
       currentPageContent,
       mainButtonLabel,
-      loadOrder,
       goToChat,
       getBusinessLogo,
       getBusinessName,

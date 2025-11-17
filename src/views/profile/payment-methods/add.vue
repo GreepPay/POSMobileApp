@@ -365,8 +365,6 @@ export default defineComponent({
           metadata = {};
         }
 
-        console.log(SingleP2pPaymentMethod.value);
-
         setTimeout(() => {
           hideContent.value = false;
         }, 200);

@@ -121,6 +121,7 @@ import { ref } from "vue";
 import { getBottomPadding } from "../../composable";
 import { onMounted } from "vue";
 import { ProductStatus } from "@greep/logic/src/gql/graphql";
+import { onIonViewWillEnter } from "@ionic/vue";
 
 export default defineComponent({
   name: "EventDetailsPage",
@@ -212,6 +213,13 @@ export default defineComponent({
         Logic.Common.hideLoader();
       }
     };
+
+    onIonViewWillEnter(() => {
+      const selectedTabFromQuery = Logic.Common.route?.query?.tab as string;
+      if (selectedTabFromQuery) {
+        selectedTab.value = selectedTabFromQuery;
+      }
+    });
 
     onMounted(() => {
       Logic.Commerce.watchProperty("SingleProduct", SingleProduct);

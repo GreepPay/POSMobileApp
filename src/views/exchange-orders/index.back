@@ -53,7 +53,7 @@
             <div class="w-[48px] mr-3">
               <div class="w-[48px]">
                 <app-icon
-                  :name="`order-${order.status}`"
+                  :name="`order-${getOrderStatus(order.status)}`"
                   custom-class="!h-[48px]"
                 />
               </div>
@@ -63,27 +63,27 @@
               <app-normal-text
                 class="!text-left !text-black !font-[500] !text-sm mb-[3px]"
               >
-                {{ order.title }}
+                {{ formatOrderTitle(order) }}
               </app-normal-text>
 
               <div class="w-full flex flex-row items-center">
                 <app-normal-text class="!text-left !text-[#616161]">
-                  {{ order.label }}
+                  {{ getOrderTypeLabel(order) }}
                 </app-normal-text>
 
                 <div
                   class="h-[4px] w-[4px] rounded-full mx-[6px]"
                   :style="`background-color: ${colorByStatus(
-                    order.status.toLowerCase() as 'success' | 'failed' | 'pending'
+                    getOrderStatus(order.status)
                   )} !important;`"
                 ></div>
                 <app-normal-text
-                  class="!text-left !capitalize"
+                  class="!text-left"
                   :style="`color: ${colorByStatus(
-                    order.status.toLowerCase() as 'success' | 'failed' | 'pending'
+                    getOrderStatus(order.status)
                   )} !important;`"
                 >
-                  {{ order.status }}
+                  {{ getOrderStatusLabel(order.status) }}
                 </app-normal-text>
               </div>
             </div>
@@ -98,9 +98,6 @@
               No {{ getEmptyStateText() }} found
             </app-normal-text>
           </div>
-
-          <!-- Spacer -->
-          <div class="h-[100px] py-8"></div>
         </div>
       </div>
     </default-page-layout>
@@ -123,7 +120,7 @@ import {
   AppNormalText,
 } from "@greep/ui-components";
 import { Logic } from "@greep/logic";
-import { ExchangeOrder, User } from "@greep/logic/src/gql/graphql";
+import { User } from "@greep/logic/src/gql/graphql";
 import { computed } from "vue";
 
 export default defineComponent({
@@ -154,14 +151,6 @@ export default defineComponent({
     const activeTab = ref("active");
     const isLoading = ref(false);
     const error = ref<string | null>(null);
-    const currentOrders = reactive<
-      {
-        uuid: string;
-        title: string;
-        label: string;
-        status: string;
-      }[]
-    >([]);
 
     // P2P order tabs
     const orderTab = computed(() => {
@@ -293,7 +282,7 @@ export default defineComponent({
     // Navigate to order details
     const goToOrder = (uuid: string) => {
       if (uuid) {
-        Logic.Common.GoToRoute(`/exchange-orders/${uuid}`);
+        Logic.Common.GoToRoute(`/p2p-orders/${uuid}`);
       }
     };
 
@@ -301,12 +290,13 @@ export default defineComponent({
     const updateTrigger = ref(0);
 
     // Computed for current P2P orders with immediate reactivity
-    const setCurrentOrder = () => {
+    const currentOrders = computed(() => {
       // Use the trigger to force re-computation
       updateTrigger.value;
 
       // Only P2P orders
       const orders = Logic.Wallet.ManyP2pOrders?.data || [];
+      console.log("P2P orders data updated:", orders.length, "orders");
 
       // Sort orders by created_at descending (recent first)
       const sortedOrders = [...orders].sort((a: any, b: any) => {
@@ -319,42 +309,32 @@ export default defineComponent({
         return dateA.getTime() - dateB.getTime();
       });
 
-      let finalOrders: ExchangeOrder[] = [];
-
       // Filter based on tab
       if (activeTab.value === "active") {
-        finalOrders = sortedOrders.filter((order: any) => {
+        const activeOrders = sortedOrders.filter((order: any) => {
           const status = order.status?.toLowerCase() || "";
           return ["pending", "processing", "confirmed", "accepted"].includes(
             status
           );
         });
+        console.log("Active P2P orders:", activeOrders.length);
+        return activeOrders;
       } else {
-        finalOrders = sortedOrders.filter((order: any) => {
+        const historyOrders = sortedOrders.filter((order: any) => {
           const status = order.status?.toLowerCase() || "";
           return ["completed", "cancelled", "failed", "delivered"].includes(
             status
           );
         });
+        console.log("History P2P orders:", historyOrders.length);
+        return historyOrders;
       }
-
-      currentOrders.length = 0;
-      // Populate currentOrders reactive array
-      finalOrders.forEach((order: ExchangeOrder) => {
-        const details = {
-          uuid: order.uuid,
-          title: formatOrderTitle(order),
-          label: Logic.Common.fomartDate(order.created_at, "MMM DD, hh:mm A"),
-          status: getOrderStatus(order.status),
-        };
-        currentOrders.push(details);
-      });
-    };
+    });
 
     // Load orders on mount and when tab changes
     onMounted(() => {
       Logic.Wallet.watchProperty("ManyP2pOrders", ManyP2pOrders);
-      setCurrentOrder();
+      loadOrders();
     });
 
     // Watch for tab changes
@@ -364,10 +344,9 @@ export default defineComponent({
 
     // Watch for changes in P2P orders data to trigger re-computation
     watch(
-      ManyP2pOrders,
+      () => Logic.Wallet.ManyP2pOrders,
       () => {
         updateTrigger.value++; // Force reactive update
-        setCurrentOrder();
       },
       { deep: true, immediate: true }
     );
@@ -380,11 +359,15 @@ export default defineComponent({
       isLoading,
       error,
       currentOrders,
-      updateTrigger,
-      getEmptyStateText,
+      colorByStatus,
       loadOrders,
       goToOrder,
-      colorByStatus,
+      formatOrderTitle,
+      getOrderTypeLabel,
+      getOrderStatus,
+      getOrderStatusLabel,
+      getEmptyStateText,
+      updateTrigger,
     };
   },
 });

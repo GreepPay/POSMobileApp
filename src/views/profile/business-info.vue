@@ -18,6 +18,7 @@
         <div class="w-full flex flex-col pt-5">
           <app-details :details="profileDetails" invertBoldness />
         </div>
+        <div class="h-[100px] py-8"></div>
       </div>
     </subpage-layout>
   </app-wrapper>

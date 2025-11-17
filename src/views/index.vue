@@ -1,29 +1,47 @@
 <template>
   <app-wrapper mobilePadding="!pt-0">
-    <default-page-layout :title="Logic.Auth.GetDefaultBusiness()?.business_name" :photoUrl="Logic.Auth.GetDefaultBusiness()?.logo || '/images/profile-image.svg'
-      " icon="drop" :title-click-action="() => Logic.Common.GoToRoute('/auth/switch-business')
-        ">
-      <app-refresher class="w-full flex flex-col items-center justify-start" :onRefresh="onAppRefresherRefresh"
-        ref="appRefreshComp">
+    <default-page-layout
+      :title="Logic.Auth.GetDefaultBusiness()?.business_name"
+      :photoUrl="
+        Logic.Auth.GetDefaultBusiness()?.logo || '/images/profile-image.svg'
+      "
+      icon="drop"
+      :title-click-action="
+        () => Logic.Common.GoToRoute('/auth/switch-business')
+      "
+    >
+      <app-refresher
+        class="w-full flex flex-col items-center justify-start"
+        :onRefresh="onAppRefresherRefresh"
+        ref="appRefreshComp"
+      >
         <!-- Balance card section -->
         <div class="w-full flex flex-col space-y-2 pt-2">
           <div class="w-full flex flex-col px-4">
             <app-image-loader
               class="w-full h-fit rounded-[16px] flex flex-col overflow-x-hidden overflow-y-hidden justify-center items-center px-4 py-5 !bg-[linear-gradient(269.64deg,_#0D965E_0.31%,_#00683F_89.75%)] relative"
-              photo-url="">
-              <img class="absolute top-0 left-0 w-full" src="/images/greep-transparent-logo.svg" />
+              photo-url=""
+            >
+              <img
+                class="absolute top-0 left-0 w-full"
+                src="/images/greep-transparent-logo.svg"
+              />
 
-              <div class="w-full flex flex-col space-y-[2px] justify-center items-center pt-2 z-10">
+              <div
+                class="w-full flex flex-col space-y-[2px] justify-center items-center pt-2 z-10"
+              >
                 <app-normal-text class="text-center !text-[#E0E2E4]">
                   Total Balance
                 </app-normal-text>
 
-                <app-header-text class="text-center !text-white !text-[27px] !font-normal pb-2">
+                <app-header-text
+                  class="text-center !text-white !text-[27px] !font-normal pb-2"
+                >
                   {{ currencySymbol
                   }}{{
                     Logic.Common.convertToMoney(
                       (currentWalletBalance || 0) *
-                      (CurrentGlobalExchangeRate?.mid || 1),
+                        (CurrentGlobalExchangeRate?.mid || 1),
                       true,
                       "",
                       false
@@ -35,18 +53,26 @@
           </div>
 
           <!-- Quick Actions -->
-          <div class="w-full grid grid-cols-12 items-center px-4 pt-3 pb-5 !border-b-[11px] !border-[#F0F3F6]">
-            <div v-for="(item, index) in quickActions" :key="index"
+          <div
+            class="w-full grid grid-cols-12 items-center px-4 pt-3 pb-5 !border-b-[11px] !border-[#F0F3F6]"
+          >
+            <div
+              v-for="(item, index) in quickActions"
+              :key="index"
               class="col-span-3 flex flex-col space-y-1 items-center justify-center relative"
-              @click="Logic.Common.GoToRoute(item.route_path)">
+              @click="Logic.Common.GoToRoute(item.route_path)"
+            >
               <app-icon :name="item.icon" custom-class="!h-[56px]" />
 
               <app-normal-text class="!text-[#616161] !text-center !font-[500]">
                 {{ item.name }}
               </app-normal-text>
 
-              <span v-if="item.soon"
-                class="px-3 py-[3px] bg-primary rounded-full !text-[10px] !text-white absolute top-[-20%] right-0">Soon</span>
+              <span
+                v-if="item.soon"
+                class="px-3 py-[3px] bg-primary rounded-full !text-[10px] !text-white absolute top-[-20%] right-0"
+                >Soon</span
+              >
             </div>
           </div>
         </div>
@@ -64,62 +90,93 @@
         </div> -->
 
         <!-- Orders Section -->
-        <div v-if="recentOrders.length > 0 && Logic.Auth.GetDefaultBusiness()?.business_type == 'vendor'"
-          class="w-full px-4 !border-b-[11px] !border-[#F0F3F6] mt-4">
-          <div class="w-full flex justify-between items-center px-4">
+        <div
+          v-if="recentOrders.length > 0 && businessHasOrder"
+          class="w-full px-4 !border-b-[11px] !border-[#F0F3F6] mt-4"
+        >
+          <div class="w-full flex justify-between items-center">
             <app-normal-text class="font-semibold !text-gray-800 !text-sm">
-              Orders
+              Recent {{ orderLabel }}
             </app-normal-text>
 
-            <app-normal-text class="text-primary" @click="Logic.Common.GoToRoute('/orders')">
+            <app-normal-text
+              class="text-primary"
+              @click="Logic.Common.GoToRoute('/orders')"
+            >
               See all
             </app-normal-text>
           </div>
-          <app-list-wrapper :items="recentOrders" title="" emptyTitle="No Orders" actionText="" content-class="!px-0">
-            <div v-for="(order, index) in recentOrders" :key="order.uuid || index" class="w-full cursor-pointer mb-4"
-              @click="Logic.Common.GoToRoute(`/orders/${order.uuid}`)">
-              <app-order-card :order="{
-                title: `${getItemCount(order)} Item(s) | ${formatOrderTitle(order)}`,
-                label: 'Shop',
-                status: getOrderStatusLabel(order.status),
-                icon: `commerce-order-${getOrderStatus(order.status)}`,
-                statusColor: colorByStatus(getOrderStatus(order.status)),
-              }" />
+          <app-list-wrapper
+            :items="recentOrders"
+            title=""
+            emptyTitle="No Orders"
+            actionText=""
+            content-class="!px-0"
+          >
+            <div
+              v-for="(order, index) in recentOrders"
+              :key="order.uuid || index"
+              class="w-full cursor-pointer"
+              @click="goToOrder(order.data)"
+            >
+              <app-commerce-order-card
+                :order="order"
+                class="min-w-[80vw]"
+                is-mini
+              />
             </div>
           </app-list-wrapper>
         </div>
 
-        <div class="w-full flex justify-between items-center px-4 z-20 pt-[20px]">
+        <div
+          class="w-full flex justify-between items-center px-4 z-20 pt-[20px]"
+        >
           <app-normal-text class="font-semibold !text-gray-800 !text-sm">
             Transactions
           </app-normal-text>
 
-          <app-normal-text class="text-primary" @click="Logic.Common.GoToRoute('/transactions')">
+          <app-normal-text
+            class="text-primary"
+            @click="Logic.Common.GoToRoute('/transactions')"
+          >
             See all
           </app-normal-text>
         </div>
 
         <!-- Transactions -->
-        <div class="w-full flex flex-col h-fit bg-white relative px-4 space-y-[5px] min-h-[70vh]"
-          id="home_transactions">
+        <div
+          class="w-full flex flex-col h-fit bg-white relative px-4 space-y-[5px] min-h-[70vh]"
+          id="home_transactions"
+        >
           <template v-if="activeTab == 'latest'">
             <div v-if="!recentTransactions.length" class="py-4 !pt-2 z-10">
-              <app-empty-state title="No transactions"
-                description="Collect Payments, Make Withdrawals, and Redeem the GRP Tokens you’ve earned." />
+              <app-empty-state
+                title="No transactions"
+                description="Collect Payments, Make Withdrawals, and Redeem the GRP Tokens you’ve earned."
+              />
             </div>
             <template v-else>
-              <app-transaction class="z-[10]" v-for="transaction in recentTransactions" :key="transaction.id"
-                :data="transaction" @click="
+              <app-transaction
+                class="z-[10]"
+                v-for="transaction in recentTransactions"
+                :key="transaction.id"
+                :data="transaction"
+                @click="
                   Logic.Common.GoToRoute(
                     '/transactions/' +
-                    transaction.id +
-                    `?group=${transaction.transaction_group}`
+                      transaction.id +
+                      `?group=${transaction.transaction_group}`
                   )
-                  " />
+                "
+              />
 
               <div class="w-full flex flex-col pt-3">
-                <app-button @click="Logic.Common.GoToRoute('/transactions')" variant="primary" outlined
-                  class="py-3 !font-[500] !border-[#F0F3F6]">
+                <app-button
+                  @click="Logic.Common.GoToRoute('/transactions')"
+                  variant="primary"
+                  outlined
+                  class="py-3 !font-[500] !border-[#F0F3F6]"
+                >
                   See all
                 </app-button>
               </div>
@@ -128,8 +185,11 @@
 
           <template v-if="activeTab == 'tools'">
             <div class="w-full grid grid-cols-12 gap-4">
-              <div v-for="(item, index) in tools" :key="index"
-                class="col-span-6 flex flex-col z-10 px-3 py-3 border-[1.5px] border-[#F0F3F6] rounded-[12px]">
+              <div
+                v-for="(item, index) in tools"
+                :key="index"
+                class="col-span-6 flex flex-col z-10 px-3 py-3 border-[1.5px] border-[#F0F3F6] rounded-[12px]"
+              >
                 <app-icon :name="item.icon" custom-class="23px" />
 
                 <div class="w-full flex flex-col pt-1">
@@ -166,7 +226,7 @@ import {
   AppButton,
   AppRefresher,
   AppListWrapper,
-  AppOrderCard,
+  AppCommerceOrderCard,
 } from "@greep/ui-components";
 import { Logic } from "@greep/logic";
 import { ref } from "vue";
@@ -177,7 +237,7 @@ import {
   onIonViewDidLeave,
   onIonViewWillEnter,
 } from "@ionic/vue";
-import { User } from "@greep/logic/src/gql/graphql";
+import { Order, User } from "@greep/logic/src/gql/graphql";
 import { computed } from "vue";
 import { availableCurrencies } from "../composable";
 import {
@@ -185,6 +245,7 @@ import {
   getPointTransaction,
   TransactionType,
 } from "../composable/financials";
+import { getOrderDetails, goToOrder } from "../composable/commerce";
 
 export default defineComponent({
   name: "IndexPage",
@@ -200,7 +261,7 @@ export default defineComponent({
     AppButton,
     AppRefresher,
     AppListWrapper,
-    AppOrderCard,
+    AppCommerceOrderCard,
   },
   layout: "Dashboard",
   middlewares: {
@@ -236,7 +297,7 @@ export default defineComponent({
         domain: "Commerce",
         property: "ManyOrders",
         method: "GetOrders",
-        params: [1, 5],
+        params: [1, 10],
         requireAuth: true,
         ignoreProperty: false,
         silentUpdate: true,
@@ -272,6 +333,24 @@ export default defineComponent({
 
     const currentWalletBalance = ref(0);
 
+    const orderLabel = computed(() => {
+      let businessType = Logic.Auth.GetDefaultBusiness()?.business_type;
+      if (businessType === "event_host") {
+        return "Sales";
+      }
+      return "Orders";
+    });
+
+    const businessHasOrder = computed(() => {
+      let businessType = Logic.Auth.GetDefaultBusiness()?.business_type;
+      return (
+        businessType === "vendor" ||
+        businessType === "event_host" ||
+        businessType === "exchanger" ||
+        businessType === "delivery"
+      );
+    });
+
     const recentTransactions = reactive<
       {
         id: string | number;
@@ -287,7 +366,19 @@ export default defineComponent({
       }[]
     >([]);
 
-    const recentOrders = reactive<any[]>([]);
+    const recentOrders = reactive<
+      {
+        uuid: string;
+        title: string;
+        label: string;
+        status: string;
+        icon: string;
+        statusColor: string;
+        price: string;
+        itemCount: string;
+        data: Order;
+      }[]
+    >([]);
 
     const activeTab = ref("latest");
 
@@ -472,132 +563,14 @@ export default defineComponent({
       appRefreshComp.value?.removeListeners();
     });
 
-    // Order formatting functions
-    const formatOrderTitle = (order: any): string => {
-      try {
-        let items: any[] = [];
-        const itemsData = order.sales?.[0]?.items;
-
-        // Parse items if it's a JSON string
-        if (typeof itemsData === 'string') {
-          items = JSON.parse(itemsData);
-        } else if (Array.isArray(itemsData)) {
-          items = itemsData;
-        }
-
-        if (items.length > 0) {
-          return items[0]?.name || "Order";
-        }
-        return "Order";
-      } catch (e) {
-        console.error("Error formatting order title:", e);
-        return "Order";
-      }
-    };
-
-    const formatOrderDate = (dateString: string): string => {
-      try {
-        const date = new Date(dateString);
-        const options: Intl.DateTimeFormatOptions = {
-          weekday: "short",
-          month: "short",
-          day: "numeric",
-          hour: "2-digit",
-          minute: "2-digit",
-        };
-        return date.toLocaleDateString("en-US", options);
-      } catch {
-        return "";
-      }
-    };
-
-    const getOrderStatus = (
-      status: string
-    ): "success" | "failed" | "pending" => {
-      const normalizedStatus = (status || "").toLowerCase();
-      if (
-        normalizedStatus.includes("delivered") ||
-        normalizedStatus.includes("completed") ||
-        normalizedStatus.includes("success")
-      ) {
-        return "success";
-      } else if (
-        normalizedStatus.includes("failed") ||
-        normalizedStatus.includes("cancelled")
-      ) {
-        return "failed";
-      }
-      return "pending";
-    };
-
-    const getOrderStatusLabel = (status: string): string => {
-      const normalizedStatus = (status || "").toLowerCase();
-      if (normalizedStatus.includes("pending")) return "Pending";
-      if (normalizedStatus.includes("confirmed")) return "Confirmed";
-      if (normalizedStatus.includes("accepted")) return "Accepted";
-      if (normalizedStatus.includes("shipped")) return "Shipped";
-      if (normalizedStatus.includes("arrived")) return "Arrived";
-      if (normalizedStatus.includes("delivered")) return "Delivered";
-      if (normalizedStatus.includes("cancelled")) return "Cancelled";
-      if (normalizedStatus.includes("failed")) return "Failed";
-      return status || "Pending";
-    };
-
-    const colorByStatus = (type: "success" | "failed" | "pending"): string => {
-      switch (type) {
-        case "success":
-          return "#10BB76";
-        case "failed":
-          return "#FA1919";
-        default:
-          return "#FF7B3B";
-      }
-    };
-
-    const formatCurrency = (
-      amount: number | string,
-      currency: string = selectedCurrency.value
-    ): string => {
-      const numAmount = typeof amount === "string" ? parseFloat(amount) : amount;
-      const currencyInfo = availableCurrencies.find((c) => c.code === currency);
-      const symbol = currencyInfo?.symbol || currency;
-
-      if (isNaN(numAmount)) return `${symbol}0.00`;
-
-      return `${symbol}${Logic.Common.convertToMoney(numAmount, true, "", false)}`;
-    };
-
-    const getItemCount = (order: any): number => {
-      try {
-        let totalItems = 0;
-        // Loop through all sales entries
-        if (order.sales && Array.isArray(order.sales)) {
-          order.sales.forEach((sale: any) => {
-            let items: any[] = [];
-            const itemsData = sale.items;
-
-            // Parse items if it's a JSON string
-            if (typeof itemsData === 'string') {
-              items = JSON.parse(itemsData);
-            } else if (Array.isArray(itemsData)) {
-              items = itemsData;
-            }
-
-            totalItems += items.length;
-          });
-        }
-        return totalItems || 0;
-      } catch (e) {
-        console.error("Error getting item count:", e);
-        return 0;
-      }
-    };
-
     const setOrderData = () => {
       recentOrders.length = 0;
       const orders = ManyOrders.value?.data || [];
       if (Array.isArray(orders)) {
-        recentOrders.push(...orders);
+        orders.forEach((order) => {
+          const details = getOrderDetails(order);
+          recentOrders.push(details);
+        });
       }
     };
 
@@ -648,15 +621,11 @@ export default defineComponent({
       tools,
       currentWalletBalance,
       selectedCountry,
-      onAppRefresherRefresh,
+      businessHasOrder,
       appRefreshComp,
-      formatOrderTitle,
-      formatOrderDate,
-      getOrderStatusLabel,
-      getOrderStatus,
-      colorByStatus,
-      formatCurrency,
-      getItemCount,
+      orderLabel,
+      onAppRefresherRefresh,
+      goToOrder,
     };
   },
 });
