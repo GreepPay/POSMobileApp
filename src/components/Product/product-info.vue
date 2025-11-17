@@ -65,17 +65,17 @@
       >
       </app-text-field>
 
-      <app-text-field
-        :has-title="false"
-        type="text"
-        placeholder="Type to ‘add new’ or ‘search’"
-        ref="productCategory"
-        name="Catgory"
+      <app-select
+        :placeholder="'Product Category'"
+        :hasTitle="false"
+        :paddings="'py-4 !px-3'"
+        :options="categoryOptions"
+        ref="categorySelect"
+        use-floating-label
         v-model="formData.category"
-        usePermanentFloatingLabel
         :rules="[FormValidations.RequiredRule]"
       >
-      </app-text-field>
+      </app-select>
 
       <app-select
         :placeholder="'Product Type'"
@@ -204,6 +204,7 @@ export default defineComponent({
 
     const formComponent = ref<any>(null);
 
+    // Product Type Options
     const productTypeOptions = reactive<SelectOption[]>([
       {
         key: "physical",
@@ -215,8 +216,29 @@ export default defineComponent({
       },
     ]);
 
+    // Category Options
+    const categoryOptions = ref<SelectOption[]>([]);
+
+    // Cuisine Country Options
     const cuisineCountryOptions = reactive<SelectOption[]>([]);
 
+    // Load categories from API
+    const loadCategories = async () => {
+      try {
+        const categories = await Logic.Product.GetCategories();
+        console.log(categories);
+
+        if (categories && categories.length > 0) {
+          // Use .value with ref
+          categoryOptions.value = categories.map((category) => ({
+            key: category.name,
+            value: category.name,
+          }));
+        }
+      } catch (error) {
+        console.error("Failed to load categories:", error);
+      }
+    };
     const initializeCountries = () => {
       try {
         cuisineCountryOptions.length = 0;
@@ -256,7 +278,7 @@ export default defineComponent({
       if (props.data) {
         hideContent.value = true;
         formData.name = props.data.name;
-        formData.category = props.data.category;
+        formData.category = props.data.category; // This should match your existing data structure
         formData.descriptions = props.data.descriptions;
         formData.photos = props.data.photos;
         formData.type = props.data.type;
@@ -278,6 +300,7 @@ export default defineComponent({
 
     onMounted(() => {
       initializeCountries();
+      loadCategories(); // Load categories when component mounts
       setDefaultValues();
     });
 
@@ -289,8 +312,10 @@ export default defineComponent({
       continueWithForm,
       hideContent,
       productTypeOptions,
+      categoryOptions,
       cuisineCountryOptions,
       initializeCountries,
+      loadCategories,
     };
   },
   data() {
