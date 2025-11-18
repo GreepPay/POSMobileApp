@@ -1,8 +1,15 @@
 <template>
   <app-wrapper>
-    <subpage-layout :title="isEdit ? `Edit Exchange Ad` : `Create Exchange Ad`" :hasBottomButton="true">
-      <app-form-wrapper ref="formComponent" :parent-refs="parentRefs" class="w-full flex flex-col justify-start pt-1"
-        v-if="showForms">
+    <subpage-layout
+      :title="isEdit ? `Edit Exchange Ad` : `Create Exchange Ad`"
+      :hasBottomButton="true"
+    >
+      <app-form-wrapper
+        ref="formComponent"
+        :parent-refs="parentRefs"
+        class="w-full flex flex-col justify-start pt-1"
+        v-if="showForms"
+      >
         <!-- Info box -->
         <div class="w-full px-4 flex flex-col">
           <app-info-box>
@@ -11,41 +18,73 @@
               <span class="font-semibold">USDC.</span>
               <br />
               <br />
-              • <span class="font-semibold">Sell ads:</span> You sell your currency and receive USDC
+              • <span class="font-semibold">Sell ads:</span> You sell your
+              currency and receive USDC
               <br />
-              • <span class="font-semibold">Buy ads:</span> You sell USDC and receive the target currency
+              • <span class="font-semibold">Buy ads:</span> You sell USDC and
+              receive the target currency
             </app-normal-text>
           </app-info-box>
         </div>
 
         <!-- Ad Type Selection -->
-        <div class="w-full flex flex-col pb-5 !border-b-[12px] !border-[#F0F3F6] pt-5 px-4">
+        <div
+          class="w-full flex flex-col pb-5 !border-b-[12px] !border-[#F0F3F6] pt-5 px-4"
+        >
           <app-normal-text class="!text-left !font-semibold pb-2">
             Choose Ad Type
           </app-normal-text>
-          <app-select :placeholder="'Select ad type'" :hasTitle="false" :paddings="'py-4 !px-4'"
-            :options="adTypeOptions" name="Ad Type" customClass=" !font-[500]" ref="AdType" v-model="formData.ad_type"
-            >
+          <app-select
+            :placeholder="'Select ad type'"
+            :hasTitle="false"
+            :paddings="'py-4 !px-4'"
+            :options="adTypeOptions"
+            name="Ad Type"
+            customClass=" !font-[500]"
+            ref="AdType"
+            v-model="formData.ad_type"
+          >
           </app-select>
         </div>
 
         <!-- Fields -->
-        <div class="w-full flex flex-col pb-5 !border-b-[12px] !border-[#F0F3F6] pt-5 px-4" v-if="!isEdit">
+        <div
+          class="w-full flex flex-col pb-5 !border-b-[12px] !border-[#F0F3F6] pt-5 px-4"
+          v-if="!isEdit"
+        >
           <app-normal-text class="!text-left !font-semibold pb-2">
             {{ currencyFieldLabel }}
           </app-normal-text>
-          <app-select :placeholder="'Select currency'" :hasTitle="false" :paddings="'py-4 !px-4'"
-            :options="currencyOptions" name="Currency to sell" customClass=" !font-[500]" ref="SellCurrency"
-            v-model="formData.sell_currency">
+          <app-select
+            :placeholder="'Select currency'"
+            :hasTitle="false"
+            :paddings="'py-4 !px-4'"
+            :options="currencyOptions"
+            name="Currency to sell"
+            customClass=" !font-[500]"
+            ref="SellCurrency"
+            v-model="formData.sell_currency"
+            auto-complete
+          >
           </app-select>
         </div>
 
-        <div class="w-full flex flex-col pb-5 !border-b-[12px] !border-[#F0F3F6] pt-5 px-4">
+        <div
+          class="w-full flex flex-col pb-5 !border-b-[12px] !border-[#F0F3F6] pt-5 px-4"
+        >
           <app-normal-text class="!text-left !font-semibold pb-2">
             {{ rateFieldLabel }}
           </app-normal-text>
-          <app-text-field :has-title="false" type="number" placeholder="0.00" ref="sellRate" name="Exchange Rate"
-            v-model="formData.sell_rate" input-style="!text-sm !font-[500]" :rules="[FormValidations.RequiredRule]">
+          <app-text-field
+            :has-title="false"
+            type="number"
+            placeholder="0.00"
+            ref="sellRate"
+            name="Exchange Rate"
+            v-model="formData.sell_rate"
+            input-style="!text-sm !font-[500]"
+            :rules="[FormValidations.RequiredRule]"
+          >
             <template #inner-suffix>
               <app-normal-text class="!font-[500] !text-right !text-sm">
                 {{ currentSellCurrency?.symbol }}
@@ -61,12 +100,22 @@
           </div>
         </div>
 
-        <div class="w-full flex flex-col pb-5 !border-b-[12px] !border-[#F0F3F6] pt-5 px-4">
+        <div
+          class="w-full flex flex-col pb-5 !border-b-[12px] !border-[#F0F3F6] pt-5 px-4"
+        >
           <app-normal-text class="!text-left !font-semibold pb-2">
             {{ minAmountLabel }}
           </app-normal-text>
-          <app-text-field :has-title="false" type="number" placeholder="0.00" ref="minSellAmount" :name="minAmountLabel"
-            v-model="formData.min_sell" input-style="!text-sm !font-[500]" :rules="[FormValidations.RequiredRule]">
+          <app-text-field
+            :has-title="false"
+            type="number"
+            placeholder="0.00"
+            ref="minSellAmount"
+            :name="minAmountLabel"
+            v-model="formData.min_sell"
+            input-style="!text-sm !font-[500]"
+            :rules="[FormValidations.RequiredRule]"
+          >
             <template #inner-suffix>
               <app-normal-text class="!font-[500] !text-right !text-sm">
                 {{ currentSellCurrency?.symbol }}
@@ -81,12 +130,22 @@
           </div>
         </div>
 
-        <div class="w-full flex flex-col pb-5 !border-b-[12px] !border-[#F0F3F6] pt-5 px-4">
+        <div
+          class="w-full flex flex-col pb-5 !border-b-[12px] !border-[#F0F3F6] pt-5 px-4"
+        >
           <app-normal-text class="!text-left !font-semibold pb-2">
             {{ maxAmountLabel }}
           </app-normal-text>
-          <app-text-field :has-title="false" type="number" placeholder="0.00" ref="maxSellAmount" :name="maxAmountLabel"
-            v-model="formData.max_sell" input-style="!text-sm !font-[500]" :rules="[FormValidations.RequiredRule]">
+          <app-text-field
+            :has-title="false"
+            type="number"
+            placeholder="0.00"
+            ref="maxSellAmount"
+            :name="maxAmountLabel"
+            v-model="formData.max_sell"
+            input-style="!text-sm !font-[500]"
+            :rules="[FormValidations.RequiredRule]"
+          >
             <template #inner-suffix>
               <app-normal-text class="!font-[500] !text-right !text-sm">
                 {{ currentSellCurrency?.symbol }}
@@ -101,13 +160,21 @@
           </div>
         </div>
 
-        <div class="w-full flex flex-col !pb-[140px] !border-b-[12px] !border-[#F0F3F6] pt-5 px-4">
+        <div
+          class="w-full flex flex-col !pb-[140px] !border-b-[12px] !border-[#F0F3F6] pt-5 px-4"
+        >
           <app-normal-text class="!text-left !font-semibold pb-2">
             Choose Supported Payout Options
           </app-normal-text>
           <div class="w-full flex flex-col pt-[2px]">
-            <div class="w-full flex flex-col !py-2" v-for="(item, index) in payoutOptions" :key="index">
-              <app-checkbox v-model="(formData.payout_options[0] as any)[item.key]">
+            <div
+              class="w-full flex flex-col !py-2"
+              v-for="(item, index) in payoutOptions"
+              :key="index"
+            >
+              <app-checkbox
+                v-model="(formData.payout_options[0] as any)[item.key]"
+              >
                 <template #label>
                   <app-normal-text>
                     {{ item.value }}
@@ -120,11 +187,19 @@
       </app-form-wrapper>
 
       <!-- Bottom button -->
-      <div class="w-full fixed bg-white bottom-0 left-0 pt-4 px-4 flex flex-col" :style="`
+      <div
+        class="w-full fixed bg-white bottom-0 left-0 pt-4 px-4 flex flex-col"
+        :style="`
           ${getBottomPadding}
-        `">
+        `"
+      >
         <div class="w-full flex flex-col">
-          <app-button @click="submitForm" variant="secondary" :class="`!py-4`" :loading="isLoading">{{ isEdit ? "Update Ad" : " Create Ad" }}
+          <app-button
+            @click="submitForm"
+            variant="secondary"
+            :class="`!py-4`"
+            :loading="isLoading"
+            >{{ isEdit ? "Update Ad" : " Create Ad" }}
           </app-button>
         </div>
       </div>
@@ -143,6 +218,7 @@ import {
   AppButton,
   AppCheckbox,
   AppIcon,
+  availableCurrencies,
 } from "@greep/ui-components";
 import { Logic } from "@greep/logic";
 import { reactive } from "vue";
@@ -222,7 +298,7 @@ export default defineComponent({
 
     const formData = reactive({
       ad_type: "",
-      sell_currency: "",
+      sell_currency: "TRY_TR",
       sell_rate: "",
       min_sell: "",
       max_sell: "",
@@ -237,37 +313,47 @@ export default defineComponent({
 
     const currentSellCurrency = computed(() => {
       return withdrawalAvailableCurrencies?.find(
-        (item) => item.code == formData.sell_currency
+        (item) => item.code == formData.sell_currency.split("_")[0]
       );
     });
 
     // Dynamic labels based on ad type
     const currencyFieldLabel = computed(() => {
-      return formData.ad_type === "buy" ? "Choose Currency to Buy" : "Choose Currency to Sell";
+      return formData.ad_type === "buy"
+        ? "Choose Currency to Buy"
+        : "Choose Currency to Sell";
     });
 
     const rateFieldLabel = computed(() => {
-      return formData.ad_type === "buy" ? "Enter Your Buying Rate Per USDC" : "Enter Your Selling Rate Per USDC";
+      return formData.ad_type === "buy"
+        ? "Enter Your Buying Rate Per USDC"
+        : "Enter Your Selling Rate Per USDC";
     });
 
     const minAmountLabel = computed(() => {
-      return formData.ad_type === "buy" ? "Minimum Buy Amount" : "Minimum Sell Amount";
+      return formData.ad_type === "buy"
+        ? "Minimum Buy Amount"
+        : "Minimum Sell Amount";
     });
 
     const maxAmountLabel = computed(() => {
-      return formData.ad_type === "buy" ? "Maximum Buy Amount" : "Maximum Sell Amount";
+      return formData.ad_type === "buy"
+        ? "Maximum Buy Amount"
+        : "Maximum Sell Amount";
     });
 
     const setCurrencyOptions = () => {
       currencyOptions.length = 0;
-      withdrawalAvailableCurrencies?.forEach((item) => {
-        if (item.allow_p2p) {
-          currencyOptions.push({
-            key: item.code,
-            value: item.name,
-          });
-        }
-      });
+      availableCurrencies
+        ?.filter((item) => item.allow_p2p)
+        ?.forEach((item) => {
+          if (item.allow_p2p) {
+            currencyOptions.push({
+              key: item.code + "_" + item.country_code,
+              value: item.name,
+            });
+          }
+        });
     };
 
     const submitForm = async () => {
@@ -291,10 +377,11 @@ export default defineComponent({
             payout_address: JSON.stringify([]),
           };
         } else {
+          const finalCurrency = formData.sell_currency.split("_")[0];
           Logic.Wallet.CreateExchangeAdForm = {
             business_id: Logic.Auth.GetDefaultBusiness().uuid,
             ad_type: formData.ad_type, // TODO: Add to backend API
-            from_currency: formData.sell_currency,
+            from_currency: finalCurrency,
             to_currency: "USDC",
             max_amount: parseFloat(formData.max_sell.replaceAll(",", "")),
             min_amount: parseFloat(formData.min_sell.replaceAll(",", "")),
@@ -339,7 +426,13 @@ export default defineComponent({
 
       if (isEdit.value) {
         formData.ad_type = SingleExchangeAd.value?.ad_type || "sell";
-        formData.sell_currency = SingleExchangeAd.value?.from_currency || "";
+        const currencyInfo = availableCurrencies?.find(
+          (item) =>
+            item.code == (SingleExchangeAd.value?.from_currency || "TRY") // Default to TRY
+        );
+        formData.sell_currency =
+          SingleExchangeAd.value?.from_currency ||
+          "" + "_" + (currencyInfo?.country_code || "TR"); // Default to TRY_TR
         formData.max_sell = SingleExchangeAd.value?.max_amount.toString() || "";
         formData.min_sell = SingleExchangeAd.value?.min_amount.toString() || "";
         formData.sell_rate = SingleExchangeAd.value?.rate.toString() || "";
@@ -347,7 +440,7 @@ export default defineComponent({
           SingleExchangeAd.value?.payout_banks || "[]"
         );
       } else {
-        formData.sell_currency = "";
+        formData.sell_currency = "TRY_TR";
         formData.max_sell = "";
         formData.min_sell = "";
         formData.sell_rate = "";

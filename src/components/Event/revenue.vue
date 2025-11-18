@@ -198,6 +198,7 @@
                     v-else
                     :photoUrl="ticket.image_url || '/images/profile-image.svg'"
                     class="h-[45px] w-[45px] rounded-full"
+                    can-show-full-image
                   >
                   </app-image-loader>
                 </div>
@@ -225,7 +226,9 @@
                 <app-normal-text
                   class="!text-[#616161] !text-right !pt-[4px] !text-[13px]"
                 >
-                  + ${{
+                  +
+                  {{ ticket?.currency_symbol
+                  }}{{
                     Logic.Common.convertToMoney(
                       ticket?.revenue,
                       true,
@@ -287,6 +290,9 @@ export default defineComponent({
       to: "",
       period: "",
     });
+    const CurrentGlobalExchangeRate = ref(
+      Logic.Wallet.CurrentGlobalExchangeRate
+    );
 
     const currencySymbol = ref("$");
 
@@ -318,6 +324,7 @@ export default defineComponent({
         image_url: string;
         is_vote: boolean;
         revenue: number;
+        currency_symbol: string;
         sales: number;
       }[]
     >([]);
@@ -382,6 +389,10 @@ export default defineComponent({
 
       const allTickets = {} as any;
 
+      const currencyInfo = availableCurrencies.find(
+        (item) => item.code === CurrentGlobalExchangeRate?.value?.target
+      );
+
       productVariants.forEach((variant) => {
         const currentCurrency = availableCurrencies.find(
           (item) => item.code === product?.currency
@@ -411,17 +422,23 @@ export default defineComponent({
             is_vote_attribute && is_vote_attribute.value === "yes"
               ? true
               : false,
-          revenue: "",
+          revenue: 0,
+          currency_symbol: currencyInfo?.symbol || "$",
           sales: 0,
         };
       });
+
+      const midRate = CurrentGlobalExchangeRate.value
+        ? CurrentGlobalExchangeRate.value.mid
+        : 1;
 
       Logic.Commerce.SingleProduct?.productSales?.forEach((sale) => {
         const extraData = JSON.parse(sale.extra_data || "{}");
 
         if (extraData?.variantId && allTickets[extraData.variantId]) {
           allTickets[extraData.variantId].sales += 1;
-          allTickets[extraData.variantId].revenue += sale.amount;
+          allTickets[extraData.variantId].revenue +=
+            parseFloat(sale.amount.toString()) * midRate;
         }
 
         const currentTicket = allTickets[extraData.variantId];
@@ -430,8 +447,8 @@ export default defineComponent({
           name: `${sale.user?.first_name} ${sale.user?.last_name}`,
           date: Logic.Common.timeFromNow(sale.created_at || ""),
           order_type: currentTicket?.is_vote ? "Vote" : "Ticket",
-          price: `$${Logic.Common.convertToMoney(
-            sale.amount,
+          price: `${currencyInfo?.symbol || ""}${Logic.Common.convertToMoney(
+            sale.amount * midRate,
             true,
             "",
             false
@@ -452,6 +469,10 @@ export default defineComponent({
     };
 
     onMounted(() => {
+      Logic.Wallet.watchProperty(
+        "CurrentGlobalExchangeRate",
+        CurrentGlobalExchangeRate
+      );
       setDefaultMonthOptions();
       setTicketSales();
     });

@@ -32,8 +32,7 @@
       </div>
 
       <div class="w-full flex flex-col space-y-2 items-center justify-center">
-        <app-normal-text
-          class="text-center w-full font-semibold sm:!text-sm xs:!text-sm"
+        <app-normal-text class="text-center w-full"
           >Enter Passcode</app-normal-text
         >
 
