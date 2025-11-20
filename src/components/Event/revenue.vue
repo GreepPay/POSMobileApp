@@ -335,6 +335,7 @@ export default defineComponent({
         date: string;
         order_type: string;
         price: string;
+        real_date: string;
       }[]
     >([]);
 
@@ -432,11 +433,12 @@ export default defineComponent({
         ? CurrentGlobalExchangeRate.value.mid
         : 1;
 
+      const allTicketsItems = Logic.Commerce.SingleProduct?.tickets;
+
       Logic.Commerce.SingleProduct?.productSales?.forEach((sale) => {
         const extraData = JSON.parse(sale.extra_data || "{}");
 
         if (extraData?.variantId && allTickets[extraData.variantId]) {
-          allTickets[extraData.variantId].sales += 1;
           allTickets[extraData.variantId].revenue +=
             parseFloat(sale.amount.toString()) * midRate;
         }
@@ -453,11 +455,26 @@ export default defineComponent({
             "",
             false
           )}`,
+          real_date: sale.created_at || "",
         });
+      });
+
+      // Update ticket sales count
+      allTicketsItems?.forEach((ticketItem) => {
+        if (allTickets[ticketItem.variantId || ""]) {
+          allTickets[ticketItem.variantId || ""].sales += 1;
+        }
       });
 
       Object.keys(allTickets).forEach((key) => {
         popularTicket.push(allTickets[key]);
+      });
+
+      //  Sort ticket sales by real date - descending
+      ticketSales.sort((a, b) => {
+        const dateA = new Date(a.real_date);
+        const dateB = new Date(b.real_date);
+        return dateB.getTime() - dateA.getTime();
       });
 
       // Order by sales - descending
