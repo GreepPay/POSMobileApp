@@ -331,9 +331,9 @@ export default defineComponent({
       CapacitorApp.addListener(
         "appUrlOpen",
         function (event: URLOpenListenerEvent) {
-          // Example url: https://beerswift.app/tabs/tabs2
+          // Example url: https://greep.io/tabs/tabs2
           // slug = /tabs/tabs2
-          const domainType = ".com";
+          const domainType = ".io";
           const slug = event.url.split(domainType).pop();
 
           // We only push to the route if there is a slug present
@@ -342,7 +342,7 @@ export default defineComponent({
               window.location.href = `https://localhost${slug}`;
               return;
             }
-            Logic.Common.GoToRoute(slug);
+            Logic.Common.GoToRoute(slug, true);
             return;
           }
         }
