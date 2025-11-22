@@ -159,13 +159,13 @@ export const getOrderDetails = (order: Order) => {
 
   const firstProduct = order.sales?.[0]?.products?.[0];
 
-  if (firstProduct.type == "event") {
+  if (firstProduct?.type == "event") {
     iconName = `ticket-in`;
     status = "Purchased";
     statusColor = colorByStatus("success");
   }
 
-  if (firstProduct.type == "digital" || firstProduct.type == "physical") {
+  if (firstProduct?.type == "digital" || firstProduct?.type == "physical") {
     if (status == "pending") {
       status = "Purchased";
       statusColor = colorByStatus("pending");
