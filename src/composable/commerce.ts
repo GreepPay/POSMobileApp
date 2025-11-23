@@ -182,7 +182,7 @@ export const getOrderDetails = (order: Order) => {
     statusColor: statusColor,
     price: `${currencyInfo?.symbol || ""}${Logic.Common.convertToMoney(
       totalPrice,
-      false,
+      true,
       ""
     )}`,
     itemCount: getItemCount(order),

@@ -44,49 +44,64 @@
 
         <!-- Market Delivery Chat Section -->
         <div
+          v-if="SingleOrder?.conversation"
           class="w-full flex flex-row items-center mt-4 py-4 px-4 !border-t-[12px] !border-b-[12px] border-[#F0F3F6] cursor-pointer"
           @click="goToChat"
         >
           <div class="w-[48px] mr-3">
             <div class="w-[48px]">
               <app-image-loader
-                :photoUrl="getBusinessLogo(SingleOrder)"
+                :photoUrl="'/images/chat-logo.png'"
                 class="h-[48px] w-[48px] rounded-full"
               />
             </div>
           </div>
           <div class="w-full flex flex-col">
-            <div class="w-full flex flex-row justify-between item-center">
+            <div class="flex flex-row justify-between items-start space-x-2">
               <app-normal-text
-                class="!text-left !text-black !font-[500] !text-sm mb-[1px]"
+                class="!text-left !font-medium !line-clamp-1 !text-[12.5px]"
               >
-                Market Delivery Chat
+                {{ SingleOrder?.conversation?.name || "Chat with Merchant" }}
               </app-normal-text>
 
-              <app-normal-text class="!text-right !text-[#999999] mb-[1px]">
-                {{ formatTime(SingleOrder.createdAt) }}
+              <app-normal-text
+                class="!text-[10px] !text-gray-400 whitespace-nowrap"
+              >
+                {{
+                  Logic.Common.fomartDate(
+                    SingleOrder?.updatedAt || "",
+                    "HH:mm A"
+                  )
+                }}
               </app-normal-text>
             </div>
-
             <div class="w-full flex flex-row items-center justify-between">
-              <app-normal-text class="!text-left !text-[#999999]">
-                Market Chat
+              <app-normal-text class="!text-left !text-gray-500 !line-clamp-1">
+                {{
+                  (SingleOrder?.conversation?.participants?.length || 0) > 2
+                    ? "Greep AI, Customer, You"
+                    : "Customer, You"
+                }}
               </app-normal-text>
 
               <div
                 class="h-[24px] w-[24px] rounded-full flex items-center justify-center"
-                style="background-color: #10bb76 !important"
+                style="
+                  background: linear-gradient(
+                    269.64deg,
+                    #0d965e 0.31%,
+                    #00683f 89.75%
+                  );
+                "
               >
-                <app-normal-text class="!text-[#ffffff] !font-[500]">
-                  1
-                </app-normal-text>
+                <app-normal-text class="!text-white"> 1 </app-normal-text>
               </div>
             </div>
           </div>
         </div>
 
         <!-- Tabs using AppTabs Component -->
-        <div class="w-full flex flex-col px-4 mt-4">
+        <!-- <div class="w-full flex flex-col px-4 mt-4">
           <app-tabs
             :tabs="orderTabs"
             v-model:activeTab="activeTab"
@@ -95,7 +110,7 @@
             customClass="!overflow-x-hidden"
             type="badge"
           />
-        </div>
+        </div> -->
 
         <!-- Info Tab Content -->
         <div
@@ -161,6 +176,42 @@
                       SingleOrder.currency
                     )
                   }}
+                </app-normal-text>
+              </div>
+            </div>
+          </div>
+
+          <div
+            class="w-full flex flex-col mb-4"
+            v-if="
+              SingleOrder?.deliverymethod == 'pick_up' &&
+              SingleOrder?.deliveryAddress
+            "
+          >
+            <div class="w-full flex flex-col items-start justify-start pb-2">
+              <app-normal-text class="!text-[12.5px] !text-gray-600">
+                Pickup Address
+              </app-normal-text>
+            </div>
+            <div
+              :class="`flex flex-row items-center px-3 py-3 border-[1.5px] border-[#F0F3F6] rounded-[12px]  `"
+            >
+              <div class="w-[50px] mr-2">
+                <app-icon name="delivery-location" customClass="h-[48px]" />
+              </div>
+
+              <div class="w-full flex flex-col">
+                <app-normal-text class="!font-semibold !text-left mb-1">
+                  {{ SingleOrder?.deliveryAddress?.name }}
+                </app-normal-text>
+                <app-normal-text class="!text-gray-500 !text-left">
+                  {{ SingleOrder?.deliveryAddress?.description }}.
+                  <a
+                    class="!underline"
+                    target="_blank"
+                    :href="SingleOrder?.deliveryAddress?.google_map_link || ''"
+                    >See on map</a
+                  >
                 </app-normal-text>
               </div>
             </div>
@@ -430,7 +481,7 @@
       </div>
 
       <!-- Bottom Buttons -->
-      <div
+      <!-- <div
         v-if="SingleOrder"
         class="w-full fixed bg-white dark:bg-black bottom-0 left-0 pt-4 px-4 flex flex-col"
         :style="`${getBottomPadding}`"
@@ -445,7 +496,7 @@
           </app-button>
           <app-button variant="secondary" class="!py-4"> Accept </app-button>
         </div>
-      </div>
+      </div> -->
     </subpage-layout>
   </app-wrapper>
 </template>
@@ -534,9 +585,7 @@ export default defineComponent({
 
     // Navigate to chat
     const goToChat = () => {
-      // TODO: Implement navigation to chat conversation
-      console.log("Navigate to chat for order:", SingleOrder.value?.uuid);
-      // Logic.Common.GoToRoute(`/chat/${conversationUuid}`);
+      Logic.Common.GoToRoute(`/chat/${SingleOrder.value?.conversation?.uuid}`);
     };
 
     // Get status label
@@ -870,15 +919,10 @@ export default defineComponent({
     const formatFullDate = (dateString: string) => {
       if (!dateString) return "";
       try {
-        const date = new Date(dateString);
-        const time = date.toLocaleTimeString("en-US", {
-          hour: "2-digit",
-          minute: "2-digit",
-          hour12: false,
-        });
-        const month = date.toLocaleString("default", { month: "short" });
-        const day = date.getDate();
-        return `${time} • ${month} ${day}`;
+        return `${Logic.Common.fomartDate(
+          dateString,
+          "hh:mm a"
+        )} • ${Logic.Common.fomartDate(dateString, "MMM D")}`;
       } catch (e) {
         return "";
       }

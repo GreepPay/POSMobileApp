@@ -1,6 +1,8 @@
 <template>
   <!-- Card Content -->
-  <div class="w-full flex flex-col py-3 mb-0 bg-white">
+  <div
+    class="w-full flex flex-col py-3 mb-0 bg-white !border-b-[10px] px-4 !border-[#f0f3f6]"
+  >
     <!-- Price and Item Details -->
     <div class="w-full flex flex-row items-center justify-between mb-3 pb-3">
       <app-normal-text
@@ -116,8 +118,7 @@ export default defineComponent({
     // Format price
     const formatPrice = (task: any) => {
       if (task.price) {
-        const priceInUSD =
-          task.price * (CurrentGlobalExchangeRate.value?.mid || 1);
+        const priceInUSD = task.price * CurrentGlobalExchangeRate.value!.mid;
         return `${currencyInfo?.symbol || "$"}${Logic.Common.convertToMoney(
           priceInUSD,
           true,

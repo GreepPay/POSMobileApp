@@ -12,7 +12,8 @@
       </app-normal-text>
       <div class="flex flex-row items-center gap-2">
         <app-normal-text
-          class="!text-right !text-[#FF9500] !font-[500] !text-[12.5px] !leading-[20px]"
+          class="!text-right !font-[500] !text-[12.5px] !leading-[20px]"
+          :style="`color: ${colorByStatus(getDeliveryStatus(delivery.status) as any)} !important;`"
         >
           {{ getDeliveryStatusLabel(delivery.status) }}
         </app-normal-text>
@@ -81,8 +82,13 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, PropType } from "vue";
-import { AppNormalText, AppIcon } from "@greep/ui-components";
+import { defineComponent, onMounted, PropType, ref } from "vue";
+import {
+  AppNormalText,
+  AppIcon,
+  availableCurrencies,
+} from "@greep/ui-components";
+import { Logic } from "@greep/logic";
 
 export default defineComponent({
   name: "DeliveryDetailCard",
@@ -97,9 +103,24 @@ export default defineComponent({
     },
   },
   setup() {
+    const CurrentGlobalExchangeRate = ref(
+      Logic.Wallet.CurrentGlobalExchangeRate
+    );
+
+    const currencyInfo = availableCurrencies?.find(
+      (currency) => currency.code === CurrentGlobalExchangeRate.value?.target
+    );
+
     // Format price
-    const formatPrice = (delivery: any) => {
-      return `$${delivery.price}`;
+    const formatPrice = (task: any) => {
+      if (task.price) {
+        const priceInUSD = task.price * CurrentGlobalExchangeRate.value!.mid;
+        return `${currencyInfo?.symbol || "$"}${Logic.Common.convertToMoney(
+          priceInUSD,
+          true,
+          ""
+        )}`;
+      }
     };
 
     // Get item details with description
@@ -154,6 +175,20 @@ export default defineComponent({
       return delivery.deliveryAddress || delivery.toAddress || "Not specified";
     };
 
+    const colorByStatus = (
+      status: "success" | "failed" | "pending" | "in_progress"
+    ) => {
+      if (status === "success") {
+        return "#10BB76";
+      } else if (status === "failed") {
+        return "#FA1919";
+      } else if (status === "in_progress") {
+        return "#00619D";
+      } else {
+        return "#FFAA1F";
+      }
+    };
+
     // Get delivery status for UI
     const getDeliveryStatus = (status: string) => {
       switch (status?.toLowerCase()) {
@@ -164,6 +199,8 @@ export default defineComponent({
         case "failed":
           return "failed";
         case "pending":
+        case "ongoing":
+          return "in_progress";
         case "processing":
         case "confirmed":
         case "picked_up":
@@ -188,6 +225,8 @@ export default defineComponent({
           return "In Transit";
         case "cancelled":
           return "Cancelled";
+        case "ongoing":
+          return "In Progress";
         case "failed":
           return "Failed";
         case "processing":
@@ -198,7 +237,15 @@ export default defineComponent({
       }
     };
 
+    onMounted(() => {
+      Logic.Wallet.watchProperty(
+        "CurrentGlobalExchangeRate",
+        CurrentGlobalExchangeRate
+      );
+    });
+
     return {
+      colorByStatus,
       formatPrice,
       getDeliveryItemName,
       getPickupAddress,

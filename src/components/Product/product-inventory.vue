@@ -61,7 +61,7 @@
         <div class="w-full flex flex-col pb-4">
           <app-text-field
             :has-title="false"
-            type="text"
+            type="numeric"
             placeholder="0"
             ref="productPrice"
             name="Price"
@@ -158,6 +158,10 @@ export default defineComponent({
       const state = formComponent.value?.validate();
       if (state) {
         formData.currency = selectedCurrencyCode.value?.split("_")[0];
+
+        formData.price = formData.price
+          ? formData.price.toString().replace(/,/g, "")
+          : "0";
         // Proceed with form submission
         return formData;
       } else {

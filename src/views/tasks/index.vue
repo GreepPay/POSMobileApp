@@ -28,10 +28,10 @@
         </div>
 
         <!-- Tasks List -->
-        <div v-else class="w-full flex flex-col px-4 pb-4">
+        <div v-else class="w-full flex flex-col pb-4">
           <div
             v-if="tasks.length === 0"
-            class="w-full flex flex-col items-center py-8 border-none"
+            class="w-full flex flex-col items-center py-8 border-none px-4"
           >
             <app-empty-state
               icon="empty-events"
@@ -43,8 +43,7 @@
           <!-- Top Divider -->
           <div
             v-if="tasks.length !== 0"
-            class="w-screen h-[12px] -mx-4"
-            style="background-color: #f0f3f6"
+            class="w-screen h-[12px] !bg-[#f0f3f6]"
           ></div>
 
           <template
@@ -58,14 +57,10 @@
               @accept="acceptTask"
             />
           </template>
-
-          <!-- Bottom Divider -->
-          <div
-            v-if="tasks.length !== 0"
-            class="w-screen h-[12px] -mx-4"
-            style="background-color: #f0f3f6"
-          ></div>
         </div>
+
+        <!-- Spacer -->
+        <div class="h-[100px] py-8"></div>
       </div>
     </default-page-layout>
   </app-wrapper>

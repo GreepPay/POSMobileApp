@@ -1,28 +1,8 @@
 <template>
   <app-wrapper>
     <subpage-layout title="Delivery Order" :hasBottomButton="true">
-      <!-- Loading State -->
-      <div v-if="isLoading" class="w-full flex flex-col items-center py-8">
-        <app-normal-text class="!text-center !text-gray-500">
-          Loading delivery details...
-        </app-normal-text>
-      </div>
-
-      <!-- Error State -->
-      <div v-else-if="error" class="w-full flex flex-col items-center py-8">
-        <app-normal-text class="!text-center !text-red-500">
-          {{ error }}
-        </app-normal-text>
-        <button
-          @click="loadDelivery"
-          class="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg"
-        >
-          Retry
-        </button>
-      </div>
-
       <!-- Delivery Details -->
-      <div v-else-if="delivery" class="w-full flex flex-col justify-start pt-1">
+      <div class="w-full flex flex-col justify-start pt-1">
         <!-- Delivery ID -->
         <div class="w-full flex flex-col px-4">
           <app-image-loader
@@ -37,12 +17,12 @@
             <div class="w-full flex flex-row items-center justify-between z-10">
               <app-normal-text class="!text-white">
                 {{
-                  delivery.trackingNumber ? "Tracking Number" : "Delivery ID"
+                  delivery?.trackingNumber ? "Tracking Number" : "Delivery ID"
                 }}
               </app-normal-text>
 
               <app-normal-text class="!text-white !font-semibold !text-sm">
-                {{ delivery.trackingNumber || delivery.uuid }}
+                {{ delivery?.trackingNumber || delivery?.uuid }}
               </app-normal-text>
             </div>
           </app-image-loader>
@@ -50,47 +30,107 @@
 
         <!-- Delivery Chat -->
         <div
+          v-if="delivery?.conversation && delivery?.status != 'pending'"
           class="w-full flex flex-row items-center mt-4 py-4 px-4 !border-t-[12px] !border-b-[12px] border-[#F0F3F6] cursor-pointer"
           @click="goToChat"
         >
           <div class="w-[48px] mr-3">
             <div class="w-[48px]">
               <app-image-loader
-                :photoUrl="getCustomerAvatar(delivery)"
+                :photoUrl="'/images/chat-logo.png'"
                 class="h-[48px] w-[48px] rounded-full"
               />
             </div>
           </div>
           <div class="w-full flex flex-col">
-            <div class="w-full flex flex-row justify-between item-center">
+            <div class="flex flex-row justify-between items-start space-x-2">
               <app-normal-text
-                class="!text-left !text-black !font-[500] !text-sm mb-[1px]"
+                class="!text-left !font-medium !line-clamp-1 !text-[12.5px]"
               >
-                {{ getCustomerName(delivery) }}
+                {{ delivery?.conversation?.name || "Chat with Merchant" }}
               </app-normal-text>
 
-              <app-normal-text class="!text-right !text-[#999999] mb-[1px]">
-                {{ formatTime(delivery.created_at || delivery.createdAt) }}
+              <app-normal-text
+                class="!text-[10px] !text-gray-400 whitespace-nowrap"
+              >
+                {{
+                  Logic.Common.fomartDate(delivery?.updatedAt || "", "HH:mm A")
+                }}
               </app-normal-text>
             </div>
-
-            <div
-              v-if="!showActionButtons(delivery)"
-              class="w-full flex flex-row items-center justify-between"
-            >
-              <app-normal-text class="!text-left !text-[#999999]">
-                Delivery Chat
+            <div class="w-full flex flex-row items-center justify-between">
+              <app-normal-text class="!text-left !text-gray-500 !line-clamp-1">
+                {{
+                  (delivery?.conversation?.participants?.length || 0) > 2
+                    ? "Greep AI, Customer, You"
+                    : "Customer, You"
+                }}
               </app-normal-text>
 
               <div
                 class="h-[24px] w-[24px] rounded-full flex items-center justify-center"
-                :style="`background-color: ${colorByStatus(
-                  getDeliveryStatus(delivery.status)
-                )} !important;`"
+                style="
+                  background: linear-gradient(
+                    269.64deg,
+                    #0d965e 0.31%,
+                    #00683f 89.75%
+                  );
+                "
               >
-                <app-normal-text class="!text-[#ffffff] !font-[500]">
-                  1
-                </app-normal-text>
+                <app-normal-text class="!text-white"> 1 </app-normal-text>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Delivery Info -->
+        <div class="w-full flex flex-col px-4 mt-4">
+          <div
+            v-if="delivery?.pickupAddress"
+            :class="`flex flex-row  items-center justify-between px-3 py-3 border-[1.5px] border-[#F0F3F6] rounded-[12px] mb-3 `"
+          >
+            <div class="w-full flex flex-col mb-2">
+              <div class="w-full flex flex-row items-center">
+                <div class="!w-[50px] mr-2">
+                  <app-icon :name="'pick_up_icon'" customClass="h-[48px]" />
+                </div>
+
+                <div class="w-full flex flex-col">
+                  <app-normal-text class="!font-semibold !text-left mb-1">
+                    Pickup From
+                  </app-normal-text>
+                  <app-normal-text
+                    is-html
+                    :html-content="delivery?.pickupAddress"
+                    class="!text-gray-500 !text-left"
+                  >
+                  </app-normal-text>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div
+            v-if="delivery?.deliveryAddress"
+            :class="`flex flex-row items-center justify-between px-3 py-3 border-[1.5px] border-[#F0F3F6] rounded-[12px] mb-3 `"
+          >
+            <div class="w-full flex flex-col">
+              <div class="w-full flex flex-row items-center">
+                <div class="!w-[50px] mr-2">
+                  <app-icon :name="'drop_off_icon'" customClass="h-[48px]" />
+                </div>
+
+                <div class="w-full flex flex-col">
+                  <app-normal-text class="!font-semibold !text-left mb-1">
+                    Drop Off At
+                  </app-normal-text>
+                  <app-normal-text
+                    is-html
+                    :html-content="delivery?.deliveryAddress"
+                    class="!text-gray-500 !text-left"
+                  >
+                  </app-normal-text>
+                </div>
               </div>
             </div>
           </div>
@@ -142,6 +182,7 @@
               :class="`!py-4`"
               @click="handleMainAction"
               :disabled="!canPerformAction(delivery)"
+              :loading="acceptButtonIsLoading"
             >
               {{ getMainButtonText(delivery) }}
             </app-button>
@@ -160,10 +201,12 @@ import {
   AppButton,
   AppDetails,
   AppCountdownTimer,
+  AppIcon,
 } from "@greep/ui-components";
 import { Logic } from "@greep/logic";
 import { getBottomPadding } from "../../composable";
 import { useRoute } from "vue-router";
+import { Business } from "@greep/logic/src/gql/graphql";
 
 export default defineComponent({
   name: "DeliveryDetailsPage",
@@ -173,6 +216,7 @@ export default defineComponent({
     AppButton,
     AppDetails,
     AppCountdownTimer,
+    AppIcon,
   },
   middlewares: {
     fetchRules: [
@@ -182,17 +226,18 @@ export default defineComponent({
         method: "GetDeliveryByUuid",
         params: [],
         requireAuth: true,
-        ignoreProperty: false,
+        ignoreProperty: true,
         useRouteId: true,
       },
     ],
   },
   setup() {
     const route = useRoute();
-    const delivery = ref<any | null>(null);
+    const delivery = ref(Logic.Commerce.SingleDelivery);
     const isLoading = ref(false);
     const error = ref<string | null>(null);
     const currentPageContent = ref("waiting");
+    const acceptButtonIsLoading = ref(false);
 
     // Watch for middleware-loaded delivery data
     watch(
@@ -207,26 +252,21 @@ export default defineComponent({
       { deep: true, immediate: true }
     );
 
-    const colorByStatus = (status: "success" | "failed" | "pending") => {
+    const colorByStatus = (
+      status: "success" | "failed" | "pending" | "in_progress"
+    ) => {
       if (status === "success") {
         return "#10BB76";
       } else if (status === "failed") {
         return "#FA1919";
+      } else if (status === "in_progress") {
+        return "#00619D";
       } else {
         return "#FFAA1F";
       }
     };
 
-    // Refresh delivery from middleware data (for manual refresh/retry)
-    const loadDelivery = () => {
-      error.value = null;
-      const singleDelivery = Logic.Commerce.SingleDelivery;
-      if (singleDelivery) {
-        delivery.value = singleDelivery;
-      } else {
-        error.value = "Delivery not found";
-      }
-    };
+    const loadDelivery = () => {};
 
     // Format time
     const formatTime = (dateString: string | null) => {
@@ -344,6 +384,8 @@ export default defineComponent({
         case "cancelled":
         case "failed":
           return "failed";
+        case "ongoing":
+          return "in_progress";
         case "pending":
         case "processing":
         case "confirmed":
@@ -365,6 +407,8 @@ export default defineComponent({
           return "Confirmed";
         case "picked_up":
           return "Picked Up";
+        case "ongoing":
+          return "In Progress";
         case "in_transit":
           return "In Transit";
         case "cancelled":
@@ -435,18 +479,6 @@ export default defineComponent({
     const getDeliveryDetails = (delivery: any) => {
       const details = [];
 
-      // Customer Details Section
-      details.push([
-        // {
-        //     title: "Customer Name",
-        //     content: getCustomerName(delivery),
-        // },
-        {
-          title: "Customer Phone",
-          content: getCustomerPhone(delivery),
-        },
-      ]);
-
       // Delivery Request Information
       details.push([
         {
@@ -490,18 +522,6 @@ export default defineComponent({
         },
       ]);
 
-      // Weight and Scheduling Information
-      details.push([
-        {
-          title: "Weight",
-          content: getWeight(delivery),
-        },
-        {
-          title: "Scheduled Date",
-          content: getScheduledDate(delivery),
-        },
-      ]);
-
       // Scheduled Time (if different from scheduled date)
       const scheduledTime = getScheduledTime(delivery);
       if (scheduledTime !== "Not specified") {
@@ -513,45 +533,28 @@ export default defineComponent({
         ]);
       }
 
-      // Custom Delivery Information (if available)
-      if (delivery.type === "custom" || !delivery.order) {
-        details.push([
-          {
-            title: "Type",
-            content: "Custom",
-          },
-          {
-            title: "Estimated Time",
-            content: delivery.estimatedDeliveryDate
-              ? formatDateTime(delivery.estimatedDeliveryDate)
-              : "Not specified",
-          },
-        ]);
-      } else {
-        details.push([
-          {
-            title: "Type",
-            content: "Order-based",
-          },
-        ]);
-      }
-
-      // Addresses (if available)
-      if (delivery.deliveryAddress || delivery.shippingAddress) {
-        details.push([
-          {
-            title: "Delivery Address",
-            content:
-              delivery.deliveryAddress ||
-              delivery.shippingAddress ||
-              "Not specified",
-          },
-          {
-            title: "Pickup Address",
-            content: delivery.pickupAddress || "Not specified",
-          },
-        ]);
-      }
+      // // Custom Delivery Information (if available)
+      // if (delivery.type === "custom" || !delivery.order) {
+      //   details.push([
+      //     {
+      //       title: "Type",
+      //       content: "Custom",
+      //     },
+      //     {
+      //       title: "Estimated Time",
+      //       content: delivery.estimatedDeliveryDate
+      //         ? formatDateTime(delivery.estimatedDeliveryDate)
+      //         : "Not specified",
+      //     },
+      //   ]);
+      // } else {
+      //   details.push([
+      //     {
+      //       title: "Type",
+      //       content: "Order-based",
+      //     },
+      //   ]);
+      // }
 
       // Additional delivery information
       if (delivery.trackingNumber) {
@@ -578,19 +581,7 @@ export default defineComponent({
 
     // Navigate to chat
     const goToChat = () => {
-      if (delivery.value) {
-        // Get conversation ID from metadata first
-        const metadata = parseMetadata(delivery.value.metadata || "{}");
-        const conversationUuid =
-          metadata.conversationId ||
-          metadata.conversarionId || // Handle typo
-          delivery.value.uuid; // Fallback to delivery UUID
-
-        console.log("🔧 Navigating to chat with UUID:", conversationUuid);
-        Logic.Common.GoToRoute(
-          `/chat/${conversationUuid}?delivery=true&type=delivery`
-        );
-      }
+      Logic.Common.GoToRoute(`/chat/${delivery.value?.conversation?.uuid}`);
     };
 
     // Handle main action based on current status
@@ -629,17 +620,12 @@ export default defineComponent({
     // Accept delivery
     const acceptDelivery = async () => {
       try {
+        acceptButtonIsLoading.value = true;
+
         const currentUser = Logic.Auth.AuthUser;
         if (!currentUser || !delivery.value) {
           throw new Error("User not authenticated or delivery not found");
         }
-
-        console.log("🔧 Accepting delivery and joining chat:", {
-          deliveryId: delivery.value.id,
-          deliveryUuid: delivery.value.uuid,
-          businessUserId: currentUser.id,
-          businessUuid: currentUser.uuid,
-        });
 
         // Step 1: Accept the delivery using GraphQL mutation
         const acceptResponse = await Logic.Commerce.AcceptDelivery(
@@ -651,11 +637,6 @@ export default defineComponent({
             acceptResponse.error.message || "Failed to accept delivery"
           );
         }
-
-        console.log(
-          "✅ Delivery accepted successfully:",
-          acceptResponse.data?.AcceptDelivery
-        );
 
         // Step 2: Reload delivery data to get updated metadata
         await loadDelivery();
@@ -669,13 +650,9 @@ export default defineComponent({
           type: "success",
         });
 
-        // Step 4: Navigate to chat screen after a brief delay
-        setTimeout(async () => {
-          await navigateToChat();
-        }, 1500);
+        acceptButtonIsLoading.value = false;
 
-        // Reload delivery to get updated status
-        await loadDelivery();
+        goToChat();
       } catch (err) {
         console.error("Error accepting delivery:", err);
         Logic.Common.showAlert({
@@ -772,10 +749,9 @@ export default defineComponent({
         const currentUser = Logic.Auth.AuthUser;
         if (!currentUser) return;
 
-        const businessName =
-          `${currentUser.first_name || ""} ${
-            currentUser.last_name || ""
-          }`.trim() || "Business Team";
+        const currentBusiness: Business = Logic.Auth.GetDefaultBusiness();
+
+        const businessName = currentBusiness?.business_name || "Business Team";
 
         Logic.Messaging.CreateMessageForm = {
           input: {
@@ -789,7 +765,7 @@ export default defineComponent({
               sender_type: "business",
               sender_name: businessName,
               sender_uuid: currentUser.uuid,
-              business_uuid: currentUser.uuid,
+              business_uuid: currentBusiness.uuid,
               business_name: businessName,
               delivery_uuid: delivery.value?.uuid,
               delivery_status: "accepted",
@@ -851,11 +827,6 @@ export default defineComponent({
         // Try to find existing conversation by delivery entity
         // This might require querying conversations by entity_type='deliveries' and entity_uuid=delivery.uuid
         // For now, we'll log the attempt and suggest manual conversation creation if needed
-
-        console.log("⚠️ Alternative conversation lookup not implemented yet.");
-        console.log(
-          "💡 Suggestion: Ensure delivery orders include conversation_id when created."
-        );
       } catch (error) {
         console.error("❌ Error in findOrCreateDeliveryConversation:", error);
       }
@@ -969,6 +940,7 @@ export default defineComponent({
       formatDateTime,
       handleMainAction,
       declineDelivery,
+      acceptButtonIsLoading,
     };
   },
   data() {
