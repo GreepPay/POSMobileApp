@@ -116,6 +116,7 @@ export default defineComponent({
         params: [1, 50],
         requireAuth: true,
         ignoreProperty: false,
+        silentUpdate: true,
       },
     ],
   },

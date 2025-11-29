@@ -205,7 +205,7 @@
 
                 <div class="flex flex-col pl-1">
                   <app-normal-text
-                    class="!font-semibold !text-left !text-[13px]"
+                    class="!font-semibold !text-left !text-[13px] !line-clamp-1"
                   >
                     {{ ticket?.name }}
                   </app-normal-text>
@@ -224,10 +224,9 @@
                   x<span class="!text-[15px]">{{ ticket?.sales }}</span>
                 </app-normal-text>
                 <app-normal-text
-                  class="!text-[#616161] !text-right !pt-[4px] !text-[13px]"
+                  class="!text-[#616161] !text-right !pt-[4px] !text-[13px] !white-space-nowrap"
                 >
-                  +
-                  {{ ticket?.currency_symbol
+                  +{{ ticket?.currency_symbol
                   }}{{
                     Logic.Common.convertToMoney(
                       ticket?.revenue,
@@ -394,6 +393,8 @@ export default defineComponent({
         (item) => item.code === CurrentGlobalExchangeRate?.value?.target
       );
 
+      const tickets = Logic.Commerce.SingleProduct?.tickets || [];
+
       productVariants.forEach((variant) => {
         const currentCurrency = availableCurrencies.find(
           (item) => item.code === product?.currency
@@ -433,14 +434,32 @@ export default defineComponent({
         ? CurrentGlobalExchangeRate.value.mid
         : 1;
 
-      const allTicketsItems = Logic.Commerce.SingleProduct?.tickets;
-
       Logic.Commerce.SingleProduct?.productSales?.forEach((sale) => {
         const extraData = JSON.parse(sale.extra_data || "{}");
 
         if (extraData?.variantId && allTickets[extraData.variantId]) {
           allTickets[extraData.variantId].revenue +=
             parseFloat(sale.amount.toString()) * midRate;
+          allTickets[extraData.variantId].sales += extraData.quantity || 1;
+        } else {
+          const ticket = tickets?.find(
+            (ticket) => ticket.variantId === extraData?.variantId
+          );
+
+          // Find item from allTickets where name matches ticket?.ticketType
+          const matchedTicket = Object.values(allTickets).find(
+            (item: any) => item.name === ticket?.ticketType
+          );
+
+          if (matchedTicket) {
+            // @ts-ignore
+            matchedTicket.revenue +=
+              parseFloat(sale.amount.toString()) * midRate;
+            // @ts-ignore
+            matchedTicket.sales += extraData.quantity || 1;
+          } else {
+            console.log("No match found for ticket sale");
+          }
         }
 
         const currentTicket = allTickets[extraData.variantId];
@@ -457,13 +476,6 @@ export default defineComponent({
           )}`,
           real_date: sale.created_at || "",
         });
-      });
-
-      // Update ticket sales count
-      allTicketsItems?.forEach((ticketItem) => {
-        if (allTickets[ticketItem.variantId || ""]) {
-          allTickets[ticketItem.variantId || ""].sales += 1;
-        }
       });
 
       Object.keys(allTickets).forEach((key) => {

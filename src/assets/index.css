@@ -68,6 +68,35 @@
   }
 }
 
+
+@layer base {
+  /* Existing classes ... */
+
+  /* ========================= */
+  /*  🔴 RED GRADIENTS         */
+  /* ========================= */
+
+  .bg-gradient-red {
+    @apply bg-gradient-to-r from-[#D71E0F] to-[#FF3219];
+  }
+
+  .bg-gradient-red-soft {
+    @apply bg-gradient-to-r from-[#FF7F7F] to-[#FF9999];
+  }
+
+  /* ========================= */
+  /*  🟢 GREEN GRADIENTS       */
+  /* ========================= */
+
+  .bg-gradient-green {
+    @apply bg-gradient-to-r from-[#00683F] to-[#0D965E];
+  }
+
+  .bg-gradient-green-soft {
+    @apply bg-gradient-to-r from-green-300 to-green-400;
+  }
+}
+
 /* Body global styles */
 body {
   font-family: "Poppins", sans-serif;

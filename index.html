@@ -115,17 +115,44 @@
         font-weight: 800;
         font-style: normal;
       }
+      
 
       #innerModal {
         margin-top: env(safe-area-inset-top) !important;
         height: calc(100% - env(safe-area-inset-top)) !important;
         font-family: Poppins !important;
       }
+
+      .woot-widget-bubble {
+        display: none !important;
+      }
+      .woot-widget-holder {
+        padding-top: calc(env(safe-area-inset-top)) !important;
+        padding-bottom: calc(env(safe-area-inset-bottom)) !important;
+      }
     </style>
   </head>
 
   <body>
     <div id="app"></div>
+
+     <script>
+      (function (d, t) {
+        var BASE_URL = "https://support-1344566.greep.io";
+        var g = d.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+        g.src = BASE_URL + "/packs/js/sdk.js";
+        g.async = true;
+        s.parentNode.insertBefore(g, s);
+        g.onload = function () {
+          window.chatwootSDK.run({
+            websiteToken: "97CCBxahYi7iYY5e6Gdkr32Q",
+            baseUrl: BASE_URL,
+          });
+        };
+      })(document, "script");
+    </script>
+
      <script
       src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAcsWVsx6-i94-6sZ8E1N9zBdALfyJbWTg&libraries=places"
       async

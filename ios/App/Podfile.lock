@@ -5,6 +5,8 @@ PODS:
   - AppAuth/Core (1.7.6)
   - AppAuth/ExternalUserAgent (1.7.6):
     - AppAuth/Core
+  - ByteowlsCapacitorFilesharer (7.0.0):
+    - Capacitor
   - Capacitor (7.0.1):
     - CapacitorCordova
   - CapacitorApp (7.0.0):
@@ -112,6 +114,7 @@ PODS:
   - RecaptchaInterop (100.0.0)
 
 DEPENDENCIES:
+  - "ByteowlsCapacitorFilesharer (from `../../node_modules/@byteowls/capacitor-filesharer`)"
   - "Capacitor (from `../../node_modules/@capacitor/ios`)"
   - "CapacitorApp (from `../../node_modules/@capacitor/app`)"
   - "CapacitorBrowser (from `../../node_modules/@capacitor/browser`)"
@@ -147,6 +150,8 @@ SPEC REPOS:
     - RecaptchaInterop
 
 EXTERNAL SOURCES:
+  ByteowlsCapacitorFilesharer:
+    :path: "../../node_modules/@byteowls/capacitor-filesharer"
   Capacitor:
     :path: "../../node_modules/@capacitor/ios"
   CapacitorApp:
@@ -172,6 +177,7 @@ EXTERNAL SOURCES:
 
 SPEC CHECKSUMS:
   AppAuth: d4f13a8fe0baf391b2108511793e4b479691fb73
+  ByteowlsCapacitorFilesharer: 5b0150dbe70e2ebdea9aed1c2e1bd2e2369f3dd6
   Capacitor: de199cba6c8b20995428ad0b7cb0bc6ca625ffd4
   CapacitorApp: 9cb31064a6c6bb2b1438583733a7bf45557fc1da
   CapacitorBrowser: 22541e48442de44dc629c214388290d6eecc6ae9
@@ -200,6 +206,6 @@ SPEC CHECKSUMS:
   PromisesObjC: f5707f49cb48b9636751c5b2e7d227e43fba9f47
   RecaptchaInterop: 7d1a4a01a6b2cb1610a47ef3f85f0c411434cb21
 
-PODFILE CHECKSUM: 2e56d1962a7a6e31a632c55d4944628625211215
+PODFILE CHECKSUM: 77a94b6cf88755fc70eb65b7bceba440861161b6
 
 COCOAPODS: 1.16.2

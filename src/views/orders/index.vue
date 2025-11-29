@@ -226,16 +226,18 @@ export default defineComponent({
       if (activeTab.value === "active") {
         finalOrders = sortedOrders.filter((order: any) => {
           const status = order.status?.toLowerCase() || "";
-          return ["pending", "processing", "confirmed", "accepted"].includes(
-            status
-          );
+          return ["pending", "processing", "accepted"].includes(status);
         });
       } else {
         finalOrders = sortedOrders.filter((order: any) => {
           const status = order.status?.toLowerCase() || "";
-          return ["completed", "cancelled", "failed", "delivered"].includes(
-            status
-          );
+          return [
+            "completed",
+            "cancelled",
+            "failed",
+            "delivered",
+            "confirmed",
+          ].includes(status);
         });
       }
 

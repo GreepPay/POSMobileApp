@@ -149,7 +149,7 @@ export default defineComponent({
         domain: "Commerce",
         property: "ManyEventTickets",
         method: "GetEventTickets",
-        params: [13, 1, 10],
+        params: [13, 1, 100],
         requireAuth: true,
         ignoreProperty: true,
         useRouteId: false,

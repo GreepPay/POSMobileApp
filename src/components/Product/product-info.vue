@@ -73,7 +73,7 @@
         ref="categorySelect"
         use-floating-label
         v-model="formData.category"
-        :rules="[FormValidations.RequiredRule]"
+        auto-complete
       >
       </app-select>
 
@@ -122,7 +122,6 @@
             v-if="formData.isNationalCuisine"
             :placeholder="'Select the cuisine\'s country'"
             :hasTitle="true"
-            :title="'Country'"
             :paddings="'py-4 !px-3'"
             :options="cuisineCountryOptions"
             ref="cuisineCountry"
@@ -150,6 +149,7 @@ import {
   AppImageLoader,
   AppSelect,
   AppCheckbox,
+  AppNormalText,
   availableCurrencies,
 } from "@greep/ui-components";
 import { Logic } from "@greep/logic";
@@ -166,6 +166,7 @@ export default defineComponent({
     AppImageLoader,
     AppSelect,
     AppCheckbox,
+    AppNormalText,
   },
   props: {
     authUser: {
@@ -226,7 +227,6 @@ export default defineComponent({
     const loadCategories = async () => {
       try {
         const categories = await Logic.Product.GetCategories();
-        console.log(categories);
 
         if (categories && categories.length > 0) {
           // Use .value with ref
@@ -267,14 +267,6 @@ export default defineComponent({
     };
 
     const setDefaultValues = () => {
-      if (props.authUser) {
-        hideContent.value = true;
-
-        setTimeout(() => {
-          hideContent.value = false;
-        }, 100);
-      }
-
       if (props.data) {
         hideContent.value = true;
         formData.name = props.data.name;

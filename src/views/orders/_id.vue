@@ -480,29 +480,106 @@
         <div class="pb-24"></div>
       </div>
 
-      <!-- Bottom Buttons -->
-      <!-- <div
-        v-if="SingleOrder"
+      <!-- Bottom button -->
+      <div
+        v-if="SingleOrder && canUpdateStatus"
         class="w-full fixed bg-white dark:bg-black bottom-0 left-0 pt-4 px-4 flex flex-col"
         :style="`${getBottomPadding}`"
       >
-        <div class="w-full grid grid-cols-2 gap-4">
-          <app-button
-            variant="primary-white"
-            class="!py-4 !border-red-500 !text-red-500 !border-[1.5px]"
-            outlined
-          >
-            Cancel
-          </app-button>
-          <app-button variant="secondary" class="!py-4"> Accept </app-button>
+        <div class="w-full grid grid-cols-12 gap-4">
+          <!-- <div class="col-span-6 flex flex-col">
+            <app-button
+              variant="primary-white"
+              :class="`!py-4 !border-red !text-red !border-[1.5px]`"
+              outlined
+              @click="declineDelivery"
+            >
+              {{ getDeclineButtonText(delivery) }}
+            </app-button>
+          </div> -->
+          <div class="col-span-12 flex flex-col">
+            <app-button
+              variant="secondary"
+              :class="`!py-4`"
+              @click="showUpdateStatusModal = true"
+            >
+              {{ nextStatus?.value || "Accept delivery" }}
+            </app-button>
+          </div>
         </div>
-      </div> -->
+      </div>
     </subpage-layout>
+
+    <!-- Update Status Modal -->
+    <app-modal
+      v-if="showUpdateStatusModal"
+      :close="
+        () => {
+          showUpdateStatusModal = false;
+        }
+      "
+      :contentClass="'!px-0'"
+    >
+      <div class="w-full flex flex-col items-center pt-4 px-4">
+        <app-icon
+          :name="iconByStatus(nextStatus?.key || '')"
+          customClass="!h-[70px]"
+        />
+        <div
+          class="w-full flex flex-col pt-4 pb-6 px-5 items-center justify-center"
+        >
+          <app-normal-text
+            class="text-center w-full !text-lg !font-semibold pb-2"
+          >
+            {{ nextStatus?.value || "Update delivery Status" }}
+          </app-normal-text>
+
+          <app-normal-text
+            class="text-center !text-sm !text-gray-two w-full !prose !prose-sm"
+          >
+            Are you sure you want to
+            {{ nextStatus?.value || "update the delivery status" }}? This action
+            cannot be undone.
+          </app-normal-text>
+        </div>
+
+        <div
+          class="w-full grid grid-cols-2 gap-3 items-center justify-center !text-xs pt-3"
+        >
+          <div class="col-span-1 flex items-center justify-center">
+            <app-button
+              variant="secondary"
+              :customClass="`!py-4 !w-full`"
+              @click="updateOrderStatus"
+              :loading="statusIsUpdating"
+              >Yes</app-button
+            >
+          </div>
+          <div class="col-span-1 flex items-center justify-center">
+            <app-button
+              variant="secondary"
+              :customClass="`!py-4 !w-full`"
+              outlined
+              @click="showUpdateStatusModal = false"
+            >
+              No
+            </app-button>
+          </div>
+        </div>
+      </div>
+    </app-modal>
   </app-wrapper>
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, onMounted, computed } from "vue";
+import {
+  defineComponent,
+  ref,
+  onMounted,
+  computed,
+  reactive,
+  watch,
+} from "vue";
 import {
   AppNormalText,
   AppImageLoader,
@@ -511,6 +588,7 @@ import {
   AppTabs,
   AppIcon,
   AppSkeletonLoader,
+  AppModal,
 } from "@greep/ui-components";
 import { Logic } from "@greep/logic";
 import { useRoute } from "vue-router";
@@ -527,6 +605,7 @@ export default defineComponent({
     AppTabs,
     AppIcon,
     AppSkeletonLoader,
+    AppModal,
   },
   middlewares: {
     fetchRules: [
@@ -545,6 +624,84 @@ export default defineComponent({
     const isLoading = ref(false);
     const SingleOrder = ref(Logic.Commerce.SingleOrder);
     const activeTab = ref<"info" | "tracking">("info");
+    const showUpdateStatusModal = ref(false);
+    const statusIsUpdating = ref(false);
+
+    const marketOrderAllowedStatusProgression = reactive({
+      pending: ["confirmed", "cancelled"],
+      confirmed: ["delivered"],
+      delivered: [],
+      cancelled: [],
+    });
+
+    const canUpdateStatus = computed(() => {
+      if (!SingleOrder.value) return false;
+      const currentStatus = SingleOrder.value.status?.toLowerCase();
+      return (
+        currentStatus in marketOrderAllowedStatusProgression &&
+        // @ts-ignore
+        marketOrderAllowedStatusProgression[currentStatus].length > 0
+      );
+    });
+
+    const statusCopy = (status: string) => {
+      switch (status.toLowerCase()) {
+        case "pending":
+          return "Pending";
+        case "confirmed":
+          return "Confirm Order";
+        case "processing":
+          return "Mark order as Processing";
+        case "delivered":
+          return "Mark order as Picked Up";
+        case "cancelled":
+          return "Cancel Order";
+        case "ongoing":
+          return "Mark as Ongoing";
+        default:
+          return status;
+      }
+    };
+
+    const iconByStatus = (status: string) => {
+      switch (status.toLowerCase()) {
+        case "pending":
+          return "market-pending";
+        case "confirmed":
+          return "market-success";
+        case "processing":
+          return "market-processing";
+        case "delivered":
+          return "market-success";
+        case "cancelled":
+          return "market-failed";
+        case "ongoing":
+          return "market-failed";
+        default:
+          return "market-processing";
+      }
+    };
+
+    const nextStatus = computed(() => {
+      if (!SingleOrder.value) return null;
+      const currentStatus = SingleOrder.value.status?.toLowerCase();
+      if (
+        currentStatus in marketOrderAllowedStatusProgression &&
+        // @ts-ignore
+        marketOrderAllowedStatusProgression[currentStatus].length > 0
+      ) {
+        // @ts-ignore
+        return {
+          // @ts-ignore
+          key: marketOrderAllowedStatusProgression[currentStatus][0] as string,
+          value: statusCopy(
+            // @ts-ignore
+            marketOrderAllowedStatusProgression[currentStatus][0]
+          ),
+        };
+      }
+      return null;
+    });
 
     // Order tabs using AppTabs component
     const orderTabs = computed(() => {
@@ -572,6 +729,7 @@ export default defineComponent({
         case "pending":
         case "processing":
         case "confirmed":
+          return "#10BB76";
         case "accepted":
         default:
           return "#FF7B3B";
@@ -928,9 +1086,66 @@ export default defineComponent({
       }
     };
 
+    const loadSingleOrder = async () => {
+      await Logic.Commerce.GetOrder(SingleOrder.value?.uuid || "");
+    };
+
+    const updateOrderStatus = async () => {
+      if (statusIsUpdating.value) return;
+
+      statusIsUpdating.value = true;
+
+      Logic.Commerce.UpdateOrderStatusForm = {
+        input: {
+          entity_uuid: SingleOrder.value?.uuid || "",
+          new_status: nextStatus?.value?.key || "",
+          order_type: "market",
+          conversation_uuid: SingleOrder.value?.conversation?.uuid || "",
+        },
+      };
+
+      await Logic.Commerce.UpdateOrderStatus()
+        .then(async () => {
+          // Reload delivery data
+          await loadSingleOrder();
+
+          Logic.Common.showAlert({
+            show: true,
+            message: "Order status updated successfully!",
+            type: "success",
+          });
+
+          showUpdateStatusModal.value = false;
+        })
+        .catch((err) => {
+          console.error("Error updating order status:", err);
+          Logic.Common.showAlert({
+            show: true,
+            message:
+              err instanceof Error
+                ? err.message
+                : "Failed to update order status. Please try again.",
+            type: "error",
+          });
+        })
+        .finally(() => {
+          statusIsUpdating.value = false;
+        });
+    };
+
+    watch(SingleOrder, () => {
+      if (SingleOrder.value?.deliverymethod != "pick_up") {
+        marketOrderAllowedStatusProgression.confirmed = [];
+      }
+    });
+
     // Load order on mount
     onMounted(() => {
       Logic.Commerce.watchProperty("SingleOrder", SingleOrder);
+
+      if (SingleOrder.value?.deliverymethod != "pick_up") {
+        marketOrderAllowedStatusProgression.confirmed = [];
+      }
     });
 
     return {
@@ -939,6 +1154,13 @@ export default defineComponent({
       activeTab,
       orderTabs,
       SingleOrder,
+      getBottomPadding,
+      showUpdateStatusModal,
+      statusIsUpdating,
+      canUpdateStatus,
+      nextStatus,
+      iconByStatus,
+      updateOrderStatus,
       getStatusColor,
       getStatusLabel,
       getBusinessLogo,
@@ -960,7 +1182,6 @@ export default defineComponent({
       getProductPrice,
       getCustomerName,
       formatCurrency,
-      getBottomPadding,
     };
   },
 });

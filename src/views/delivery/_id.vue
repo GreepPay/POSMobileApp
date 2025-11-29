@@ -151,7 +151,7 @@
 
       <!-- Bottom button -->
       <div
-        v-if="delivery && showActionButtons(delivery)"
+        v-if="delivery && showActionButtons(delivery) && canUpdateStatus"
         class="w-full fixed bg-white dark:bg-black bottom-0 left-0 pt-4 px-4 flex flex-col"
         :style="`${getBottomPadding}`"
       >
@@ -166,7 +166,7 @@
           />
         </div>
         <div class="w-full grid grid-cols-12 gap-4">
-          <div class="col-span-6 flex flex-col">
+          <!-- <div class="col-span-6 flex flex-col">
             <app-button
               variant="primary-white"
               :class="`!py-4 !border-red !text-red !border-[1.5px]`"
@@ -175,26 +175,91 @@
             >
               {{ getDeclineButtonText(delivery) }}
             </app-button>
-          </div>
-          <div class="col-span-6 flex flex-col">
+          </div> -->
+          <div class="col-span-12 flex flex-col">
             <app-button
               variant="secondary"
               :class="`!py-4`"
               @click="handleMainAction"
-              :disabled="!canPerformAction(delivery)"
               :loading="acceptButtonIsLoading"
             >
-              {{ getMainButtonText(delivery) }}
+              {{ nextStatus?.value || "Accept delivery" }}
             </app-button>
           </div>
         </div>
       </div>
     </subpage-layout>
+
+    <!-- Update Status Modal -->
+    <app-modal
+      v-if="showUpdateStatusModal"
+      :close="
+        () => {
+          showUpdateStatusModal = false;
+        }
+      "
+      :contentClass="'!px-0'"
+    >
+      <div class="w-full flex flex-col items-center pt-4 px-4">
+        <app-icon
+          :name="iconByStatus(nextStatus?.key || '')"
+          customClass="!h-[70px]"
+        />
+        <div
+          class="w-full flex flex-col pt-4 pb-6 px-5 items-center justify-center"
+        >
+          <app-normal-text
+            class="text-center w-full !text-lg !font-semibold pb-2"
+          >
+            {{ nextStatus?.value || "Update delivery Status" }}
+          </app-normal-text>
+
+          <app-normal-text
+            class="text-center !text-sm !text-gray-two w-full !prose !prose-sm"
+          >
+            Are you sure you want to
+            {{ nextStatus?.value || "update the delivery status" }}? This action
+            cannot be undone.
+          </app-normal-text>
+        </div>
+
+        <div
+          class="w-full grid grid-cols-2 gap-3 items-center justify-center !text-xs pt-3"
+        >
+          <div class="col-span-1 flex items-center justify-center">
+            <app-button
+              variant="secondary"
+              :customClass="`!py-4 !w-full`"
+              @click="updateDeliveryStatus"
+              :loading="statusIsUpdating"
+              >Yes</app-button
+            >
+          </div>
+          <div class="col-span-1 flex items-center justify-center">
+            <app-button
+              variant="secondary"
+              :customClass="`!py-4 !w-full`"
+              outlined
+              @click="showUpdateStatusModal = false"
+            >
+              No
+            </app-button>
+          </div>
+        </div>
+      </div>
+    </app-modal>
   </app-wrapper>
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, computed, watch, onMounted } from "vue";
+import {
+  defineComponent,
+  ref,
+  computed,
+  watch,
+  onMounted,
+  reactive,
+} from "vue";
 import {
   AppNormalText,
   AppImageLoader,
@@ -202,10 +267,10 @@ import {
   AppDetails,
   AppCountdownTimer,
   AppIcon,
+  AppModal,
 } from "@greep/ui-components";
 import { Logic } from "@greep/logic";
 import { getBottomPadding } from "../../composable";
-import { useRoute } from "vue-router";
 import { Business } from "@greep/logic/src/gql/graphql";
 
 export default defineComponent({
@@ -217,6 +282,7 @@ export default defineComponent({
     AppDetails,
     AppCountdownTimer,
     AppIcon,
+    AppModal,
   },
   middlewares: {
     fetchRules: [
@@ -232,12 +298,91 @@ export default defineComponent({
     ],
   },
   setup() {
-    const route = useRoute();
     const delivery = ref(Logic.Commerce.SingleDelivery);
     const isLoading = ref(false);
     const error = ref<string | null>(null);
     const currentPageContent = ref("waiting");
     const acceptButtonIsLoading = ref(false);
+    const showUpdateStatusModal = ref(false);
+    const statusIsUpdating = ref(false);
+
+    const deliveryOrderAllowedStatusProgression = reactive({
+      pending: ["accepted", "in_transit", "delivered", "cancelled", "ongoing"],
+      accepted: ["in_transit", "delivered", "cancelled"],
+      ongoing: ["in_transit", "delivered", "cancelled"],
+      in_transit: ["delivered", "cancelled"],
+      delivered: [],
+      cancelled: [],
+    });
+
+    const canUpdateStatus = computed(() => {
+      if (!delivery.value) return false;
+      const currentStatus = delivery.value.status?.toLowerCase();
+      return (
+        currentStatus in deliveryOrderAllowedStatusProgression &&
+        // @ts-ignore
+        deliveryOrderAllowedStatusProgression[currentStatus].length > 0
+      );
+    });
+
+    const statusCopy = (status: string) => {
+      switch (status.toLowerCase()) {
+        case "pending":
+          return "Pending";
+        case "accepted":
+          return "Accept delivery";
+        case "in_transit":
+          return "Mark as In Transit";
+        case "delivered":
+          return "Mark as Delivered";
+        case "cancelled":
+          return "Cancel delivery";
+        case "ongoing":
+          return "Mark as Ongoing";
+        default:
+          return status;
+      }
+    };
+
+    const iconByStatus = (status: string) => {
+      switch (status.toLowerCase()) {
+        case "accepted":
+          return "delivery-confirmed";
+        case "in_transit":
+          return "delivery-confirmed";
+        case "delivered":
+          return "delivery-completed";
+        case "cancelled":
+          return "delivery-failed";
+        case "ongoing":
+          return "delivery-confirmed";
+        default:
+          return "delivery-confirmed";
+      }
+    };
+
+    const nextStatus = computed(() => {
+      if (!delivery.value) return null;
+      const currentStatus = delivery.value.status?.toLowerCase();
+      if (
+        currentStatus in deliveryOrderAllowedStatusProgression &&
+        // @ts-ignore
+        deliveryOrderAllowedStatusProgression[currentStatus].length > 0
+      ) {
+        // @ts-ignore
+        return {
+          // @ts-ignore
+          key: deliveryOrderAllowedStatusProgression[
+            currentStatus
+          ][0] as string,
+          value: statusCopy(
+            // @ts-ignore
+            deliveryOrderAllowedStatusProgression[currentStatus][0]
+          ),
+        };
+      }
+      return null;
+    });
 
     // Watch for middleware-loaded delivery data
     watch(
@@ -266,7 +411,9 @@ export default defineComponent({
       }
     };
 
-    const loadDelivery = () => {};
+    const loadDelivery = () => {
+      Logic.Commerce.GetDeliveryByUuid(delivery.value?.uuid || "");
+    };
 
     // Format time
     const formatTime = (dateString: string | null) => {
@@ -595,17 +742,8 @@ export default defineComponent({
           case "pending":
             await acceptDelivery();
             break;
-          case "confirmed":
-            await markPickedUp();
-            break;
-          case "picked_up":
-            await markInTransit();
-            break;
-          case "in_transit":
-            await markDelivered();
-            break;
           default:
-            console.log("Unknown status:", status);
+            showUpdateStatusModal.value = true;
         }
       } catch (err) {
         console.error("Error performing action:", err);
@@ -665,6 +803,49 @@ export default defineComponent({
         });
         throw err;
       }
+    };
+
+    const updateDeliveryStatus = async () => {
+      if (statusIsUpdating.value) return;
+
+      statusIsUpdating.value = true;
+
+      Logic.Commerce.UpdateOrderStatusForm = {
+        input: {
+          entity_uuid: delivery.value?.uuid || "",
+          new_status: nextStatus?.value?.key || "",
+          order_type: "delivery",
+          conversation_uuid: delivery.value?.conversation?.uuid || "",
+        },
+      };
+
+      await Logic.Commerce.UpdateOrderStatus()
+        .then(async () => {
+          // Reload delivery data
+          await loadDelivery();
+
+          Logic.Common.showAlert({
+            show: true,
+            message: "Delivery status updated successfully!",
+            type: "success",
+          });
+
+          showUpdateStatusModal.value = false;
+        })
+        .catch((err) => {
+          console.error("Error updating delivery status:", err);
+          Logic.Common.showAlert({
+            show: true,
+            message:
+              err instanceof Error
+                ? err.message
+                : "Failed to update delivery status. Please try again.",
+            type: "error",
+          });
+        })
+        .finally(() => {
+          statusIsUpdating.value = false;
+        });
     };
 
     // ✅ NEW: Join delivery conversation as business participant
@@ -914,9 +1095,14 @@ export default defineComponent({
       isLoading,
       error,
       getBottomPadding,
-      colorByStatus,
+      acceptButtonIsLoading,
+      canUpdateStatus,
       currentPageContent,
+      nextStatus,
+      showUpdateStatusModal,
+      statusIsUpdating,
       loadDelivery,
+      colorByStatus,
       goToChat,
       getCustomerAvatar,
       getCustomerName,
@@ -940,7 +1126,8 @@ export default defineComponent({
       formatDateTime,
       handleMainAction,
       declineDelivery,
-      acceptButtonIsLoading,
+      updateDeliveryStatus,
+      iconByStatus,
     };
   },
   data() {

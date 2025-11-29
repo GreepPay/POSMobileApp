@@ -1,6 +1,7 @@
 import { Logic } from "@greep/logic";
 import { Order } from "@greep/logic/src/gql/graphql";
 import { availableCurrencies } from ".";
+import { capitalize } from "vue";
 
 // Format currency
 
@@ -40,11 +41,15 @@ const getOrderStatus = (status: string) => {
     case "delivered":
       return "success";
     case "cancelled":
+      return "failed";
     case "failed":
       return "failed";
     case "pending":
+      return "pending";
     case "processing":
+      return "pending";
     case "confirmed":
+      return "success";
     case "accepted":
     default:
       return "pending";
@@ -169,7 +174,9 @@ export const getOrderDetails = (order: Order) => {
     if (status == "pending") {
       status = "Purchased";
       statusColor = colorByStatus("pending");
-      iconName = `commerce-order-${getOrderStatus("confirmed")}`;
+      iconName = `commerce-order-${getOrderStatus("pending")}`;
+    } else {
+      status = capitalize(order.status);
     }
   }
 

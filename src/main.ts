@@ -7,6 +7,7 @@ import { Logic } from "@greep/logic";
 // Layouts
 import DashboardLayout from "./layouts/DashboardLayout.vue";
 import SubpageLayout from "./layouts/SubpageLayout.vue";
+import Subpage3Layout from "./layouts/Subpage3Layout.vue";
 import AuthLayout from "./layouts/AuthLayout.vue";
 
 // Wrappers
@@ -47,6 +48,7 @@ routes.then((routes) => {
     .component("auth-layout", AuthLayout)
     .component("dashboard-layout", DashboardLayout)
     .component("subpage-layout", SubpageLayout)
+    .component("subpage-3-layout", Subpage3Layout)
     .component("app-wrapper", AppWrapper)
     .use(router);
 

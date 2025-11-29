@@ -89,6 +89,7 @@ import {
   availableCurrencies,
 } from "@greep/ui-components";
 import { Logic } from "@greep/logic";
+import { Delivery } from "@greep/logic/src/gql/graphql";
 
 export default defineComponent({
   name: "DeliveryDetailCard",
@@ -146,33 +147,13 @@ export default defineComponent({
     };
 
     // Get pickup address
-    const getPickupAddress = (task: any) => {
-      try {
-        if (task.metadata && typeof task.metadata === "string") {
-          const metadata = JSON.parse(task.metadata);
-          if (metadata.pickupAddress) {
-            return metadata.pickupAddress;
-          }
-        }
-      } catch (e) {
-        // continue
-      }
-      return task.deliveryAddress || "Not specified";
+    const getPickupAddress = (task: Delivery) => {
+      return task.pickupAddress || "Not specified";
     };
 
     // Get dropoff address
-    const getDropoffAddress = (delivery: any) => {
-      try {
-        if (delivery.metadata && typeof delivery.metadata === "string") {
-          const metadata = JSON.parse(delivery.metadata);
-          if (metadata.dropoffAddress) {
-            return metadata.dropoffAddress;
-          }
-        }
-      } catch (e) {
-        // continue
-      }
-      return delivery.deliveryAddress || delivery.toAddress || "Not specified";
+    const getDropoffAddress = (delivery: Delivery) => {
+      return delivery.deliveryAddress || "Not specified";
     };
 
     const colorByStatus = (
