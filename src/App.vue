@@ -109,7 +109,7 @@ export default defineComponent({
     // Set UI frontend logic
     SetFrontendLogic(Logic);
 
-    const appVersion = ref("1.10");
+    const appVersion = ref("1.11");
 
     // Set app version
     localStorage.setItem("app_version", appVersion.value);

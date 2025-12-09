@@ -487,21 +487,27 @@
         :style="`${getBottomPadding}`"
       >
         <div class="w-full grid grid-cols-12 gap-4">
-          <!-- <div class="col-span-6 flex flex-col">
+          <div class="col-span-6 flex flex-col">
             <app-button
               variant="primary-white"
               :class="`!py-4 !border-red !text-red !border-[1.5px]`"
               outlined
-              @click="declineDelivery"
+              @click="
+                isCancle = true;
+                showUpdateStatusModal = true;
+              "
             >
-              {{ getDeclineButtonText(delivery) }}
+              Cancel
             </app-button>
-          </div> -->
-          <div class="col-span-12 flex flex-col">
+          </div>
+          <div class="col-span-6 flex flex-col">
             <app-button
               variant="secondary"
               :class="`!py-4`"
-              @click="showUpdateStatusModal = true"
+              @click="
+                isCancle = false;
+                showUpdateStatusModal = true;
+              "
             >
               {{ nextStatus?.value || "Accept delivery" }}
             </app-button>
@@ -594,6 +600,7 @@ import { Logic } from "@greep/logic";
 import { useRoute } from "vue-router";
 import { Order } from "@greep/logic/src/gql/graphql";
 import { getBottomPadding } from "../../composable";
+import { onIonViewWillEnter } from "@ionic/vue";
 
 export default defineComponent({
   name: "CommerceOrderDetailsPage",
@@ -625,7 +632,9 @@ export default defineComponent({
     const SingleOrder = ref(Logic.Commerce.SingleOrder);
     const activeTab = ref<"info" | "tracking">("info");
     const showUpdateStatusModal = ref(false);
+    const isCancle = ref(false);
     const statusIsUpdating = ref(false);
+    const cancelIsLoading = ref(false);
 
     const marketOrderAllowedStatusProgression = reactive({
       pending: ["confirmed", "cancelled"],
@@ -684,6 +693,14 @@ export default defineComponent({
 
     const nextStatus = computed(() => {
       if (!SingleOrder.value) return null;
+
+      if (isCancle.value) {
+        return {
+          key: "cancelled",
+          value: statusCopy("cancelled"),
+        };
+      }
+
       const currentStatus = SingleOrder.value.status?.toLowerCase();
       if (
         currentStatus in marketOrderAllowedStatusProgression &&
@@ -1090,7 +1107,59 @@ export default defineComponent({
       await Logic.Commerce.GetOrder(SingleOrder.value?.uuid || "");
     };
 
+    const cancelOrder = async () => {
+      if (statusIsUpdating.value) return;
+
+      statusIsUpdating.value = true;
+      Logic.Common.showLoader({
+        show: true,
+        loading: true,
+      });
+
+      Logic.Commerce.UpdateOrderStatusForm = {
+        input: {
+          entity_uuid: SingleOrder.value?.uuid || "",
+          new_status: "cancelled",
+          order_type: "market",
+          conversation_uuid: SingleOrder.value?.conversation?.uuid || "",
+        },
+      };
+
+      await Logic.Commerce.UpdateOrderStatus()
+        .then(async () => {
+          // Reload delivery data
+          await loadSingleOrder();
+
+          Logic.Common.showAlert({
+            show: true,
+            message: "Order cancelled successfully!",
+            type: "success",
+          });
+        })
+        .catch((err) => {
+          console.error("Error cancelling order:", err);
+          Logic.Common.showAlert({
+            show: true,
+            message:
+              err instanceof Error
+                ? err.message
+                : "Failed to cancel order. Please try again.",
+            type: "error",
+          });
+        })
+        .finally(() => {
+          statusIsUpdating.value = false;
+          Logic.Common.hideLoader();
+        });
+    };
+
     const updateOrderStatus = async () => {
+      if (isCancle.value) {
+        await cancelOrder();
+        showUpdateStatusModal.value = false;
+        return;
+      }
+
       if (statusIsUpdating.value) return;
 
       statusIsUpdating.value = true;
@@ -1139,6 +1208,10 @@ export default defineComponent({
       }
     });
 
+    onIonViewWillEnter(() => {
+      isCancle.value = false;
+    });
+
     // Load order on mount
     onMounted(() => {
       Logic.Commerce.watchProperty("SingleOrder", SingleOrder);
@@ -1159,6 +1232,9 @@ export default defineComponent({
       statusIsUpdating,
       canUpdateStatus,
       nextStatus,
+      cancelIsLoading,
+      isCancle,
+      cancelOrder,
       iconByStatus,
       updateOrderStatus,
       getStatusColor,

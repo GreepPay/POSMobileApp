@@ -152,6 +152,7 @@ export default defineComponent({
         );
 
         if (
+          variant &&
           !isVote &&
           (selectedTab.value === "attendees" ||
             (selectedTab.value === "checked_in" && ticket.status == "used"))

@@ -452,6 +452,13 @@ export default defineComponent({
       //
     };
 
+    watch(
+      () => props.product,
+      () => {
+        setDefaults();
+      }
+    );
+
     watch(slidePosition, () => {
       currentSlidePosition.value = slidePosition.value;
     });

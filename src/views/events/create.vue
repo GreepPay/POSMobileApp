@@ -256,6 +256,7 @@ export default defineComponent({
                     price: string;
                     color: string;
                     is_vote: boolean;
+                    vote_is_unique: boolean;
                     image_url: string;
                   }) => {
                     productVariants.push({
@@ -268,6 +269,10 @@ export default defineComponent({
                         {
                           key: "is_vote",
                           value: ticket.is_vote ? "yes" : "no",
+                        },
+                        {
+                          key: "vote_is_unique",
+                          value: ticket.vote_is_unique ? "yes" : "no",
                         },
                         {
                           key: "image_url",

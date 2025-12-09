@@ -258,6 +258,24 @@
                 </template>
               </app-checkbox>
             </div>
+
+            <div class="w-full pt-2 pl-[2px]" v-if="item.is_vote">
+              <app-checkbox v-model="item.vote_is_unique" :variant="'normal'">
+                <template #label>
+                  <app-normal-text
+                    :class="`!font-[500] !text-xs -ml-2 ${
+                      item.is_vote ? '' : '!text-gray-500'
+                    }`"
+                  >
+                    {{
+                      item.vote_is_unique
+                        ? "Each attendee can only vote once with this ticket"
+                        : "Each attendee can only vote once with this ticket"
+                    }}
+                  </app-normal-text>
+                </template>
+              </app-checkbox>
+            </div>
           </div>
         </div>
 
@@ -358,6 +376,7 @@ export default defineComponent({
         price: string;
         color: string;
         is_vote: boolean;
+        vote_is_unique: boolean;
         image_url: string;
       }[]
     >([]);
@@ -397,6 +416,7 @@ export default defineComponent({
         price: "",
         color: randomColor,
         is_vote: false,
+        vote_is_unique: false,
         image_url: "",
       });
     };
@@ -419,6 +439,7 @@ export default defineComponent({
           price: string;
           color: string;
           is_vote: boolean;
+          vote_is_unique: boolean;
           image_url: string;
         }[] = [];
 
@@ -430,6 +451,10 @@ export default defineComponent({
               (attr) => attr.key.toLowerCase() == "is_vote"
             );
 
+            const uniqueVote = attributes.find(
+              (attr) => attr.key.toLowerCase() == "vote_is_unique"
+            );
+
             const imageUrl = attributes.find(
               (attr) => attr.key.toLowerCase() == "image_url"
             );
@@ -439,6 +464,7 @@ export default defineComponent({
               price: variant.priceAdjustment.toString(),
               color: variant.attributes[0].value,
               is_vote: isVote?.value == "yes" ? true : false,
+              vote_is_unique: uniqueVote?.value == "yes" ? true : false,
               image_url: imageUrl?.value || "",
             });
           });
@@ -473,15 +499,15 @@ export default defineComponent({
       Logic,
       formData,
       formComponent,
-      continueWithForm,
       showVariantModal,
-      removeTicket,
-      addNewTicket,
       currencyOptions,
       colorsToPickFrom,
       currentSellCurrency,
       allTickets,
       hideContent,
+      continueWithForm,
+      removeTicket,
+      addNewTicket,
     };
   },
   data() {

@@ -447,9 +447,38 @@ export default defineComponent({
           );
 
           // Find item from allTickets where name matches ticket?.ticketType
-          const matchedTicket = Object.values(allTickets).find(
-            (item: any) => item.name === ticket?.ticketType
-          );
+          const matchedTicket = Object.values(allTickets).find((item: any) => {
+            const ticketType = ticket?.ticketType || "";
+            if (!ticketType) return false;
+            const name = (item.name || "").toString();
+            if (name === ticketType) return true;
+
+            // Levenshtein distance to compute similarity
+            const s = name.toLowerCase();
+            const t = ticketType.toLowerCase();
+            const m = s.length;
+            const n = t.length;
+            if (m === 0 || n === 0) return false;
+
+            const dp: number[] = Array.from({ length: m + 1 }, (_, i) => i);
+            for (let j = 1; j <= n; j++) {
+              let prev = dp[0];
+              dp[0] = j;
+              for (let i = 1; i <= m; i++) {
+                const temp = dp[i];
+                const cost = s[i - 1] === t[j - 1] ? 0 : 1;
+                dp[i] = Math.min(dp[i] + 1, dp[i - 1] + 1, prev + cost);
+                prev = temp;
+              }
+            }
+
+            const dist = dp[m];
+            const maxLen = Math.max(m, n);
+            const similarity = maxLen ? (maxLen - dist) / maxLen : 0;
+
+            // match if similarity >= 80%
+            return similarity >= 0.8;
+          });
 
           if (matchedTicket) {
             // @ts-ignore
@@ -458,6 +487,7 @@ export default defineComponent({
             // @ts-ignore
             matchedTicket.sales += extraData.quantity || 1;
           } else {
+            console.log(extraData);
             console.log("No match found for ticket sale");
           }
         }

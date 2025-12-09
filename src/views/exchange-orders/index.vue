@@ -141,7 +141,7 @@ export default defineComponent({
         domain: "Wallet",
         property: "ManyP2pOrders",
         method: "GetP2pOrders",
-        params: [1, 50],
+        params: [1, 120],
         requireAuth: true,
         ignoreProperty: false,
         silentUpdate: true,
