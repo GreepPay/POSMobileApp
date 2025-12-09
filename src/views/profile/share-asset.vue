@@ -169,7 +169,7 @@ export default defineComponent({
             await (await fetch(imageData)).blob()
           );
           await Logic.Common.shareFile(
-            `greep-pay-assets-${currentBusiness.value?.business_name}`,
+            `greep-pay-assets-${currentBusiness.value?.business_name}.png`,
             base64Data,
             "image/png"
           );
