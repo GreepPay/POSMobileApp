@@ -38,6 +38,7 @@
     "country-state-city": "^3.2.1",
     "firebase": "^11.8.1",
     "html2pdf.js": "^0.12.0",
+    "html5-qrcode": "^2.3.8",
     "ionicons": "^7.0.0",
     "pdfjs": "^2.5.4",
     "pdfjs-dist": "^5.4.149",

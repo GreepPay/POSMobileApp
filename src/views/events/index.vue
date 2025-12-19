@@ -144,9 +144,10 @@ export default defineComponent({
               `From ${amount}`,
               Logic.Common.fomartDate(
                 product.eventStartDate || "",
-                "ddd, DD MMM"
+                "ddd, DD MMM",
+                false
               ),
-              Logic.Common.fomartDate(product.eventEndDate || "", "hA"),
+              Logic.Common.fomartDate(product.eventEndDate || "", "hA", false),
             ],
             uuid: product.uuid,
           });

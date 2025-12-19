@@ -569,7 +569,9 @@ export default defineComponent({
       if (Array.isArray(orders)) {
         orders.forEach((order) => {
           const details = getOrderDetails(order);
-          recentOrders.push(details);
+          if (details.status !== "Cancelled" && details.status !== "Failed") {
+            recentOrders.push(details);
+          }
         });
       }
     };

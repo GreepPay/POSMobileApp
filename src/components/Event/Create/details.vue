@@ -298,10 +298,14 @@ export default defineComponent({
         formData.name = props.product.name;
         formData.descriptions = props.product.description;
         formData.date = props.product.eventEndDate
-          ? Logic.Common.fomartDate(props.product.eventEndDate, "YYYY-MM-DD")
+          ? Logic.Common.fomartDate(
+              props.product.eventEndDate,
+              "YYYY-MM-DD",
+              false
+            )
           : "";
         formData.time = props.product.eventEndDate
-          ? Logic.Common.fomartDate(props.product.eventEndDate, "HH:mm")
+          ? Logic.Common.fomartDate(props.product.eventEndDate, "HH:mm", false)
           : "";
         formData.photos = images.map((image) => {
           return {
